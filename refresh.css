@@ -1,0 +1,1 @@
+.player-tools{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:4px}.refresh-player{border:1px solid var(--line);background:#f5f3ed;color:var(--muted);border-radius:20px;padding:4px 7px;font-size:8px;cursor:pointer}.refresh-player:hover{border-color:var(--green);color:var(--green)}

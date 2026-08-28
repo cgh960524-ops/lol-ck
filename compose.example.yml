@@ -1,0 +1,14 @@
+services:
+  eungck-lab:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "4173:4173"
+    environment:
+      RIOT_API_KEY: "${RIOT_API_KEY}"
+      UPLOADER_TOKEN: "${UPLOADER_TOKEN}"
+    volumes:
+      - eungck-data:/app/data
+
+volumes:
+  eungck-data:

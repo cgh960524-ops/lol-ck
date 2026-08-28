@@ -1,0 +1,5 @@
+{
+  "serverUrl": "https://your-domain.example",
+  "uploadToken": "서버의 UPLOADER_TOKEN과 같은 긴 임의 문자열",
+  "riotApiKey": "RGAPI-발급받은-키"
+}

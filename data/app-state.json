@@ -1,0 +1,3391 @@
+{
+  "version": 1,
+  "players": [
+    {
+      "id": 1,
+      "name": "bebebbi",
+      "tag": "#KR1",
+      "tier": "UNRANKED",
+      "division": "",
+      "lp": 0,
+      "role": "JUNGLE",
+      "secondary": "SUPPORT",
+      "form": -20,
+      "color": "#887355",
+      "selected": false,
+      "most": [
+        {
+          "name": "LeeSin",
+          "games": 1,
+          "wins": 1,
+          "kills": 16,
+          "deaths": 3,
+          "assists": 10,
+          "winRate": 100,
+          "kda": 8.67
+        },
+        {
+          "name": "Pantheon",
+          "games": 1,
+          "wins": 0,
+          "kills": 1,
+          "deaths": 2,
+          "assists": 0,
+          "winRate": 0,
+          "kda": 0.5
+        },
+        {
+          "name": "Lillia",
+          "games": 1,
+          "wins": 0,
+          "kills": 1,
+          "deaths": 10,
+          "assists": 12,
+          "winRate": 0,
+          "kda": 1.3
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 33,
+      "recentGames": 3,
+      "puuid": "Ah-EaE42lf0lVB4JuWj0eiUr6hMYm_ISYOnIvUOAZgU13wLnu0FGfYrPr0_7Yus5SS17MB9ued373g",
+      "internalRating": 1045,
+      "internalGames": 23,
+      "internalRoles": {
+        "JUNGLE": {
+          "games": 13,
+          "wins": 8,
+          "rating": 1058
+        },
+        "SUPPORT": {
+          "games": 10,
+          "wins": 4,
+          "rating": 967
+        }
+      },
+      "internalChampions": {
+        "Pantheon": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 10.625
+        },
+        "Jarvan IV": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.2
+        },
+        "Vi": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 7.916666666666666
+        },
+        "Lillia": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 3.9333333333333336
+        },
+        "Swain": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.3333333333333335
+        },
+        "Maokai": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 9.533333333333333
+        },
+        "Poppy": {
+          "games": 4,
+          "wins": 1,
+          "kdaTotal": 29.733333333333334
+        },
+        "Morgana": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.75
+        },
+        "Alistar": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.2
+        },
+        "Brand": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.7777777777777777
+        },
+        "Dr. Mundo": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 26
+        },
+        "Trundle": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.75
+        },
+        "Amumu": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.5
+        }
+      },
+      "internalKda": 4.53,
+      "internalChampionScore": 8,
+      "playAliases": []
+    },
+    {
+      "id": 2,
+      "name": "2611130932135616",
+      "tag": "#KR1",
+      "tier": "EMERALD",
+      "division": "IV",
+      "lp": 67,
+      "role": "SUPPORT",
+      "secondary": "TOP",
+      "form": -6,
+      "color": "#516b87",
+      "selected": false,
+      "most": [
+        {
+          "name": "Pantheon",
+          "games": 3,
+          "wins": 2,
+          "kills": 36,
+          "deaths": 46,
+          "assists": 45,
+          "winRate": 67,
+          "kda": 1.76
+        },
+        {
+          "name": "Xerath",
+          "games": 3,
+          "wins": 1,
+          "kills": 8,
+          "deaths": 21,
+          "assists": 17,
+          "winRate": 33,
+          "kda": 1.19
+        },
+        {
+          "name": "Seraphine",
+          "games": 2,
+          "wins": 1,
+          "kills": 11,
+          "deaths": 16,
+          "assists": 35,
+          "winRate": 50,
+          "kda": 2.88
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 45,
+      "recentGames": 40,
+      "puuid": "wT2f-3I7aScpGy8Sz6Jo9OsGOZkVFh2IV4BOaG_Lvxcsr5JKPVy4RXGykWv82faq7l5NNhq5dnY3Lg",
+      "internalRating": 1226,
+      "internalGames": 34,
+      "internalRoles": {
+        "TOP": {
+          "games": 14,
+          "wins": 4,
+          "rating": 1372
+        },
+        "JUNGLE": {
+          "games": 10,
+          "wins": 6,
+          "rating": 1508
+        },
+        "SUPPORT": {
+          "games": 3,
+          "wins": 2,
+          "rating": 1566
+        },
+        "ADC": {
+          "games": 6,
+          "wins": 2,
+          "rating": 1523
+        },
+        "MID": {
+          "games": 1,
+          "wins": 0,
+          "rating": 1553
+        }
+      },
+      "internalChampions": {
+        "Olaf": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.7142857142857143
+        },
+        "Mordekaiser": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 8.666666666666668
+        },
+        "Illaoi": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 3.672727272727273
+        },
+        "Dr. Mundo": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.2
+        },
+        "Anivia": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2
+        },
+        "Sett": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 5.433333333333334
+        },
+        "Malphite": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.7
+        },
+        "Jax": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.3333333333333333
+        },
+        "Hecarim": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.3333333333333335
+        },
+        "Sylas": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.875
+        },
+        "Vi": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.0909090909090908
+        },
+        "Zac": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Xin Zhao": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.75
+        },
+        "Rumble": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.8333333333333335
+        },
+        "Volibear": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.75
+        },
+        "Maokai": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.166666666666667
+        },
+        "Karma": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.125
+        },
+        "Shen": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.5
+        },
+        "Nautilus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.090909090909091
+        },
+        "Leona": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.7
+        },
+        "Poppy": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.875
+        },
+        "Camille": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.125
+        },
+        "Nasus": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.25
+        },
+        "Malzahar": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.4
+        },
+        "Sivir": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.375
+        },
+        "Xerath": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.875
+        },
+        "Corki": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Braum": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.4
+        }
+      },
+      "internalKda": 1.68,
+      "internalChampionScore": 4,
+      "playAliases": [],
+      "lockedRole": ""
+    },
+    {
+      "id": 3,
+      "name": "신휴지",
+      "tag": "#1004",
+      "tier": "PLATINUM",
+      "division": "IV",
+      "lp": 11,
+      "role": "ADC",
+      "secondary": "SUPPORT",
+      "form": -12,
+      "color": "#7d5369",
+      "selected": false,
+      "most": [
+        {
+          "name": "Kaisa",
+          "games": 2,
+          "wins": 1,
+          "kills": 17,
+          "deaths": 12,
+          "assists": 10,
+          "winRate": 50,
+          "kda": 2.25
+        },
+        {
+          "name": "Lulu",
+          "games": 1,
+          "wins": 1,
+          "kills": 4,
+          "deaths": 2,
+          "assists": 15,
+          "winRate": 100,
+          "kda": 9.5
+        },
+        {
+          "name": "Ashe",
+          "games": 1,
+          "wins": 0,
+          "kills": 5,
+          "deaths": 5,
+          "assists": 0,
+          "winRate": 0,
+          "kda": 1
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 40,
+      "recentGames": 5,
+      "puuid": "rhtvlV9C1GiFUbErh3DBoyzDpjsYv3QplmQ2XU1wJ01CodJO30tMVWzWGbEmvL3L6oC0zbVmkRHA4A",
+      "internalRating": 1352,
+      "internalGames": 21,
+      "internalRoles": {
+        "JUNGLE": {
+          "games": 10,
+          "wins": 4,
+          "rating": 1360
+        },
+        "ADC": {
+          "games": 10,
+          "wins": 4,
+          "rating": 1394
+        },
+        "TOP": {
+          "games": 1,
+          "wins": 1,
+          "rating": 1414
+        }
+      },
+      "internalChampions": {
+        "Lee Sin": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 4
+        },
+        "Xin Zhao": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 38
+        },
+        "Viego": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 4.5
+        },
+        "Wukong": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.25
+        },
+        "Tristana": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 8.625
+        },
+        "Lucian": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.625
+        },
+        "Samira": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.75
+        },
+        "Sivir": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 3.7666666666666666
+        },
+        "Caitlyn": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Kai'Sa": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.8333333333333335
+        },
+        "Ashe": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7.666666666666667
+        },
+        "Jinx": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.2222222222222223
+        },
+        "Varus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 0.7777777777777778
+        },
+        "Irelia": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.3333333333333335
+        },
+        "Dr. Mundo": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.6666666666666665
+        },
+        "Camille": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 11
+        }
+      },
+      "internalKda": 4.62,
+      "internalChampionScore": -3,
+      "playAliases": [
+        {
+          "puuid": "f5269220-e3be-5f4a-af9f-b8cefeef71fd",
+          "gameName": "구마유자차",
+          "tagLine": "KR1"
+        }
+      ],
+      "lockedRole": "TOP"
+    },
+    {
+      "id": 4,
+      "name": "크리티컬",
+      "tag": "#데미지",
+      "tier": "EMERALD",
+      "division": "III",
+      "lp": 15,
+      "role": "MID",
+      "secondary": "TOP",
+      "form": 12,
+      "color": "#6b7350",
+      "selected": false,
+      "most": [
+        {
+          "name": "Yone",
+          "games": 1,
+          "wins": 1,
+          "kills": 3,
+          "deaths": 3,
+          "assists": 5,
+          "winRate": 100,
+          "kda": 2.67
+        },
+        {
+          "name": "Ryze",
+          "games": 1,
+          "wins": 1,
+          "kills": 14,
+          "deaths": 5,
+          "assists": 9,
+          "winRate": 100,
+          "kda": 4.6
+        },
+        {
+          "name": "Ahri",
+          "games": 1,
+          "wins": 1,
+          "kills": 6,
+          "deaths": 3,
+          "assists": 10,
+          "winRate": 100,
+          "kda": 5.33
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "MtxvQdKJlKtjzlbwel80ybDbz-fsC8lA_LjRFW1cuaaGsGknmX8l_SdBvgbEH8qhlsvQ1w_AV72eWQ",
+      "internalRating": 1581,
+      "internalGames": 13,
+      "internalRoles": {
+        "TOP": {
+          "games": 8,
+          "wins": 3,
+          "rating": 1508
+        },
+        "JUNGLE": {
+          "games": 2,
+          "wins": 2,
+          "rating": 1635
+        },
+        "ADC": {
+          "games": 3,
+          "wins": 3,
+          "rating": 1622
+        }
+      },
+      "internalChampions": {
+        "Renekton": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 3.5535714285714284
+        },
+        "Shen": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 6
+        },
+        "Camille": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 4.25
+        },
+        "Irelia": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.25
+        },
+        "LeBlanc": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 8
+        },
+        "Vayne": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.5
+        },
+        "Nasus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.3333333333333335
+        },
+        "Malphite": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3
+        },
+        "Kai'Sa": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.833333333333333
+        },
+        "Ezreal": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 8.333333333333332
+        }
+      },
+      "internalKda": 3.62,
+      "internalChampionScore": -6,
+      "playAliases": []
+    },
+    {
+      "id": 5,
+      "name": "New",
+      "tag": "#0327",
+      "tier": "PLATINUM",
+      "division": "III",
+      "lp": 82,
+      "role": "MID",
+      "secondary": "JUNGLE",
+      "form": 12,
+      "color": "#655986",
+      "selected": false,
+      "most": [
+        {
+          "name": "LeeSin",
+          "games": 1,
+          "wins": 1,
+          "kills": 0,
+          "deaths": 0,
+          "assists": 0,
+          "winRate": 100,
+          "kda": 0
+        },
+        {
+          "name": "KogMaw",
+          "games": 1,
+          "wins": 1,
+          "kills": 13,
+          "deaths": 9,
+          "assists": 10,
+          "winRate": 100,
+          "kda": 2.56
+        },
+        {
+          "name": "Syndra",
+          "games": 1,
+          "wins": 1,
+          "kills": 9,
+          "deaths": 6,
+          "assists": 18,
+          "winRate": 100,
+          "kda": 4.5
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "oyb7KAT1KrZkEcAJUEikWlW6dY-7NY9-jJP8s_mRWQSblYe2H6lYx6p6whE8Uvi_DU6R0LniCIpVKQ",
+      "internalRating": 1351,
+      "internalGames": 14,
+      "internalRoles": {
+        "JUNGLE": {
+          "games": 6,
+          "wins": 3,
+          "rating": 1403
+        },
+        "MID": {
+          "games": 7,
+          "wins": 3,
+          "rating": 1363
+        },
+        "TOP": {
+          "games": 1,
+          "wins": 1,
+          "rating": 1449
+        }
+      },
+      "internalChampions": {
+        "Graves": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.727272727272727
+        },
+        "Sylas": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 9.25
+        },
+        "Lillia": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.3333333333333335
+        },
+        "Kindred": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5
+        },
+        "Nocturne": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7.5
+        },
+        "Syndra": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8888888888888888
+        },
+        "Zed": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7
+        },
+        "Diana": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8571428571428571
+        },
+        "Locke": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8461538461538461
+        },
+        "Twisted Fate": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.25
+        },
+        "Nasus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 0.5454545454545454
+        },
+        "Lissandra": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 1.6666666666666667
+        },
+        "Annie": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.25
+        }
+      },
+      "internalKda": 3.08,
+      "internalChampionScore": -2,
+      "playAliases": []
+    },
+    {
+      "id": 6,
+      "name": "백설기콩떡",
+      "tag": "#1224",
+      "tier": "EMERALD",
+      "division": "IV",
+      "lp": 0,
+      "role": "MID",
+      "secondary": "SUPPORT",
+      "form": -12,
+      "color": "#965c4b",
+      "selected": false,
+      "most": [
+        {
+          "name": "Orianna",
+          "games": 1,
+          "wins": 1,
+          "kills": 6,
+          "deaths": 2,
+          "assists": 13,
+          "winRate": 100,
+          "kda": 9.5
+        },
+        {
+          "name": "Cassiopeia",
+          "games": 1,
+          "wins": 1,
+          "kills": 7,
+          "deaths": 8,
+          "assists": 3,
+          "winRate": 100,
+          "kda": 1.25
+        },
+        {
+          "name": "Akali",
+          "games": 1,
+          "wins": 0,
+          "kills": 5,
+          "deaths": 7,
+          "assists": 3,
+          "winRate": 0,
+          "kda": 1.14
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 40,
+      "recentGames": 5,
+      "puuid": "UH_TcxiWCPVITBTEJZOjcNNN_PiB-NAIrcl--TlV4XFU3icZIqOhTrHLht9pQCDeuopxbg9GnHoiHQ",
+      "internalRating": 1766,
+      "internalGames": 36,
+      "internalRoles": {
+        "SUPPORT": {
+          "games": 4,
+          "wins": 3,
+          "rating": 1680
+        },
+        "MID": {
+          "games": 22,
+          "wins": 11,
+          "rating": 1647
+        },
+        "ADC": {
+          "games": 5,
+          "wins": 1,
+          "rating": 1519
+        },
+        "TOP": {
+          "games": 1,
+          "wins": 0,
+          "rating": 1543
+        },
+        "JUNGLE": {
+          "games": 4,
+          "wins": 3,
+          "rating": 1649
+        }
+      },
+      "internalChampions": {
+        "Seraphine": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 32.5
+        },
+        "Shen": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.1666666666666667
+        },
+        "Neeko": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7.25
+        },
+        "Milio": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 14
+        },
+        "Cassiopeia": {
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 10.438095238095238
+        },
+        "Smolder": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 9
+        },
+        "Ryze": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 7.2
+        },
+        "Orianna": {
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 24.666666666666668
+        },
+        "Annie": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 11.166666666666666
+        },
+        "Akali": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 13
+        },
+        "Viktor": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 18.25
+        },
+        "Xerath": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 10.5
+        },
+        "Tristana": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 14.5
+        },
+        "Anivia": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 29
+        },
+        "Sylas": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7.666666666666667
+        },
+        "Syndra": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 1.8571428571428572
+        },
+        "LeBlanc": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2
+        },
+        "Mel": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.5
+        },
+        "Lulu": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.6
+        },
+        "Alistar": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.5454545454545454
+        },
+        "Rell": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.1538461538461537
+        },
+        "Jayce": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3
+        },
+        "Rumble": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.5
+        },
+        "Gnar": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 0.7142857142857143
+        },
+        "Yone": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.5
+        }
+      },
+      "internalKda": 6.35,
+      "internalChampionScore": 10,
+      "playAliases": []
+    },
+    {
+      "id": 7,
+      "name": "인생망했다",
+      "tag": "#1111",
+      "tier": "PLATINUM",
+      "division": "III",
+      "lp": 79,
+      "role": "JUNGLE",
+      "secondary": "MID",
+      "form": -15,
+      "color": "#3d7372",
+      "selected": false,
+      "most": [
+        {
+          "name": "Naafiri",
+          "games": 10,
+          "wins": 3,
+          "kills": 87,
+          "deaths": 61,
+          "assists": 60,
+          "winRate": 30,
+          "kda": 2.41
+        },
+        {
+          "name": "Mel",
+          "games": 5,
+          "wins": 3,
+          "kills": 70,
+          "deaths": 52,
+          "assists": 38,
+          "winRate": 60,
+          "kda": 2.08
+        },
+        {
+          "name": "Orianna",
+          "games": 3,
+          "wins": 1,
+          "kills": 17,
+          "deaths": 26,
+          "assists": 24,
+          "winRate": 33,
+          "kda": 1.58
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 38,
+      "recentGames": 40,
+      "puuid": "S5dXLrxW_xZXHxwk-ekqGsXTuj6rEoNHP7Fdn1JkU0EWlzXMQQpVO502PWku07m4IKfn6KwKKS_ufw",
+      "internalRating": 1381,
+      "internalGames": 35,
+      "internalRoles": {
+        "ADC": {
+          "games": 15,
+          "wins": 9,
+          "rating": 1430
+        },
+        "JUNGLE": {
+          "games": 20,
+          "wins": 8,
+          "rating": 1356
+        }
+      },
+      "internalChampions": {
+        "Ashe": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 13.629870129870131
+        },
+        "Jhin": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 7.928571428571429
+        },
+        "Kai'Sa": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 7.5
+        },
+        "Lucian": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 5.888888888888888
+        },
+        "Ezreal": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 9.5
+        },
+        "Ziggs": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.3333333333333335
+        },
+        "Jinx": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 9
+        },
+        "Vayne": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.875
+        },
+        "Mel": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.3333333333333335
+        },
+        "Naafiri": {
+          "games": 4,
+          "wins": 2,
+          "kdaTotal": 17.375
+        },
+        "Skarner": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.3333333333333333
+        },
+        "Xin Zhao": {
+          "games": 4,
+          "wins": 2,
+          "kdaTotal": 11.43888888888889
+        },
+        "Vi": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 4.5
+        },
+        "Maokai": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 20
+        },
+        "Nocturne": {
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 8.833333333333332
+        },
+        "Vex": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.5
+        },
+        "Pantheon": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.2
+        },
+        "Lillia": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 5
+        },
+        "Jarvan IV": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.5
+        },
+        "Elise": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 4.071428571428571
+        }
+      },
+      "internalKda": 4.02,
+      "internalChampionScore": 10,
+      "playAliases": []
+    },
+    {
+      "id": 8,
+      "name": "둥글e",
+      "tag": "#KR1",
+      "tier": "GOLD",
+      "division": "I",
+      "lp": 45,
+      "role": "MID",
+      "secondary": "SUPPORT",
+      "form": -12,
+      "color": "#3f665c",
+      "selected": false,
+      "most": [
+        {
+          "name": "Viktor",
+          "games": 2,
+          "wins": 1,
+          "kills": 6,
+          "deaths": 20,
+          "assists": 17,
+          "winRate": 50,
+          "kda": 1.15
+        },
+        {
+          "name": "TwistedFate",
+          "games": 1,
+          "wins": 1,
+          "kills": 10,
+          "deaths": 9,
+          "assists": 10,
+          "winRate": 100,
+          "kda": 2.22
+        },
+        {
+          "name": "Mel",
+          "games": 1,
+          "wins": 0,
+          "kills": 11,
+          "deaths": 7,
+          "assists": 9,
+          "winRate": 0,
+          "kda": 2.86
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 40,
+      "recentGames": 5,
+      "puuid": "ZaXyaKsOUWJc7ofpyHb2uouEzsHZW8z3568anSVphlGviIQO-e0qRLCW5vtqqkrZuKsgquDLQloq6w",
+      "internalRating": 1140,
+      "internalGames": 31,
+      "internalRoles": {
+        "MID": {
+          "games": 12,
+          "wins": 5,
+          "rating": 1149
+        },
+        "SUPPORT": {
+          "games": 10,
+          "wins": 6,
+          "rating": 1182
+        },
+        "ADC": {
+          "games": 9,
+          "wins": 6,
+          "rating": 1285
+        }
+      },
+      "internalChampions": {
+        "Ahri": {
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 9.583333333333332
+        },
+        "Syndra": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 6.392857142857142
+        },
+        "Zoe": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.75
+        },
+        "Twisted Fate": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2
+        },
+        "Thresh": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 5.4
+        },
+        "Leona": {
+          "games": 3,
+          "wins": 3,
+          "kdaTotal": 15.5
+        },
+        "Nautilus": {
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 5.368181818181818
+        },
+        "Neeko": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 7.375
+        },
+        "Xerath": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 11.666666666666668
+        },
+        "Lulu": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 7
+        },
+        "Blitzcrank": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.1111111111111112
+        },
+        "Ezreal": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8333333333333334
+        },
+        "Ziggs": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 13.5
+        },
+        "Taliyah": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 6.333333333333333
+        },
+        "Orianna": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 12.944444444444445
+        },
+        "Malphite": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.6666666666666666
+        },
+        "LeBlanc": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 8
+        },
+        "Seraphine": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.5
+        },
+        "Braum": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.6
+        }
+      },
+      "internalKda": 4.02,
+      "internalChampionScore": 7,
+      "playAliases": []
+    },
+    {
+      "id": 9,
+      "name": "전수찬오른붕",
+      "tag": "#KR11",
+      "tier": "EMERALD",
+      "division": "IV",
+      "lp": 44,
+      "role": "ADC",
+      "secondary": "JUNGLE",
+      "form": 12,
+      "color": "#887355",
+      "selected": false,
+      "most": [
+        {
+          "name": "Kaisa",
+          "games": 1,
+          "wins": 1,
+          "kills": 4,
+          "deaths": 8,
+          "assists": 10,
+          "winRate": 100,
+          "kda": 1.75
+        },
+        {
+          "name": "Jhin",
+          "games": 1,
+          "wins": 1,
+          "kills": 10,
+          "deaths": 5,
+          "assists": 24,
+          "winRate": 100,
+          "kda": 6.8
+        },
+        {
+          "name": "Graves",
+          "games": 1,
+          "wins": 1,
+          "kills": 8,
+          "deaths": 5,
+          "assists": 11,
+          "winRate": 100,
+          "kda": 3.8
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "QeK98_tmBzMrTGTokRyJkI4CLTbtXdUHb_3rO-gSKN-sd2Hc2WSjshDOiDlGWQ3oZ0AA4otuENJsTg",
+      "internalRating": 1343,
+      "internalGames": 39,
+      "internalRoles": {
+        "ADC": {
+          "games": 18,
+          "wins": 6,
+          "rating": 1404
+        },
+        "JUNGLE": {
+          "games": 20,
+          "wins": 8,
+          "rating": 1545
+        },
+        "MID": {
+          "games": 1,
+          "wins": 0,
+          "rating": 1578
+        }
+      },
+      "internalChampions": {
+        "Yunara": {
+          "games": 4,
+          "wins": 2,
+          "kdaTotal": 9.346031746031747
+        },
+        "Ezreal": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 8.666666666666668
+        },
+        "Tristana": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.8181818181818181
+        },
+        "Ziggs": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 2.8
+        },
+        "Ambessa": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 3
+        },
+        "Jarvan IV": {
+          "games": 4,
+          "wins": 1,
+          "kdaTotal": 19.154761904761905
+        },
+        "Lee Sin": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 14.25
+        },
+        "Viego": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.6666666666666667
+        },
+        "Aatrox": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8571428571428571
+        },
+        "Kai'Sa": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 2.961038961038961
+        },
+        "Samira": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 7.303571428571429
+        },
+        "Caitlyn": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.857142857142857
+        },
+        "Pantheon": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 4.933333333333334
+        },
+        "Gragas": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.6
+        },
+        "Karthus": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8888888888888888
+        },
+        "Braum": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.111111111111111
+        },
+        "Leona": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.625
+        },
+        "Hecarim": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 10.166666666666666
+        },
+        "Jhin": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 3.4857142857142858
+        },
+        "Maokai": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 13.166666666666668
+        },
+        "Vi": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.5555555555555556
+        },
+        "Aphelios": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.25
+        },
+        "Xerath": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8
+        }
+      },
+      "internalKda": 3.06,
+      "internalChampionScore": 3,
+      "playAliases": [
+        {
+          "puuid": "89c2c7e2-51a7-53a6-bf6d-68a6674035f3",
+          "gameName": "괴벌레",
+          "tagLine": "델타포스"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Piremi",
+      "tag": "#0916",
+      "tier": "PLATINUM",
+      "division": "II",
+      "lp": 86,
+      "role": "MID",
+      "secondary": "SUPPORT",
+      "form": 12,
+      "color": "#516b87",
+      "selected": false,
+      "most": [
+        {
+          "name": "Ahri",
+          "games": 1,
+          "wins": 1,
+          "kills": 8,
+          "deaths": 5,
+          "assists": 17,
+          "winRate": 100,
+          "kda": 5
+        },
+        {
+          "name": "Mel",
+          "games": 1,
+          "wins": 1,
+          "kills": 16,
+          "deaths": 4,
+          "assists": 9,
+          "winRate": 100,
+          "kda": 6.25
+        },
+        {
+          "name": "Nautilus",
+          "games": 1,
+          "wins": 1,
+          "kills": 6,
+          "deaths": 8,
+          "assists": 30,
+          "winRate": 100,
+          "kda": 4.5
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "U7nRZWRwQcpvITz_HHtwVmnmmuB0R-YHPy10RE7BsIQhWmJIQFzINmJE0-9sOakzABYvePavIn3_Yw",
+      "internalRating": 1640,
+      "internalGames": 39,
+      "internalRoles": {
+        "MID": {
+          "games": 33,
+          "wins": 18,
+          "rating": 1578
+        },
+        "ADC": {
+          "games": 6,
+          "wins": 5,
+          "rating": 1494
+        }
+      },
+      "internalChampions": {
+        "Galio": {
+          "games": 4,
+          "wins": 2,
+          "kdaTotal": 27.9
+        },
+        "Orianna": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.4
+        },
+        "Ryze": {
+          "games": 6,
+          "wins": 6,
+          "kdaTotal": 22.16190476190476
+        },
+        "Vladimir": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 12.375
+        },
+        "Mel": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.75
+        },
+        "Syndra": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 3.888888888888889
+        },
+        "Ahri": {
+          "games": 4,
+          "wins": 1,
+          "kdaTotal": 15.95
+        },
+        "Lissandra": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 9.5
+        },
+        "Aurora": {
+          "games": 6,
+          "wins": 5,
+          "kdaTotal": 54
+        },
+        "Irelia": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.25
+        },
+        "Yasuo": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 11.066666666666666
+        },
+        "Corki": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.1666666666666667
+        },
+        "K'Sante": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 21
+        },
+        "Nautilus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7.333333333333333
+        },
+        "Leona": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8571428571428571
+        },
+        "Braum": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 11.5
+        },
+        "Zilean": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 8
+        },
+        "Sylas": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 5.666666666666667
+        }
+      },
+      "internalKda": 5.71,
+      "internalChampionScore": 25,
+      "playAliases": [
+        {
+          "puuid": "5099b52b-6f75-5fab-8aaa-9d3721623e6d",
+          "gameName": "에스구십롱바디",
+          "tagLine": "Dunn"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "발목분쇄기 SON",
+      "tag": "#KR2",
+      "tier": "MASTER",
+      "division": "I",
+      "lp": 359,
+      "role": "TOP",
+      "secondary": "JUNGLE",
+      "form": 12,
+      "color": "#7d5369",
+      "selected": false,
+      "most": [
+        {
+          "name": "LeeSin",
+          "games": 1,
+          "wins": 1,
+          "kills": 7,
+          "deaths": 4,
+          "assists": 10,
+          "winRate": 100,
+          "kda": 4.25
+        },
+        {
+          "name": "Ambessa",
+          "games": 1,
+          "wins": 1,
+          "kills": 10,
+          "deaths": 8,
+          "assists": 11,
+          "winRate": 100,
+          "kda": 2.63
+        },
+        {
+          "name": "KSante",
+          "games": 1,
+          "wins": 1,
+          "kills": 4,
+          "deaths": 3,
+          "assists": 7,
+          "winRate": 100,
+          "kda": 3.67
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "yG9URV_TyAZ6RE3nAvlJW8CbiymHg3T0daFtrep9N0CXmqYYabvMpRaZ7ZhOCrhB4BfsTHZtt1S0wg",
+      "internalRating": 2182,
+      "internalGames": 25,
+      "internalRoles": {
+        "ADC": {
+          "games": 8,
+          "wins": 5,
+          "rating": 2103
+        },
+        "TOP": {
+          "games": 2,
+          "wins": 1,
+          "rating": 2043
+        },
+        "JUNGLE": {
+          "games": 14,
+          "wins": 9,
+          "rating": 2178
+        },
+        "MID": {
+          "games": 1,
+          "wins": 0,
+          "rating": 2044
+        }
+      },
+      "internalChampions": {
+        "Nautilus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.8333333333333335
+        },
+        "Elise": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Pyke": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.4
+        },
+        "Rakan": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 4.2
+        },
+        "Alistar": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 22
+        },
+        "Viego": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 27.166666666666664
+        },
+        "Diana": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7.25
+        },
+        "Lillia": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 8.25
+        },
+        "Jarvan IV": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 4.833333333333333
+        },
+        "Sylas": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.25
+        },
+        "Vi": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7
+        },
+        "Jayce": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 12
+        },
+        "Zaahen": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2
+        },
+        "Vayne": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 23
+        },
+        "Aatrox": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.3333333333333335
+        },
+        "Jax": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.6666666666666665
+        },
+        "K'Sante": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7
+        },
+        "Gragas": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 12.5
+        },
+        "Yone": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.6666666666666665
+        },
+        "Zeri": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Shaco": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.5
+        },
+        "Thresh": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Aphelios": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.4
+        }
+      },
+      "internalKda": 6.61,
+      "internalChampionScore": 32,
+      "lockedRole": "",
+      "playAliases": []
+    },
+    {
+      "id": 12,
+      "name": "자 페",
+      "tag": "#KR1",
+      "tier": "EMERALD",
+      "division": "III",
+      "lp": 93,
+      "role": "ADC",
+      "secondary": "SUPPORT",
+      "form": 12,
+      "color": "#6b7350",
+      "selected": false,
+      "most": [
+        {
+          "name": "Yunara",
+          "games": 3,
+          "wins": 3,
+          "kills": 26,
+          "deaths": 13,
+          "assists": 20,
+          "winRate": 100,
+          "kda": 3.54
+        },
+        {
+          "name": "Pyke",
+          "games": 1,
+          "wins": 0,
+          "kills": 5,
+          "deaths": 8,
+          "assists": 9,
+          "winRate": 0,
+          "kda": 1.75
+        },
+        {
+          "name": "Blitzcrank",
+          "games": 1,
+          "wins": 0,
+          "kills": 6,
+          "deaths": 10,
+          "assists": 7,
+          "winRate": 0,
+          "kda": 1.3
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "hf3bu4X--alt958i6JTd8i_4QTiJvbteMlpzhNT6ko56DtrJvDTZJwqIGJWq6hG6s00iHbFz7z4M4g",
+      "internalRating": 1720,
+      "internalGames": 17,
+      "internalRoles": {
+        "ADC": {
+          "games": 15,
+          "wins": 8,
+          "rating": 1702
+        },
+        "JUNGLE": {
+          "games": 2,
+          "wins": 1,
+          "rating": 1610
+        }
+      },
+      "internalChampions": {
+        "Blitzcrank": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3
+        },
+        "Braum": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 9.5
+        },
+        "Thresh": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.6
+        },
+        "Leona": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.333333333333333
+        },
+        "Shen": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.5
+        },
+        "Ezreal": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 45.42857142857143
+        },
+        "Xayah": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 21
+        },
+        "Xerath": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 12.9
+        },
+        "Miss Fortune": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 19
+        },
+        "Yunara": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 6.083333333333333
+        },
+        "Kai'Sa": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 5.666666666666667
+        },
+        "Varus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 18
+        }
+      },
+      "internalKda": 8.82,
+      "internalChampionScore": 18,
+      "lockedRole": "",
+      "playAliases": []
+    },
+    {
+      "id": 13,
+      "name": "운 지",
+      "tag": "#UNZI",
+      "tier": "DIAMOND",
+      "division": "IV",
+      "lp": 12,
+      "role": "ADC",
+      "secondary": "SUPPORT",
+      "form": 12,
+      "color": "#655986",
+      "selected": false,
+      "most": [
+        {
+          "name": "Kaisa",
+          "games": 1,
+          "wins": 1,
+          "kills": 2,
+          "deaths": 5,
+          "assists": 7,
+          "winRate": 100,
+          "kda": 1.8
+        },
+        {
+          "name": "Jhin",
+          "games": 1,
+          "wins": 1,
+          "kills": 6,
+          "deaths": 2,
+          "assists": 11,
+          "winRate": 100,
+          "kda": 8.5
+        },
+        {
+          "name": "Pyke",
+          "games": 1,
+          "wins": 1,
+          "kills": 4,
+          "deaths": 10,
+          "assists": 11,
+          "winRate": 100,
+          "kda": 1.5
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "7SWstu4qT3_zvd0e_9M-nykUxAdLFE7Z0L4Y__0VcA1lASJLbUyRHdbjYD86TbmKNc8NwIqotTV0VQ",
+      "internalRating": 1833,
+      "internalGames": 16,
+      "internalRoles": {
+        "ADC": {
+          "games": 14,
+          "wins": 9,
+          "rating": 1894
+        },
+        "MID": {
+          "games": 2,
+          "wins": 0,
+          "rating": 1731
+        }
+      },
+      "internalChampions": {
+        "Lucian": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 8
+        },
+        "Jhin": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 13.291666666666666
+        },
+        "Kai'Sa": {
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 8.34090909090909
+        },
+        "Caitlyn": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.2222222222222222
+        },
+        "Ashe": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 18.6
+        },
+        "Ezreal": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Sivir": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 8.666666666666666
+        },
+        "Nautilus": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.7142857142857144
+        },
+        "Seraphine": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.125
+        },
+        "Blitzcrank": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 10.5
+        },
+        "Shen": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.4
+        }
+      },
+      "internalKda": 4.8,
+      "internalChampionScore": 5,
+      "playAliases": []
+    },
+    {
+      "id": 14,
+      "name": "아무것도하지말자하",
+      "tag": "#1111",
+      "tier": "BRONZE",
+      "division": "IV",
+      "lp": 74,
+      "role": "TOP",
+      "secondary": "ADC",
+      "form": 12,
+      "color": "#965c4b",
+      "selected": false,
+      "most": [
+        {
+          "name": "Gangplank",
+          "games": 2,
+          "wins": 0,
+          "kills": 17,
+          "deaths": 19,
+          "assists": 11,
+          "winRate": 0,
+          "kda": 1.47
+        },
+        {
+          "name": "Ryze",
+          "games": 1,
+          "wins": 1,
+          "kills": 5,
+          "deaths": 5,
+          "assists": 1,
+          "winRate": 100,
+          "kda": 1.2
+        },
+        {
+          "name": "Kaisa",
+          "games": 1,
+          "wins": 1,
+          "kills": 17,
+          "deaths": 1,
+          "assists": 4,
+          "winRate": 100,
+          "kda": 21
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "CSUWrqhjLcte4FZvJnTlfGm0nL1Xk2Hp2jgD4-MieBk00Q3ueJaNEtIc242IUEapstfCooUnHLdbXw",
+      "internalRating": 768,
+      "internalGames": 16,
+      "internalRoles": {
+        "TOP": {
+          "games": 10,
+          "wins": 4,
+          "rating": 834
+        },
+        "JUNGLE": {
+          "games": 5,
+          "wins": 2,
+          "rating": 897
+        },
+        "ADC": {
+          "games": 1,
+          "wins": 1,
+          "rating": 961
+        }
+      },
+      "internalChampions": {
+        "Yorick": {
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 2.5952380952380953
+        },
+        "Illaoi": {
+          "games": 8,
+          "wins": 4,
+          "kdaTotal": 9.351190476190476
+        },
+        "Malphite": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8333333333333334
+        },
+        "Malzahar": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 2.696428571428571
+        },
+        "Maokai": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 1
+        },
+        "Sett": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.18181818181818182
+        }
+      },
+      "internalKda": 1.04,
+      "internalChampionScore": -10,
+      "lockedRole": "TOP",
+      "playAliases": []
+    },
+    {
+      "id": 15,
+      "name": "진관우님13",
+      "tag": "#KR2",
+      "tier": "UNRANKED",
+      "division": "",
+      "lp": 0,
+      "role": "MID",
+      "secondary": "SUPPORT",
+      "form": 0,
+      "color": "#3d7372",
+      "selected": false,
+      "most": [],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 0,
+      "recentGames": 0,
+      "puuid": "fUPco7EIj_4OCYa2fiC_TrmEpUivzfmgiPWXXUhVSLxcmAsBTO2BqhpboS0XGr3uvd-qLi7M9-nqTg",
+      "internalRating": 952,
+      "internalGames": 17,
+      "internalRoles": {
+        "TOP": {
+          "games": 9,
+          "wins": 5,
+          "rating": 1023
+        },
+        "JUNGLE": {
+          "games": 2,
+          "wins": 1,
+          "rating": 1007
+        },
+        "ADC": {
+          "games": 6,
+          "wins": 2,
+          "rating": 922
+        }
+      },
+      "internalChampions": {
+        "Shen": {
+          "games": 4,
+          "wins": 0,
+          "kdaTotal": 6.476190476190475
+        },
+        "Malphite": {
+          "games": 5,
+          "wins": 4,
+          "kdaTotal": 32.55
+        },
+        "Sett": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 7.7333333333333325
+        },
+        "Kennen": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.2
+        },
+        "Jax": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Morgana": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.6666666666666665
+        },
+        "Leona": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.8
+        },
+        "Maokai": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.375
+        },
+        "Karma": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.1
+        }
+      },
+      "internalKda": 3.46,
+      "internalChampionScore": 8,
+      "lockedRole": "TOP",
+      "playAliases": []
+    },
+    {
+      "id": 16,
+      "name": "김정진짱",
+      "tag": "#KR1",
+      "tier": "UNRANKED",
+      "division": "",
+      "lp": 0,
+      "role": "ADC",
+      "secondary": "MID",
+      "form": 0,
+      "color": "#3f665c",
+      "selected": false,
+      "most": [
+        {
+          "name": "Kaisa",
+          "games": 1,
+          "wins": 1,
+          "kills": 10,
+          "deaths": 10,
+          "assists": 7,
+          "winRate": 100,
+          "kda": 1.7
+        },
+        {
+          "name": "Irelia",
+          "games": 1,
+          "wins": 1,
+          "kills": 6,
+          "deaths": 12,
+          "assists": 6,
+          "winRate": 100,
+          "kda": 1
+        },
+        {
+          "name": "Katarina",
+          "games": 1,
+          "wins": 0,
+          "kills": 2,
+          "deaths": 7,
+          "assists": 1,
+          "winRate": 0,
+          "kda": 0.43
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 50,
+      "recentGames": 4,
+      "puuid": "_5lNfDgJt6egHGQLjjL9Ixnqq7o7m71ggHT0Ef-7dax-x2CmUZxngWMjn2rfUfzrn5Llsb3tm2KaIg",
+      "internalRating": 1000,
+      "internalGames": 0,
+      "internalRoles": {},
+      "internalChampions": {},
+      "internalKda": 0,
+      "internalChampionScore": 0,
+      "playAliases": [
+        {
+          "puuid": "f11d9e67-0af9-54a0-861e-822cc1fa4ffd",
+          "gameName": "크리티컬",
+          "tagLine": "데미지"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "name": "gogo",
+      "tag": "#kr111",
+      "tier": "GOLD",
+      "division": "I",
+      "lp": 48,
+      "role": "MID",
+      "secondary": "ADC",
+      "form": 36,
+      "color": "#887355",
+      "selected": false,
+      "most": [
+        {
+          "name": "Sylas",
+          "games": 2,
+          "wins": 2,
+          "kills": 23,
+          "deaths": 14,
+          "assists": 22,
+          "winRate": 100,
+          "kda": 3.21
+        },
+        {
+          "name": "Ezreal",
+          "games": 2,
+          "wins": 1,
+          "kills": 12,
+          "deaths": 11,
+          "assists": 13,
+          "winRate": 50,
+          "kda": 2.27
+        },
+        {
+          "name": "Viktor",
+          "games": 1,
+          "wins": 1,
+          "kills": 6,
+          "deaths": 4,
+          "assists": 4,
+          "winRate": 100,
+          "kda": 2.5
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 80,
+      "recentGames": 5,
+      "puuid": "tes_ShlmhJEq1yrqsO1CyiAv1tM8984uuHYo8RHVxeDt5iJFPlp-4NN1rdYs60_ruD4KPpFpVhBeZg",
+      "internalRating": 1336,
+      "internalGames": 4,
+      "internalRoles": {
+        "ADC": {
+          "games": 3,
+          "wins": 2,
+          "rating": 1332
+        },
+        "TOP": {
+          "games": 1,
+          "wins": 1,
+          "rating": 1290
+        }
+      },
+      "internalChampions": {
+        "Karma": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.1
+        },
+        "Lulu": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 24
+        },
+        "Alistar": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 6.333333333333333
+        },
+        "Seraphine": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 17
+        }
+      },
+      "internalKda": 12.61,
+      "internalChampionScore": 11
+    }
+  ],
+  "seriesState": {
+    "active": {
+      "id": 1787492632721,
+      "createdAt": 1787492632721,
+      "blue": [
+        {
+          "id": 14,
+          "name": "아무것도하지말자하",
+          "tag": "#1111",
+          "role": "TOP",
+          "power": 920,
+          "internalGames": 12,
+          "tier": "BRONZE"
+        },
+        {
+          "id": 7,
+          "name": "인생망했다",
+          "tag": "#1111",
+          "role": "JUNGLE",
+          "power": 1499,
+          "internalGames": 31,
+          "tier": "PLATINUM"
+        },
+        {
+          "id": 6,
+          "name": "백설기콩떡",
+          "tag": "#1224",
+          "role": "MID",
+          "power": 1745,
+          "internalGames": 32,
+          "tier": "EMERALD"
+        },
+        {
+          "id": 2,
+          "name": "2611130932135616",
+          "tag": "#KR1",
+          "role": "ADC",
+          "power": 1431,
+          "internalGames": 30,
+          "tier": "EMERALD"
+        },
+        {
+          "id": 11,
+          "name": "발목분쇄기 SON",
+          "tag": "#KR2",
+          "role": "SUPPORT",
+          "power": 2172,
+          "internalGames": 21,
+          "tier": "MASTER"
+        }
+      ],
+      "red": [
+        {
+          "id": 3,
+          "name": "신휴지",
+          "tag": "#1004",
+          "role": "TOP",
+          "power": 1181,
+          "internalGames": 17,
+          "tier": "PLATINUM"
+        },
+        {
+          "id": 9,
+          "name": "전수찬오른붕",
+          "tag": "#KR11",
+          "role": "JUNGLE",
+          "power": 1448,
+          "internalGames": 35,
+          "tier": "EMERALD"
+        },
+        {
+          "id": 10,
+          "name": "Piremi",
+          "tag": "#0916",
+          "role": "MID",
+          "power": 1651,
+          "internalGames": 35,
+          "tier": "PLATINUM"
+        },
+        {
+          "id": 12,
+          "name": "자 페",
+          "tag": "#KR1",
+          "role": "ADC",
+          "power": 1748,
+          "internalGames": 13,
+          "tier": "EMERALD"
+        },
+        {
+          "id": 13,
+          "name": "운 지",
+          "tag": "#UNZI",
+          "role": "SUPPORT",
+          "power": 1795,
+          "internalGames": 12,
+          "tier": "DIAMOND"
+        }
+      ],
+      "blueCaptainId": 11,
+      "redCaptainId": 13,
+      "sets": [
+        {
+          "number": 1,
+          "gameId": "8352709199",
+          "winner": "BLUE",
+          "imported": true,
+          "matchId": "8352709199",
+          "rolesConfirmed": true
+        },
+        {
+          "number": 2,
+          "gameId": "8352795194",
+          "winner": "RED",
+          "imported": true,
+          "matchId": "8352795194",
+          "rolesConfirmed": true
+        },
+        {
+          "number": 3,
+          "gameId": "8352863123",
+          "winner": "RED",
+          "imported": true,
+          "matchId": "8352863123",
+          "rolesConfirmed": true
+        },
+        {
+          "number": 4,
+          "gameId": "8352912125",
+          "winner": "RED",
+          "imported": true,
+          "matchId": "8352912125",
+          "rolesConfirmed": true
+        }
+      ],
+      "pogId": 12,
+      "pogScore": 71,
+      "finished": true,
+      "finalWinner": "RED",
+      "finishedAt": 1787502836968
+    },
+    "history": [
+      {
+        "id": 1786807069255,
+        "createdAt": 1786807069255,
+        "blue": [
+          {
+            "id": 2,
+            "name": "2611130932135616",
+            "tag": "#KR1",
+            "role": "TOP"
+          },
+          {
+            "id": 7,
+            "name": "인생망했다",
+            "tag": "#1111",
+            "role": "JUNGLE"
+          },
+          {
+            "id": 6,
+            "name": "백설기콩떡",
+            "tag": "#1224",
+            "role": "MID"
+          },
+          {
+            "id": 8,
+            "name": "둥글e",
+            "tag": "#KR1",
+            "role": "ADC"
+          },
+          {
+            "id": 11,
+            "name": "발목분쇄기 SON",
+            "tag": "#KR2",
+            "role": "SUPPORT"
+          }
+        ],
+        "red": [
+          {
+            "id": 4,
+            "name": "크리티컬",
+            "tag": "#데미지",
+            "role": "TOP"
+          },
+          {
+            "id": 9,
+            "name": "전수찬오른붕",
+            "tag": "#KR11",
+            "role": "JUNGLE"
+          },
+          {
+            "id": 10,
+            "name": "Piremi",
+            "tag": "#0916",
+            "role": "MID"
+          },
+          {
+            "id": 3,
+            "name": "신휴지",
+            "tag": "#1004",
+            "role": "ADC"
+          },
+          {
+            "id": 12,
+            "name": "자 페",
+            "tag": "#KR1",
+            "role": "SUPPORT"
+          }
+        ],
+        "sets": [
+          {
+            "number": 1,
+            "gameId": "8341883802",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8341883802"
+          },
+          {
+            "number": 2,
+            "gameId": "8341976507",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8341976507"
+          },
+          {
+            "number": 3,
+            "gameId": "8342027917",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8342027917"
+          },
+          {
+            "number": 4,
+            "gameId": "8342075815",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8342075815"
+          },
+          {
+            "number": 5,
+            "gameId": "8342123836",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8342123836"
+          }
+        ],
+        "pogId": 7,
+        "pogScore": 63.8,
+        "finished": true,
+        "finalWinner": "BLUE",
+        "finishedAt": 1786820971922
+      },
+      {
+        "id": 1786976992545,
+        "createdAt": 1786976992545,
+        "blue": [
+          {
+            "id": 15,
+            "name": "진관우님13",
+            "tag": "#KR2",
+            "role": "TOP"
+          },
+          {
+            "id": 11,
+            "name": "발목분쇄기 SON",
+            "tag": "#KR2",
+            "role": "JUNGLE"
+          },
+          {
+            "id": 10,
+            "name": "Piremi",
+            "tag": "#0916",
+            "role": "MID"
+          },
+          {
+            "id": 16,
+            "name": "김정진짱",
+            "tag": "#KR1",
+            "role": "ADC"
+          },
+          {
+            "id": 2,
+            "name": "2611130932135616",
+            "tag": "#KR1",
+            "role": "SUPPORT"
+          }
+        ],
+        "red": [
+          {
+            "id": 14,
+            "name": "아무것도하지말자하",
+            "tag": "#1111",
+            "role": "TOP"
+          },
+          {
+            "id": 7,
+            "name": "인생망했다",
+            "tag": "#1111",
+            "role": "JUNGLE"
+          },
+          {
+            "id": 8,
+            "name": "둥글e",
+            "tag": "#KR1",
+            "role": "MID"
+          },
+          {
+            "id": 12,
+            "name": "자 페",
+            "tag": "#KR1",
+            "role": "ADC"
+          },
+          {
+            "id": 9,
+            "name": "전수찬오른붕",
+            "tag": "#KR11",
+            "role": "SUPPORT"
+          }
+        ],
+        "sets": [
+          {
+            "number": 1,
+            "gameId": "8345079030",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8345079030"
+          },
+          {
+            "number": 2,
+            "gameId": "8345159249",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8345159249"
+          }
+        ],
+        "pogId": 11,
+        "pogScore": 86.1,
+        "finished": true,
+        "finalWinner": "BLUE",
+        "finishedAt": 1786983335657
+      },
+      {
+        "id": 1787235270526,
+        "createdAt": 1787235270526,
+        "blue": [
+          {
+            "id": 15,
+            "name": "진관우님13",
+            "tag": "#KR2",
+            "role": "TOP"
+          },
+          {
+            "id": 7,
+            "name": "인생망했다",
+            "tag": "#1111",
+            "role": "JUNGLE"
+          },
+          {
+            "id": 6,
+            "name": "백설기콩떡",
+            "tag": "#1224",
+            "role": "MID"
+          },
+          {
+            "id": 9,
+            "name": "전수찬오른붕",
+            "tag": "#KR11",
+            "role": "ADC"
+          },
+          {
+            "id": 2,
+            "name": "2611130932135616",
+            "tag": "#KR1",
+            "role": "SUPPORT"
+          }
+        ],
+        "red": [
+          {
+            "id": 14,
+            "name": "아무것도하지말자하",
+            "tag": "#1111",
+            "role": "TOP"
+          },
+          {
+            "id": 11,
+            "name": "발목분쇄기 SON",
+            "tag": "#KR2",
+            "role": "JUNGLE"
+          },
+          {
+            "id": 10,
+            "name": "Piremi",
+            "tag": "#0916",
+            "role": "MID"
+          },
+          {
+            "id": 12,
+            "name": "자 페",
+            "tag": "#KR1",
+            "role": "ADC"
+          },
+          {
+            "id": 17,
+            "name": "gogo",
+            "tag": "#kr111",
+            "role": "SUPPORT"
+          }
+        ],
+        "sets": [
+          {
+            "number": 1,
+            "gameId": "8348378238",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8348378238"
+          },
+          {
+            "number": 2,
+            "gameId": "8348439562",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8348439562"
+          },
+          {
+            "number": 3,
+            "gameId": "8348486584",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8348486584"
+          },
+          {
+            "number": 4,
+            "gameId": "8348548055",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8348548055"
+          }
+        ],
+        "pogId": 12,
+        "pogScore": 78.2,
+        "finished": true,
+        "finalWinner": "RED",
+        "finishedAt": 1787245138706
+      },
+      {
+        "id": 1787322366477,
+        "createdAt": 1787322366477,
+        "blue": [
+          {
+            "id": 11,
+            "name": "발목분쇄기 SON",
+            "tag": "#KR2",
+            "role": "TOP",
+            "power": 2154,
+            "internalGames": 12,
+            "tier": "MASTER"
+          },
+          {
+            "id": 1,
+            "name": "bebebbi",
+            "tag": "#KR1",
+            "role": "JUNGLE",
+            "power": 1084,
+            "internalGames": 14,
+            "tier": "UNRANKED"
+          },
+          {
+            "id": 8,
+            "name": "둥글e",
+            "tag": "#KR1",
+            "role": "MID",
+            "power": 1236,
+            "internalGames": 22,
+            "tier": "GOLD"
+          },
+          {
+            "id": 13,
+            "name": "운 지",
+            "tag": "#UNZI",
+            "role": "ADC",
+            "power": 1823,
+            "internalGames": 3,
+            "tier": "DIAMOND"
+          },
+          {
+            "id": 10,
+            "name": "Piremi",
+            "tag": "#0916",
+            "role": "SUPPORT",
+            "power": 1564,
+            "internalGames": 26,
+            "tier": "PLATINUM"
+          }
+        ],
+        "red": [
+          {
+            "id": 2,
+            "name": "2611130932135616",
+            "tag": "#KR1",
+            "role": "TOP",
+            "power": 1410,
+            "internalGames": 26,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 9,
+            "name": "전수찬오른붕",
+            "tag": "#KR11",
+            "role": "JUNGLE",
+            "power": 1506,
+            "internalGames": 26,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 5,
+            "name": "New",
+            "tag": "#0327",
+            "role": "MID",
+            "power": 1503,
+            "internalGames": 5,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 12,
+            "name": "자 페",
+            "tag": "#KR1",
+            "role": "ADC",
+            "power": 1748,
+            "internalGames": 9,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 6,
+            "name": "백설기콩떡",
+            "tag": "#1224",
+            "role": "SUPPORT",
+            "power": 1647,
+            "internalGames": 23,
+            "tier": "EMERALD"
+          }
+        ],
+        "blueCaptainId": 11,
+        "redCaptainId": 12,
+        "sets": [
+          {
+            "number": 1,
+            "gameId": "8349580234",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8349580234",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 2,
+            "gameId": "8349654577",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8349654577",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 3,
+            "gameId": "8349725424",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8349725424",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 4,
+            "gameId": "8349796021",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8349796021",
+            "rolesConfirmed": true
+          }
+        ],
+        "pogId": 8,
+        "pogScore": 63.3,
+        "finished": true,
+        "finalWinner": "BLUE",
+        "finishedAt": 1787332981106
+      },
+      {
+        "id": 1787407546915,
+        "createdAt": 1787407546915,
+        "blue": [
+          {
+            "id": 11,
+            "name": "발목분쇄기 SON",
+            "tag": "#KR2",
+            "role": "TOP",
+            "power": 2211,
+            "internalGames": 16,
+            "tier": "MASTER"
+          },
+          {
+            "id": 1,
+            "name": "bebebbi",
+            "tag": "#KR1",
+            "role": "JUNGLE",
+            "power": 1132,
+            "internalGames": 18,
+            "tier": "UNRANKED"
+          },
+          {
+            "id": 10,
+            "name": "Piremi",
+            "tag": "#0916",
+            "role": "MID",
+            "power": 1662,
+            "internalGames": 30,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 9,
+            "name": "전수찬오른붕",
+            "tag": "#KR11",
+            "role": "ADC",
+            "power": 1498,
+            "internalGames": 30,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 15,
+            "name": "진관우님13",
+            "tag": "#KR2",
+            "role": "SUPPORT",
+            "power": 989,
+            "internalGames": 12,
+            "tier": "UNRANKED"
+          }
+        ],
+        "red": [
+          {
+            "id": 6,
+            "name": "백설기콩떡",
+            "tag": "#1224",
+            "role": "TOP",
+            "power": 1534,
+            "internalGames": 27,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 7,
+            "name": "인생망했다",
+            "tag": "#1111",
+            "role": "JUNGLE",
+            "power": 1484,
+            "internalGames": 26,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 5,
+            "name": "New",
+            "tag": "#0327",
+            "role": "MID",
+            "power": 1454,
+            "internalGames": 9,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 13,
+            "name": "운 지",
+            "tag": "#UNZI",
+            "role": "ADC",
+            "power": 1845,
+            "internalGames": 7,
+            "tier": "DIAMOND"
+          },
+          {
+            "id": 8,
+            "name": "둥글e",
+            "tag": "#KR1",
+            "role": "SUPPORT",
+            "power": 1154,
+            "internalGames": 26,
+            "tier": "GOLD"
+          }
+        ],
+        "blueCaptainId": 11,
+        "redCaptainId": 13,
+        "sets": [
+          {
+            "number": 1,
+            "gameId": "8351111294",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8351111294",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 2,
+            "gameId": "8351193971",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8351193971",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 3,
+            "gameId": "8351284139",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8351284139",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 4,
+            "gameId": "8351373937",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8351373937",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 5,
+            "gameId": "8351459190",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8351459190",
+            "rolesConfirmed": true
+          }
+        ],
+        "pogId": 13,
+        "pogScore": 68.7,
+        "finished": true,
+        "finalWinner": "RED",
+        "finishedAt": 1787422391009
+      },
+      {
+        "id": 1787492632721,
+        "createdAt": 1787492632721,
+        "blue": [
+          {
+            "id": 14,
+            "name": "아무것도하지말자하",
+            "tag": "#1111",
+            "role": "TOP",
+            "power": 920,
+            "internalGames": 12,
+            "tier": "BRONZE"
+          },
+          {
+            "id": 7,
+            "name": "인생망했다",
+            "tag": "#1111",
+            "role": "JUNGLE",
+            "power": 1499,
+            "internalGames": 31,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 6,
+            "name": "백설기콩떡",
+            "tag": "#1224",
+            "role": "MID",
+            "power": 1745,
+            "internalGames": 32,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 2,
+            "name": "2611130932135616",
+            "tag": "#KR1",
+            "role": "ADC",
+            "power": 1431,
+            "internalGames": 30,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 11,
+            "name": "발목분쇄기 SON",
+            "tag": "#KR2",
+            "role": "SUPPORT",
+            "power": 2172,
+            "internalGames": 21,
+            "tier": "MASTER"
+          }
+        ],
+        "red": [
+          {
+            "id": 3,
+            "name": "신휴지",
+            "tag": "#1004",
+            "role": "TOP",
+            "power": 1181,
+            "internalGames": 17,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 9,
+            "name": "전수찬오른붕",
+            "tag": "#KR11",
+            "role": "JUNGLE",
+            "power": 1448,
+            "internalGames": 35,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 10,
+            "name": "Piremi",
+            "tag": "#0916",
+            "role": "MID",
+            "power": 1651,
+            "internalGames": 35,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 12,
+            "name": "자 페",
+            "tag": "#KR1",
+            "role": "ADC",
+            "power": 1748,
+            "internalGames": 13,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 13,
+            "name": "운 지",
+            "tag": "#UNZI",
+            "role": "SUPPORT",
+            "power": 1795,
+            "internalGames": 12,
+            "tier": "DIAMOND"
+          }
+        ],
+        "blueCaptainId": 11,
+        "redCaptainId": 13,
+        "sets": [
+          {
+            "number": 1,
+            "gameId": "8352709199",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8352709199",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 2,
+            "gameId": "8352795194",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8352795194",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 3,
+            "gameId": "8352863123",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8352863123",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 4,
+            "gameId": "8352912125",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8352912125",
+            "rolesConfirmed": true
+          }
+        ],
+        "pogId": 12,
+        "pogScore": 71,
+        "finished": true,
+        "finalWinner": "RED",
+        "finishedAt": 1787502836968
+      }
+    ]
+  },
+  "ladderChoice": {
+    "alternative": 0,
+    "blue": [
+      {
+        "id": 14,
+        "role": "TOP"
+      },
+      {
+        "id": 7,
+        "role": "JUNGLE"
+      },
+      {
+        "id": 6,
+        "role": "MID"
+      },
+      {
+        "id": 2,
+        "role": "ADC"
+      },
+      {
+        "id": 11,
+        "role": "SUPPORT"
+      }
+    ],
+    "red": [
+      {
+        "id": 3,
+        "role": "TOP"
+      },
+      {
+        "id": 9,
+        "role": "JUNGLE"
+      },
+      {
+        "id": 10,
+        "role": "MID"
+      },
+      {
+        "id": 12,
+        "role": "ADC"
+      },
+      {
+        "id": 13,
+        "role": "SUPPORT"
+      }
+    ],
+    "selectedAt": 1787492580914
+  },
+  "updatedAt": 1787581080536
+}
