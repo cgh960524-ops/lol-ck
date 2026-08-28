@@ -3,7 +3,7 @@
   "functions": {
     "api/[...path].mjs": {
       "maxDuration": 60,
-      "includeFiles": "{index.html,client.js,*.css}"
+      "includeFiles": "**/*"
     }
   }
 }
