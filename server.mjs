@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadJson, saveJson, stateFiles } from "./storage.mjs";
+import { staticAssets } from "./static-assets.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4173);
@@ -10,25 +11,6 @@ const host = process.env.HOST || "0.0.0.0";
 const { matches: dataFile, appState: appStateFile, runtime: runtimeConfigFile } = stateFiles(root);
 const uploadToken = process.env.UPLOADER_TOKEN || "";
 const types = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".svg":"image/svg+xml" };
-const staticAssets = {
-  "index.html": new URL("./index.html", import.meta.url),
-  "client.js": new URL("./client.js", import.meta.url),
-  "styles.css": new URL("./styles.css", import.meta.url),
-  "champions.css": new URL("./champions.css", import.meta.url),
-  "bulk.css": new URL("./bulk.css", import.meta.url),
-  "matches.css": new URL("./matches.css", import.meta.url),
-  "match-form.css": new URL("./match-form.css", import.meta.url),
-  "aliases.css": new URL("./aliases.css", import.meta.url),
-  "role-lock.css": new URL("./role-lock.css", import.meta.url),
-  "series.css": new URL("./series.css", import.meta.url),
-  "series-result.css": new URL("./series-result.css", import.meta.url),
-  "pog.css": new URL("./pog.css", import.meta.url),
-  "refresh.css": new URL("./refresh.css", import.meta.url),
-  "ladder.css": new URL("./ladder.css", import.meta.url),
-  "player-stats.css": new URL("./player-stats.css", import.meta.url),
-  "custom-team.css": new URL("./custom-team.css", import.meta.url),
-  "rebrand.css": new URL("./rebrand.css", import.meta.url),
-};
 
 const json = (res,status,body) => { res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}); res.end(JSON.stringify(body)); };
 const wait = ms => new Promise(resolve=>setTimeout(resolve,ms));
@@ -83,7 +65,7 @@ export async function handleRequest(req,res){
       requireUploaderAuth(req);
       const match=validateMatch(await readBody(req)),matches=await loadMatches(),index=matches.findIndex(m=>m.gameId===match.gameId);if(index>=0)matches[index]=match;else matches.push(match);await saveMatches(matches);return json(res,index>=0?200:201,{ok:true,replaced:index>=0,gameId:match.gameId,total:matches.length});
     }
-    const file=pathname==="/"?"index.html":pathname.slice(1),asset=staticAssets[file];if(!asset){res.writeHead(404).end("Not Found");return}const data=await readFile(asset);res.writeHead(200,{"Content-Type":types[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});res.end(data);
+    const file=pathname==="/"?"index.html":pathname.slice(1),data=staticAssets[file];if(data===undefined){res.writeHead(404).end("Not Found");return}res.writeHead(200,{"Content-Type":types[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});res.end(data);
   }catch(error){console.error(error.details||error);json(res,error.status||500,{error:error.message||"서버 오류가 발생했습니다."})}
 }
 
