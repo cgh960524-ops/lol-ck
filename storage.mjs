@@ -10,7 +10,7 @@ async function blobModule() {
 }
 
 export async function loadJson(name, localFile, fallback) {
-  const blob = name === "runtime-config" ? null : await blobModule();
+  const blob = await blobModule();
   if (blob) {
     const pathname = `${blobPrefix}/${name}.json`;
     const result = await blob.get(pathname, { access: "private", useCache: false, token: blobToken });
@@ -26,7 +26,7 @@ export async function loadJson(name, localFile, fallback) {
 
 export async function saveJson(name, localFile, value) {
   const body = JSON.stringify(value, null, 2);
-  const blob = name === "runtime-config" ? null : await blobModule();
+  const blob = await blobModule();
   if (blob) {
     await blob.put(`${blobPrefix}/${name}.json`, body, {
       access: "private", addRandomSuffix: false, allowOverwrite: true,
