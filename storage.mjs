@@ -12,16 +12,13 @@ async function blobModule() {
 export async function loadJson(name, localFile, fallback) {
   const blob = name === "runtime-config" ? null : await blobModule();
   if (blob) {
-    const result = await blob.list({ prefix: `${blobPrefix}/${name}.json`, limit: 1, token: blobToken });
-    const item = result.blobs.find(entry => entry.pathname === `${blobPrefix}/${name}.json`);
-    if (item) {
-      const response = await fetch(item.url, { cache: "no-store" });
-      if (response.ok) return response.json();
-    }
+    const pathname = `${blobPrefix}/${name}.json`;
+    const result = await blob.get(pathname, { access: "private", useCache: false, token: blobToken });
+    if (result?.statusCode === 200) return new Response(result.stream).json();
   }
   try {
     const localValue = JSON.parse(await readFile(localFile, "utf8"));
-    if (blob) await blob.put(`${blobPrefix}/${name}.json`, JSON.stringify(localValue, null, 2), { access: "public", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json; charset=utf-8", token: blobToken });
+    if (blob) await blob.put(`${blobPrefix}/${name}.json`, JSON.stringify(localValue, null, 2), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json; charset=utf-8", token: blobToken });
     return localValue;
   }
   catch (error) { if (error.code === "ENOENT") return fallback; throw error; }
@@ -32,7 +29,7 @@ export async function saveJson(name, localFile, value) {
   const blob = name === "runtime-config" ? null : await blobModule();
   if (blob) {
     await blob.put(`${blobPrefix}/${name}.json`, body, {
-      access: "public", addRandomSuffix: false, allowOverwrite: true,
+      access: "private", addRandomSuffix: false, allowOverwrite: true,
       contentType: "application/json; charset=utf-8", token: blobToken,
     });
     return;
