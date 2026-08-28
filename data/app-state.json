@@ -49,35 +49,40 @@
       "recentWinRate": 33,
       "recentGames": 3,
       "puuid": "Ah-EaE42lf0lVB4JuWj0eiUr6hMYm_ISYOnIvUOAZgU13wLnu0FGfYrPr0_7Yus5SS17MB9ued373g",
-      "internalRating": 1045,
-      "internalGames": 23,
+      "internalRating": 1139,
+      "internalGames": 31,
       "internalRoles": {
         "JUNGLE": {
-          "games": 13,
-          "wins": 8,
-          "rating": 1058
+          "games": 20,
+          "wins": 13,
+          "rating": 1170
         },
         "SUPPORT": {
           "games": 10,
           "wins": 4,
-          "rating": 967
+          "rating": 953
+        },
+        "ADC": {
+          "games": 1,
+          "wins": 0,
+          "rating": 976
         }
       },
       "internalChampions": {
         "Pantheon": {
-          "games": 3,
-          "wins": 2,
-          "kdaTotal": 10.625
+          "games": 4,
+          "wins": 3,
+          "kdaTotal": 13.291666666666666
         },
         "Jarvan IV": {
-          "games": 1,
+          "games": 2,
           "wins": 0,
-          "kdaTotal": 1.2
+          "kdaTotal": 2.7
         },
         "Vi": {
-          "games": 3,
-          "wins": 2,
-          "kdaTotal": 7.916666666666666
+          "games": 4,
+          "wins": 3,
+          "kdaTotal": 11.916666666666666
         },
         "Lillia": {
           "games": 2,
@@ -90,9 +95,9 @@
           "kdaTotal": 2.3333333333333335
         },
         "Maokai": {
-          "games": 2,
-          "wins": 2,
-          "kdaTotal": 9.533333333333333
+          "games": 4,
+          "wins": 3,
+          "kdaTotal": 17.53333333333333
         },
         "Poppy": {
           "games": 4,
@@ -115,14 +120,14 @@
           "kdaTotal": 1.7777777777777777
         },
         "Dr. Mundo": {
-          "games": 2,
-          "wins": 2,
-          "kdaTotal": 26
+          "games": 4,
+          "wins": 3,
+          "kdaTotal": 31.5
         },
         "Trundle": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 2.75
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 8
         },
         "Amumu": {
           "games": 1,
@@ -130,8 +135,8 @@
           "kdaTotal": 1.5
         }
       },
-      "internalKda": 4.53,
-      "internalChampionScore": 8,
+      "internalKda": 4.23,
+      "internalChampionScore": 16,
       "playAliases": []
     },
     {
@@ -182,18 +187,18 @@
       "recentWinRate": 45,
       "recentGames": 40,
       "puuid": "wT2f-3I7aScpGy8Sz6Jo9OsGOZkVFh2IV4BOaG_Lvxcsr5JKPVy4RXGykWv82faq7l5NNhq5dnY3Lg",
-      "internalRating": 1226,
-      "internalGames": 34,
+      "internalRating": 1234,
+      "internalGames": 41,
       "internalRoles": {
         "TOP": {
-          "games": 14,
-          "wins": 4,
-          "rating": 1372
+          "games": 21,
+          "wins": 8,
+          "rating": 1364
         },
         "JUNGLE": {
-          "games": 10,
+          "games": 9,
           "wins": 6,
-          "rating": 1508
+          "rating": 1535
         },
         "SUPPORT": {
           "games": 3,
@@ -201,14 +206,14 @@
           "rating": 1566
         },
         "ADC": {
-          "games": 6,
+          "games": 7,
           "wins": 2,
-          "rating": 1523
+          "rating": 1510
         },
         "MID": {
           "games": 1,
           "wins": 0,
-          "rating": 1553
+          "rating": 1555
         }
       },
       "internalChampions": {
@@ -218,9 +223,9 @@
           "kdaTotal": 0.7142857142857143
         },
         "Mordekaiser": {
-          "games": 3,
+          "games": 4,
           "wins": 2,
-          "kdaTotal": 8.666666666666668
+          "kdaTotal": 9.291666666666668
         },
         "Illaoi": {
           "games": 3,
@@ -238,14 +243,14 @@
           "kdaTotal": 2
         },
         "Sett": {
-          "games": 3,
-          "wins": 2,
-          "kdaTotal": 5.433333333333334
+          "games": 5,
+          "wins": 3,
+          "kdaTotal": 7.483838383838384
         },
         "Malphite": {
-          "games": 1,
-          "wins": 0,
-          "kdaTotal": 0.7
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 10.557142857142857
         },
         "Jax": {
           "games": 1,
@@ -298,9 +303,9 @@
           "kdaTotal": 3.125
         },
         "Shen": {
-          "games": 1,
-          "wins": 0,
-          "kdaTotal": 1.5
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 5.1
         },
         "Nautilus": {
           "games": 1,
@@ -351,12 +356,17 @@
           "games": 1,
           "wins": 0,
           "kdaTotal": 1.4
+        },
+        "Ryze": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2
         }
       },
-      "internalKda": 1.68,
-      "internalChampionScore": 4,
+      "internalKda": 1.84,
+      "internalChampionScore": -1,
       "playAliases": [],
-      "lockedRole": ""
+      "lockedRole": "TOP"
     },
     {
       "id": 3,
@@ -406,23 +416,23 @@
       "recentWinRate": 40,
       "recentGames": 5,
       "puuid": "rhtvlV9C1GiFUbErh3DBoyzDpjsYv3QplmQ2XU1wJ01CodJO30tMVWzWGbEmvL3L6oC0zbVmkRHA4A",
-      "internalRating": 1352,
-      "internalGames": 21,
+      "internalRating": 1248,
+      "internalGames": 24,
       "internalRoles": {
         "JUNGLE": {
-          "games": 10,
-          "wins": 4,
-          "rating": 1360
+          "games": 9,
+          "wins": 2,
+          "rating": 1283
         },
         "ADC": {
           "games": 10,
           "wins": 4,
-          "rating": 1394
+          "rating": 1383
         },
         "TOP": {
-          "games": 1,
-          "wins": 1,
-          "rating": 1414
+          "games": 5,
+          "wins": 3,
+          "rating": 1398
         }
       },
       "internalChampions": {
@@ -502,12 +512,22 @@
           "kdaTotal": 3.6666666666666665
         },
         "Camille": {
-          "games": 1,
+          "games": 2,
           "wins": 1,
-          "kdaTotal": 11
+          "kdaTotal": 11.555555555555555
+        },
+        "Mordekaiser": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.25
+        },
+        "Fiora": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.25
         }
       },
-      "internalKda": 4.62,
+      "internalKda": 4.17,
       "internalChampionScore": -3,
       "playAliases": [
         {
@@ -516,7 +536,7 @@
           "tagLine": "KR1"
         }
       ],
-      "lockedRole": "TOP"
+      "lockedRole": ""
     },
     {
       "id": 4,
@@ -566,23 +586,23 @@
       "recentWinRate": 60,
       "recentGames": 5,
       "puuid": "MtxvQdKJlKtjzlbwel80ybDbz-fsC8lA_LjRFW1cuaaGsGknmX8l_SdBvgbEH8qhlsvQ1w_AV72eWQ",
-      "internalRating": 1581,
+      "internalRating": 1583,
       "internalGames": 13,
       "internalRoles": {
         "TOP": {
           "games": 8,
           "wins": 3,
-          "rating": 1508
+          "rating": 1511
         },
         "JUNGLE": {
           "games": 2,
           "wins": 2,
-          "rating": 1635
+          "rating": 1633
         },
         "ADC": {
           "games": 3,
           "wins": 3,
-          "rating": 1622
+          "rating": 1623
         }
       },
       "internalChampions": {
@@ -689,30 +709,30 @@
       "recentWinRate": 60,
       "recentGames": 5,
       "puuid": "oyb7KAT1KrZkEcAJUEikWlW6dY-7NY9-jJP8s_mRWQSblYe2H6lYx6p6whE8Uvi_DU6R0LniCIpVKQ",
-      "internalRating": 1351,
-      "internalGames": 14,
+      "internalRating": 1300,
+      "internalGames": 18,
       "internalRoles": {
         "JUNGLE": {
-          "games": 6,
-          "wins": 3,
-          "rating": 1403
+          "games": 8,
+          "wins": 4,
+          "rating": 1352
         },
         "MID": {
-          "games": 7,
-          "wins": 3,
-          "rating": 1363
+          "games": 9,
+          "wins": 4,
+          "rating": 1356
         },
-        "TOP": {
+        "ADC": {
           "games": 1,
           "wins": 1,
-          "rating": 1449
+          "rating": 1456
         }
       },
       "internalChampions": {
         "Graves": {
-          "games": 1,
-          "wins": 0,
-          "kdaTotal": 2.727272727272727
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 9.727272727272727
         },
         "Sylas": {
           "games": 2,
@@ -720,9 +740,9 @@
           "kdaTotal": 9.25
         },
         "Lillia": {
-          "games": 1,
-          "wins": 0,
-          "kdaTotal": 3.3333333333333335
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 19.333333333333332
         },
         "Kindred": {
           "games": 1,
@@ -773,87 +793,97 @@
           "games": 1,
           "wins": 1,
           "kdaTotal": 2.25
+        },
+        "Quinn": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.6
+        },
+        "Shaco": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.4545454545454546
         }
       },
-      "internalKda": 3.08,
-      "internalChampionScore": -2,
+      "internalKda": 4.01,
+      "internalChampionScore": 14,
       "playAliases": []
     },
     {
       "id": 6,
       "name": "백설기콩떡",
       "tag": "#1224",
-      "tier": "EMERALD",
-      "division": "IV",
-      "lp": 0,
+      "tier": "PLATINUM",
+      "division": "II",
+      "lp": 4,
       "role": "MID",
       "secondary": "SUPPORT",
-      "form": -12,
+      "form": -6,
       "color": "#965c4b",
       "selected": false,
       "most": [
         {
-          "name": "Orianna",
-          "games": 1,
-          "wins": 1,
-          "kills": 6,
-          "deaths": 2,
-          "assists": 13,
-          "winRate": 100,
-          "kda": 9.5
-        },
-        {
-          "name": "Cassiopeia",
-          "games": 1,
+          "name": "Neeko",
+          "games": 3,
           "wins": 1,
           "kills": 7,
-          "deaths": 8,
-          "assists": 3,
-          "winRate": 100,
-          "kda": 1.25
+          "deaths": 13,
+          "assists": 38,
+          "winRate": 33,
+          "kda": 3.46
         },
         {
-          "name": "Akali",
-          "games": 1,
-          "wins": 0,
-          "kills": 5,
-          "deaths": 7,
-          "assists": 3,
-          "winRate": 0,
-          "kda": 1.14
+          "name": "Taliyah",
+          "games": 2,
+          "wins": 2,
+          "kills": 7,
+          "deaths": 9,
+          "assists": 9,
+          "winRate": 100,
+          "kda": 1.78
+        },
+        {
+          "name": "LeeSin",
+          "games": 2,
+          "wins": 2,
+          "kills": 22,
+          "deaths": 12,
+          "assists": 22,
+          "winRate": 100,
+          "kda": 3.67
         }
       ],
       "dataDragonVersion": "16.16.1",
-      "recentWinRate": 40,
-      "recentGames": 5,
+      "recentWinRate": 45,
+      "recentGames": 40,
       "puuid": "UH_TcxiWCPVITBTEJZOjcNNN_PiB-NAIrcl--TlV4XFU3icZIqOhTrHLht9pQCDeuopxbg9GnHoiHQ",
-      "internalRating": 1766,
-      "internalGames": 36,
+      "internalRating": 1567,
+      "internalGames": 52,
       "internalRoles": {
         "SUPPORT": {
-          "games": 4,
-          "wins": 3,
-          "rating": 1680
+          "games": 8,
+          "wins": 4,
+          "rating": 1504
         },
         "MID": {
-          "games": 22,
-          "wins": 11,
-          "rating": 1647
+          "games": 32,
+          "wins": 14,
+          "rating": 1529
         },
         "ADC": {
-          "games": 5,
-          "wins": 1,
-          "rating": 1519
+          "games": 2,
+          "wins": 0,
+          "rating": 1395
         },
         "TOP": {
-          "games": 1,
-          "wins": 0,
-          "rating": 1543
+          "games": 5,
+          "wins": 3,
+          "rating": 1472
         },
         "JUNGLE": {
-          "games": 4,
-          "wins": 3,
-          "rating": 1649
+          "games": 5,
+          "wins": 0,
+          "rating": 1323
         }
       },
       "internalChampions": {
@@ -878,9 +908,9 @@
           "kdaTotal": 14
         },
         "Cassiopeia": {
-          "games": 3,
+          "games": 4,
           "wins": 1,
-          "kdaTotal": 10.438095238095238
+          "kdaTotal": 11.723809523809525
         },
         "Smolder": {
           "games": 1,
@@ -888,14 +918,14 @@
           "kdaTotal": 9
         },
         "Ryze": {
-          "games": 2,
+          "games": 3,
           "wins": 0,
-          "kdaTotal": 7.2
+          "kdaTotal": 9.533333333333333
         },
         "Orianna": {
-          "games": 3,
+          "games": 4,
           "wins": 1,
-          "kdaTotal": 24.666666666666668
+          "kdaTotal": 25.066666666666666
         },
         "Annie": {
           "games": 2,
@@ -908,9 +938,9 @@
           "kdaTotal": 13
         },
         "Viktor": {
-          "games": 3,
-          "wins": 2,
-          "kdaTotal": 18.25
+          "games": 4,
+          "wins": 3,
+          "kdaTotal": 24.583333333333332
         },
         "Xerath": {
           "games": 1,
@@ -918,9 +948,9 @@
           "kdaTotal": 10.5
         },
         "Tristana": {
-          "games": 2,
+          "games": 3,
           "wins": 1,
-          "kdaTotal": 14.5
+          "kdaTotal": 16.1
         },
         "Anivia": {
           "games": 2,
@@ -928,9 +958,9 @@
           "kdaTotal": 29
         },
         "Sylas": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 7.666666666666667
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 13
         },
         "Syndra": {
           "games": 1,
@@ -963,9 +993,9 @@
           "kdaTotal": 1.1538461538461537
         },
         "Jayce": {
-          "games": 1,
+          "games": 3,
           "wins": 0,
-          "kdaTotal": 3
+          "kdaTotal": 9.666666666666668
         },
         "Rumble": {
           "games": 1,
@@ -978,14 +1008,45 @@
           "kdaTotal": 0.7142857142857143
         },
         "Yone": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 5.666666666666666
+        },
+        "Galio": {
+          "games": 2,
+          "wins": 0,
+          "kdaTotal": 8.666666666666666
+        },
+        "Poppy": {
           "games": 1,
           "wins": 0,
-          "kdaTotal": 3.5
+          "kdaTotal": 1
+        },
+        "Dr. Mundo": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2
+        },
+        "Olaf": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.4
+        },
+        "Yasuo": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8571428571428571
+        },
+        "Corki": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2
         }
       },
-      "internalKda": 6.35,
-      "internalChampionScore": 10,
-      "playAliases": []
+      "internalKda": 5.19,
+      "internalChampionScore": 8,
+      "playAliases": [],
+      "lockedRole": "MID"
     },
     {
       "id": 7,
@@ -1035,18 +1096,18 @@
       "recentWinRate": 38,
       "recentGames": 40,
       "puuid": "S5dXLrxW_xZXHxwk-ekqGsXTuj6rEoNHP7Fdn1JkU0EWlzXMQQpVO502PWku07m4IKfn6KwKKS_ufw",
-      "internalRating": 1381,
-      "internalGames": 35,
+      "internalRating": 1397,
+      "internalGames": 47,
       "internalRoles": {
         "ADC": {
           "games": 15,
           "wins": 9,
-          "rating": 1430
+          "rating": 1452
         },
         "JUNGLE": {
-          "games": 20,
-          "wins": 8,
-          "rating": 1356
+          "games": 32,
+          "wins": 14,
+          "rating": 1350
         }
       },
       "internalChampions": {
@@ -1061,9 +1122,9 @@
           "kdaTotal": 7.928571428571429
         },
         "Kai'Sa": {
-          "games": 2,
+          "games": 3,
           "wins": 1,
-          "kdaTotal": 7.5
+          "kdaTotal": 10.375
         },
         "Lucian": {
           "games": 2,
@@ -1071,9 +1132,9 @@
           "kdaTotal": 5.888888888888888
         },
         "Ezreal": {
-          "games": 1,
+          "games": 2,
           "wins": 1,
-          "kdaTotal": 9.5
+          "kdaTotal": 10.5
         },
         "Ziggs": {
           "games": 1,
@@ -1091,14 +1152,14 @@
           "kdaTotal": 0.875
         },
         "Mel": {
-          "games": 1,
+          "games": 2,
           "wins": 1,
-          "kdaTotal": 3.3333333333333335
+          "kdaTotal": 4.666666666666667
         },
         "Naafiri": {
-          "games": 4,
+          "games": 5,
           "wins": 2,
-          "kdaTotal": 17.375
+          "kdaTotal": 19.48611111111111
         },
         "Skarner": {
           "games": 1,
@@ -1106,9 +1167,9 @@
           "kdaTotal": 1.3333333333333333
         },
         "Xin Zhao": {
-          "games": 4,
-          "wins": 2,
-          "kdaTotal": 11.43888888888889
+          "games": 5,
+          "wins": 3,
+          "kdaTotal": 19.105555555555558
         },
         "Vi": {
           "games": 2,
@@ -1131,29 +1192,35 @@
           "kdaTotal": 1.5
         },
         "Pantheon": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 4.2
+          "games": 4,
+          "wins": 4,
+          "kdaTotal": 19.825
         },
         "Lillia": {
-          "games": 1,
-          "wins": 0,
-          "kdaTotal": 5
+          "games": 3,
+          "wins": 1,
+          "kdaTotal": 16.5
         },
         "Jarvan IV": {
-          "games": 1,
-          "wins": 0,
-          "kdaTotal": 1.5
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 8
         },
         "Elise": {
           "games": 2,
           "wins": 1,
           "kdaTotal": 4.071428571428571
+        },
+        "Lee Sin": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.5
         }
       },
-      "internalKda": 4.02,
-      "internalChampionScore": 10,
-      "playAliases": []
+      "internalKda": 4.08,
+      "internalChampionScore": 16,
+      "playAliases": [],
+      "lockedRole": ""
     },
     {
       "id": 8,
@@ -1203,35 +1270,35 @@
       "recentWinRate": 40,
       "recentGames": 5,
       "puuid": "ZaXyaKsOUWJc7ofpyHb2uouEzsHZW8z3568anSVphlGviIQO-e0qRLCW5vtqqkrZuKsgquDLQloq6w",
-      "internalRating": 1140,
-      "internalGames": 31,
+      "internalRating": 1248,
+      "internalGames": 47,
       "internalRoles": {
         "MID": {
-          "games": 12,
-          "wins": 5,
-          "rating": 1149
+          "games": 15,
+          "wins": 7,
+          "rating": 1155
         },
         "SUPPORT": {
-          "games": 10,
-          "wins": 6,
-          "rating": 1182
+          "games": 22,
+          "wins": 13,
+          "rating": 1215
         },
         "ADC": {
-          "games": 9,
+          "games": 10,
           "wins": 6,
-          "rating": 1285
+          "rating": 1354
         }
       },
       "internalChampions": {
         "Ahri": {
-          "games": 3,
-          "wins": 1,
-          "kdaTotal": 9.583333333333332
+          "games": 4,
+          "wins": 2,
+          "kdaTotal": 17.916666666666664
         },
         "Syndra": {
-          "games": 2,
-          "wins": 2,
-          "kdaTotal": 6.392857142857142
+          "games": 3,
+          "wins": 3,
+          "kdaTotal": 10.592857142857142
         },
         "Zoe": {
           "games": 1,
@@ -1249,19 +1316,19 @@
           "kdaTotal": 5.4
         },
         "Leona": {
-          "games": 3,
+          "games": 4,
           "wins": 3,
-          "kdaTotal": 15.5
+          "kdaTotal": 15.928571428571429
         },
         "Nautilus": {
-          "games": 3,
-          "wins": 1,
-          "kdaTotal": 5.368181818181818
+          "games": 5,
+          "wins": 3,
+          "kdaTotal": 10.423737373737374
         },
         "Neeko": {
-          "games": 3,
+          "games": 4,
           "wins": 2,
-          "kdaTotal": 7.375
+          "kdaTotal": 8.819444444444445
         },
         "Xerath": {
           "games": 2,
@@ -1269,9 +1336,9 @@
           "kdaTotal": 11.666666666666668
         },
         "Lulu": {
-          "games": 2,
+          "games": 3,
           "wins": 1,
-          "kdaTotal": 7
+          "kdaTotal": 7.4
         },
         "Blitzcrank": {
           "games": 1,
@@ -1309,19 +1376,40 @@
           "kdaTotal": 8
         },
         "Seraphine": {
-          "games": 1,
+          "games": 2,
           "wins": 1,
-          "kdaTotal": 4.5
+          "kdaTotal": 5.333333333333333
         },
         "Braum": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 6.6
+        },
+        "Morgana": {
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 11.805555555555555
+        },
+        "Galio": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 7.125
+        },
+        "Amumu": {
           "games": 1,
           "wins": 1,
-          "kdaTotal": 4.6
+          "kdaTotal": 3.6666666666666665
+        },
+        "Viktor": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.142857142857143
         }
       },
-      "internalKda": 4.02,
-      "internalChampionScore": 7,
-      "playAliases": []
+      "internalKda": 3.66,
+      "internalChampionScore": 10,
+      "playAliases": [],
+      "lockedRole": ""
     },
     {
       "id": 9,
@@ -1371,18 +1459,18 @@
       "recentWinRate": 60,
       "recentGames": 5,
       "puuid": "QeK98_tmBzMrTGTokRyJkI4CLTbtXdUHb_3rO-gSKN-sd2Hc2WSjshDOiDlGWQ3oZ0AA4otuENJsTg",
-      "internalRating": 1343,
-      "internalGames": 39,
+      "internalRating": 1328,
+      "internalGames": 55,
       "internalRoles": {
         "ADC": {
-          "games": 18,
-          "wins": 6,
-          "rating": 1404
+          "games": 33,
+          "wins": 12,
+          "rating": 1399
         },
         "JUNGLE": {
-          "games": 20,
+          "games": 21,
           "wins": 8,
-          "rating": 1545
+          "rating": 1535
         },
         "MID": {
           "games": 1,
@@ -1392,14 +1480,14 @@
       },
       "internalChampions": {
         "Yunara": {
-          "games": 4,
-          "wins": 2,
-          "kdaTotal": 9.346031746031747
+          "games": 6,
+          "wins": 3,
+          "kdaTotal": 14.631746031746033
         },
         "Ezreal": {
-          "games": 2,
-          "wins": 1,
-          "kdaTotal": 8.666666666666668
+          "games": 4,
+          "wins": 2,
+          "kdaTotal": 13.166666666666668
         },
         "Tristana": {
           "games": 1,
@@ -1417,14 +1505,14 @@
           "kdaTotal": 3
         },
         "Jarvan IV": {
-          "games": 4,
+          "games": 5,
           "wins": 1,
-          "kdaTotal": 19.154761904761905
+          "kdaTotal": 20.011904761904763
         },
         "Lee Sin": {
-          "games": 2,
+          "games": 3,
           "wins": 2,
-          "kdaTotal": 14.25
+          "kdaTotal": 17.916666666666668
         },
         "Viego": {
           "games": 1,
@@ -1442,9 +1530,9 @@
           "kdaTotal": 2.961038961038961
         },
         "Samira": {
-          "games": 2,
+          "games": 3,
           "wins": 2,
-          "kdaTotal": 7.303571428571429
+          "kdaTotal": 8.720238095238095
         },
         "Caitlyn": {
           "games": 1,
@@ -1452,9 +1540,9 @@
           "kdaTotal": 2.857142857142857
         },
         "Pantheon": {
-          "games": 2,
+          "games": 3,
           "wins": 0,
-          "kdaTotal": 4.933333333333334
+          "kdaTotal": 6.433333333333334
         },
         "Gragas": {
           "games": 1,
@@ -1482,40 +1570,51 @@
           "kdaTotal": 10.166666666666666
         },
         "Jhin": {
-          "games": 2,
-          "wins": 0,
-          "kdaTotal": 3.4857142857142858
+          "games": 4,
+          "wins": 1,
+          "kdaTotal": 8.835714285714285
         },
         "Maokai": {
-          "games": 2,
-          "wins": 2,
-          "kdaTotal": 13.166666666666668
+          "games": 3,
+          "wins": 3,
+          "kdaTotal": 17.366666666666667
         },
         "Vi": {
-          "games": 1,
+          "games": 3,
           "wins": 0,
-          "kdaTotal": 1.5555555555555556
+          "kdaTotal": 5.698412698412699
         },
         "Aphelios": {
-          "games": 1,
+          "games": 2,
           "wins": 1,
-          "kdaTotal": 2.25
+          "kdaTotal": 2.85
         },
         "Xerath": {
           "games": 1,
           "wins": 0,
           "kdaTotal": 0.8
+        },
+        "Nautilus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 8.333333333333334
+        },
+        "Milio": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.2
         }
       },
-      "internalKda": 3.06,
-      "internalChampionScore": 3,
+      "internalKda": 2.95,
+      "internalChampionScore": 0,
       "playAliases": [
         {
           "puuid": "89c2c7e2-51a7-53a6-bf6d-68a6674035f3",
           "gameName": "괴벌레",
           "tagLine": "델타포스"
         }
-      ]
+      ],
+      "lockedRole": ""
     },
     {
       "id": 10,
@@ -1565,18 +1664,33 @@
       "recentWinRate": 60,
       "recentGames": 5,
       "puuid": "U7nRZWRwQcpvITz_HHtwVmnmmuB0R-YHPy10RE7BsIQhWmJIQFzINmJE0-9sOakzABYvePavIn3_Yw",
-      "internalRating": 1640,
-      "internalGames": 39,
+      "internalRating": 1548,
+      "internalGames": 55,
       "internalRoles": {
         "MID": {
           "games": 33,
           "wins": 18,
-          "rating": 1578
+          "rating": 1562
         },
         "ADC": {
-          "games": 6,
-          "wins": 5,
-          "rating": 1494
+          "games": 8,
+          "wins": 4,
+          "rating": 1298
+        },
+        "SUPPORT": {
+          "games": 4,
+          "wins": 3,
+          "rating": 1459
+        },
+        "TOP": {
+          "games": 9,
+          "wins": 7,
+          "rating": 1493
+        },
+        "JUNGLE": {
+          "games": 1,
+          "wins": 1,
+          "rating": 1464
         }
       },
       "internalChampions": {
@@ -1601,9 +1715,9 @@
           "kdaTotal": 12.375
         },
         "Mel": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 5.75
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 10.083333333333332
         },
         "Syndra": {
           "games": 2,
@@ -1641,9 +1755,9 @@
           "kdaTotal": 1.1666666666666667
         },
         "K'Sante": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 21
+          "games": 3,
+          "wins": 2,
+          "kdaTotal": 28.75
         },
         "Nautilus": {
           "games": 1,
@@ -1656,9 +1770,9 @@
           "kdaTotal": 0.8571428571428571
         },
         "Braum": {
-          "games": 1,
+          "games": 2,
           "wins": 1,
-          "kdaTotal": 11.5
+          "kdaTotal": 12.3
         },
         "Zilean": {
           "games": 1,
@@ -1669,9 +1783,64 @@
           "games": 1,
           "wins": 0,
           "kdaTotal": 5.666666666666667
+        },
+        "Kennen": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.6
+        },
+        "Gwen": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 11.333333333333332
+        },
+        "Renekton": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.75
+        },
+        "Karma": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.1
+        },
+        "Neeko": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1
+        },
+        "Jax": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.6666666666666665
+        },
+        "Ornn": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4
+        },
+        "Malphite": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 18
+        },
+        "Kai'Sa": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.875
+        },
+        "Xerath": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.333333333333333
+        },
+        "Ashe": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.375
         }
       },
-      "internalKda": 5.71,
+      "internalKda": 5.3,
       "internalChampionScore": 25,
       "playAliases": [
         {
@@ -1679,7 +1848,8 @@
           "gameName": "에스구십롱바디",
           "tagLine": "Dunn"
         }
-      ]
+      ],
+      "lockedRole": ""
     },
     {
       "id": 11,
@@ -1729,28 +1899,33 @@
       "recentWinRate": 60,
       "recentGames": 5,
       "puuid": "yG9URV_TyAZ6RE3nAvlJW8CbiymHg3T0daFtrep9N0CXmqYYabvMpRaZ7ZhOCrhB4BfsTHZtt1S0wg",
-      "internalRating": 2182,
-      "internalGames": 25,
+      "internalRating": 2340,
+      "internalGames": 37,
       "internalRoles": {
         "ADC": {
-          "games": 8,
-          "wins": 5,
-          "rating": 2103
+          "games": 11,
+          "wins": 10,
+          "rating": 2258
         },
         "TOP": {
-          "games": 2,
-          "wins": 1,
-          "rating": 2043
+          "games": 10,
+          "wins": 5,
+          "rating": 2066
         },
         "JUNGLE": {
-          "games": 14,
-          "wins": 9,
-          "rating": 2178
+          "games": 9,
+          "wins": 8,
+          "rating": 2232
+        },
+        "SUPPORT": {
+          "games": 4,
+          "wins": 1,
+          "rating": 2036
         },
         "MID": {
-          "games": 1,
-          "wins": 0,
-          "rating": 2044
+          "games": 3,
+          "wins": 1,
+          "rating": 1996
         }
       },
       "internalChampions": {
@@ -1795,14 +1970,14 @@
           "kdaTotal": 8.25
         },
         "Jarvan IV": {
-          "games": 1,
-          "wins": 0,
-          "kdaTotal": 4.833333333333333
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 37.833333333333336
         },
         "Sylas": {
-          "games": 1,
+          "games": 2,
           "wins": 1,
-          "kdaTotal": 5.25
+          "kdaTotal": 6.083333333333333
         },
         "Vi": {
           "games": 1,
@@ -1810,9 +1985,9 @@
           "kdaTotal": 7
         },
         "Jayce": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 12
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 17.5
         },
         "Zaahen": {
           "games": 1,
@@ -1868,11 +2043,56 @@
           "games": 1,
           "wins": 0,
           "kdaTotal": 1.4
+        },
+        "Samira": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3.625
+        },
+        "Jhin": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 33
+        },
+        "Tristana": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 16
+        },
+        "Xin Zhao": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.5
+        },
+        "Ezreal": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 10.666666666666666
+        },
+        "Yunara": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4.25
+        },
+        "Sivir": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 11
+        },
+        "Zed": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 18
+        },
+        "Aurelion Sol": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.888888888888889
         }
       },
-      "internalKda": 6.61,
-      "internalChampionScore": 32,
-      "lockedRole": "",
+      "internalKda": 8.37,
+      "internalChampionScore": 28,
+      "lockedRole": "MID",
       "playAliases": []
     },
     {
@@ -1923,18 +2143,28 @@
       "recentWinRate": 60,
       "recentGames": 5,
       "puuid": "hf3bu4X--alt958i6JTd8i_4QTiJvbteMlpzhNT6ko56DtrJvDTZJwqIGJWq6hG6s00iHbFz7z4M4g",
-      "internalRating": 1720,
-      "internalGames": 17,
+      "internalRating": 1686,
+      "internalGames": 26,
       "internalRoles": {
         "ADC": {
-          "games": 15,
-          "wins": 8,
-          "rating": 1702
+          "games": 18,
+          "wins": 11,
+          "rating": 1749
         },
         "JUNGLE": {
-          "games": 2,
-          "wins": 1,
-          "rating": 1610
+          "games": 1,
+          "wins": 0,
+          "rating": 1567
+        },
+        "SUPPORT": {
+          "games": 4,
+          "wins": 3,
+          "rating": 1618
+        },
+        "TOP": {
+          "games": 3,
+          "wins": 0,
+          "rating": 1528
         }
       },
       "internalChampions": {
@@ -1944,9 +2174,9 @@
           "kdaTotal": 3
         },
         "Braum": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 9.5
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 17.166666666666668
         },
         "Thresh": {
           "games": 1,
@@ -1954,9 +2184,9 @@
           "kdaTotal": 1.6
         },
         "Leona": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 5.333333333333333
+          "games": 3,
+          "wins": 3,
+          "kdaTotal": 13.758333333333333
         },
         "Shen": {
           "games": 1,
@@ -1997,10 +2227,40 @@
           "games": 1,
           "wins": 1,
           "kdaTotal": 18
+        },
+        "Karma": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.5
+        },
+        "Nautilus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5
+        },
+        "Lulu": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.2
+        },
+        "Camille": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.5
+        },
+        "Mordekaiser": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.6666666666666665
+        },
+        "Kennen": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3
         }
       },
-      "internalKda": 8.82,
-      "internalChampionScore": 18,
+      "internalKda": 7.15,
+      "internalChampionScore": 29,
       "lockedRole": "",
       "playAliases": []
     },
@@ -2052,25 +2312,25 @@
       "recentWinRate": 60,
       "recentGames": 5,
       "puuid": "7SWstu4qT3_zvd0e_9M-nykUxAdLFE7Z0L4Y__0VcA1lASJLbUyRHdbjYD86TbmKNc8NwIqotTV0VQ",
-      "internalRating": 1833,
-      "internalGames": 16,
+      "internalRating": 1787,
+      "internalGames": 28,
       "internalRoles": {
         "ADC": {
-          "games": 14,
-          "wins": 9,
-          "rating": 1894
+          "games": 24,
+          "wins": 12,
+          "rating": 1784
         },
-        "MID": {
-          "games": 2,
-          "wins": 0,
-          "rating": 1731
+        "SUPPORT": {
+          "games": 4,
+          "wins": 3,
+          "rating": 1795
         }
       },
       "internalChampions": {
         "Lucian": {
-          "games": 2,
-          "wins": 1,
-          "kdaTotal": 8
+          "games": 4,
+          "wins": 2,
+          "kdaTotal": 14.392857142857142
         },
         "Jhin": {
           "games": 2,
@@ -2078,9 +2338,9 @@
           "kdaTotal": 13.291666666666666
         },
         "Kai'Sa": {
-          "games": 3,
-          "wins": 1,
-          "kdaTotal": 8.34090909090909
+          "games": 5,
+          "wins": 2,
+          "kdaTotal": 17.007575757575758
         },
         "Caitlyn": {
           "games": 1,
@@ -2088,24 +2348,24 @@
           "kdaTotal": 0.2222222222222222
         },
         "Ashe": {
-          "games": 2,
+          "games": 3,
           "wins": 2,
-          "kdaTotal": 18.6
+          "kdaTotal": 19.35
         },
         "Ezreal": {
-          "games": 1,
+          "games": 2,
           "wins": 0,
-          "kdaTotal": 1
+          "kdaTotal": 2.571428571428571
         },
         "Sivir": {
-          "games": 1,
-          "wins": 1,
-          "kdaTotal": 8.666666666666666
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 12.666666666666666
         },
         "Nautilus": {
-          "games": 1,
+          "games": 2,
           "wins": 0,
-          "kdaTotal": 2.7142857142857144
+          "kdaTotal": 3.428571428571429
         },
         "Seraphine": {
           "games": 1,
@@ -2121,11 +2381,32 @@
           "games": 1,
           "wins": 1,
           "kdaTotal": 3.4
+        },
+        "Corki": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.2
+        },
+        "Varus": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 4
+        },
+        "Samira": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2
+        },
+        "Camille": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.75
         }
       },
-      "internalKda": 4.8,
-      "internalChampionScore": 5,
-      "playAliases": []
+      "internalKda": 3.96,
+      "internalChampionScore": 8,
+      "playAliases": [],
+      "lockedRole": ""
     },
     {
       "id": 14,
@@ -2175,30 +2456,30 @@
       "recentWinRate": 60,
       "recentGames": 5,
       "puuid": "CSUWrqhjLcte4FZvJnTlfGm0nL1Xk2Hp2jgD4-MieBk00Q3ueJaNEtIc242IUEapstfCooUnHLdbXw",
-      "internalRating": 768,
-      "internalGames": 16,
+      "internalRating": 831,
+      "internalGames": 20,
       "internalRoles": {
         "TOP": {
-          "games": 10,
-          "wins": 4,
-          "rating": 834
+          "games": 13,
+          "wins": 5,
+          "rating": 805
         },
         "JUNGLE": {
           "games": 5,
-          "wins": 2,
-          "rating": 897
+          "wins": 3,
+          "rating": 998
         },
         "ADC": {
-          "games": 1,
+          "games": 2,
           "wins": 1,
-          "rating": 961
+          "rating": 952
         }
       },
       "internalChampions": {
         "Yorick": {
-          "games": 3,
-          "wins": 1,
-          "kdaTotal": 2.5952380952380953
+          "games": 4,
+          "wins": 2,
+          "kdaTotal": 3.795238095238095
         },
         "Illaoi": {
           "games": 8,
@@ -2206,9 +2487,9 @@
           "kdaTotal": 9.351190476190476
         },
         "Malphite": {
-          "games": 1,
+          "games": 2,
           "wins": 0,
-          "kdaTotal": 0.8333333333333334
+          "kdaTotal": 1.6666666666666667
         },
         "Malzahar": {
           "games": 2,
@@ -2224,10 +2505,20 @@
           "games": 1,
           "wins": 0,
           "kdaTotal": 0.18181818181818182
+        },
+        "Trundle": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0
+        },
+        "Mordekaiser": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 2.5
         }
       },
-      "internalKda": 1.04,
-      "internalChampionScore": -10,
+      "internalKda": 1.06,
+      "internalChampionScore": -12,
       "lockedRole": "TOP",
       "playAliases": []
     },
@@ -2248,30 +2539,35 @@
       "recentWinRate": 0,
       "recentGames": 0,
       "puuid": "fUPco7EIj_4OCYa2fiC_TrmEpUivzfmgiPWXXUhVSLxcmAsBTO2BqhpboS0XGr3uvd-qLi7M9-nqTg",
-      "internalRating": 952,
-      "internalGames": 17,
+      "internalRating": 854,
+      "internalGames": 21,
       "internalRoles": {
         "TOP": {
-          "games": 9,
-          "wins": 5,
-          "rating": 1023
+          "games": 10,
+          "wins": 6,
+          "rating": 1021
         },
         "JUNGLE": {
-          "games": 2,
+          "games": 4,
           "wins": 1,
-          "rating": 1007
+          "rating": 923
         },
         "ADC": {
-          "games": 6,
+          "games": 2,
+          "wins": 1,
+          "rating": 972
+        },
+        "SUPPORT": {
+          "games": 5,
           "wins": 2,
-          "rating": 922
+          "rating": 938
         }
       },
       "internalChampions": {
         "Shen": {
-          "games": 4,
+          "games": 5,
           "wins": 0,
-          "kdaTotal": 6.476190476190475
+          "kdaTotal": 9.809523809523808
         },
         "Malphite": {
           "games": 5,
@@ -2279,9 +2575,9 @@
           "kdaTotal": 32.55
         },
         "Sett": {
-          "games": 2,
+          "games": 3,
           "wins": 2,
-          "kdaTotal": 7.7333333333333325
+          "kdaTotal": 9.733333333333333
         },
         "Kennen": {
           "games": 1,
@@ -2289,9 +2585,9 @@
           "kdaTotal": 1.2
         },
         "Jax": {
-          "games": 1,
-          "wins": 0,
-          "kdaTotal": 1
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 3
         },
         "Morgana": {
           "games": 1,
@@ -2312,10 +2608,15 @@
           "games": 1,
           "wins": 0,
           "kdaTotal": 1.1
+        },
+        "Gragas": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 7.5
         }
       },
-      "internalKda": 3.46,
-      "internalChampionScore": 8,
+      "internalKda": 3.51,
+      "internalChampionScore": 4,
       "lockedRole": "TOP",
       "playAliases": []
     },
@@ -2429,18 +2730,18 @@
       "recentWinRate": 80,
       "recentGames": 5,
       "puuid": "tes_ShlmhJEq1yrqsO1CyiAv1tM8984uuHYo8RHVxeDt5iJFPlp-4NN1rdYs60_ruD4KPpFpVhBeZg",
-      "internalRating": 1336,
+      "internalRating": 1329,
       "internalGames": 4,
       "internalRoles": {
         "ADC": {
           "games": 3,
           "wins": 2,
-          "rating": 1332
+          "rating": 1327
         },
         "TOP": {
           "games": 1,
           "wins": 1,
-          "rating": 1290
+          "rating": 1288
         }
       },
       "internalChampions": {
@@ -2466,68 +2767,409 @@
         }
       },
       "internalKda": 12.61,
-      "internalChampionScore": 11
+      "internalChampionScore": 11,
+      "playAliases": []
+    },
+    {
+      "id": 18,
+      "name": "9 Things",
+      "tag": "#123",
+      "tier": "UNRANKED",
+      "division": "",
+      "lp": 0,
+      "role": "MID",
+      "secondary": "SUPPORT",
+      "form": 0,
+      "color": "#516b87",
+      "selected": false,
+      "most": [],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 0,
+      "recentGames": 0,
+      "puuid": "9Ou2ekVs7SsT_9P5XPmHalw3YVxWfBuTOIzv5DtjpHG9dH4vpperIdM59oocQB27GTPI517vsxxASg",
+      "internalRating": 1119,
+      "internalGames": 9,
+      "internalRoles": {
+        "MID": {
+          "games": 9,
+          "wins": 8,
+          "rating": 1119
+        }
+      },
+      "internalChampions": {
+        "Orianna": {
+          "games": 2,
+          "wins": 1,
+          "kdaTotal": 9.75
+        },
+        "Ahri": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5.75
+        },
+        "Aurora": {
+          "games": 2,
+          "wins": 2,
+          "kdaTotal": 9.333333333333334
+        },
+        "Annie": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3
+        },
+        "Twisted Fate": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 5
+        },
+        "Zoe": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 3
+        },
+        "Sylas": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 23
+        }
+      },
+      "internalKda": 6.54,
+      "internalChampionScore": 26,
+      "lockedRole": "",
+      "playAliases": []
+    },
+    {
+      "id": 19,
+      "name": "천재 or 비극",
+      "tag": "#KR1",
+      "tier": "UNRANKED",
+      "division": "",
+      "lp": 0,
+      "role": "MID",
+      "secondary": "SUPPORT",
+      "form": -12,
+      "color": "#7d5369",
+      "selected": false,
+      "most": [
+        {
+          "name": "Lux",
+          "games": 2,
+          "wins": 1,
+          "kills": 22,
+          "deaths": 12,
+          "assists": 18,
+          "winRate": 50,
+          "kda": 3.33
+        },
+        {
+          "name": "Seraphine",
+          "games": 1,
+          "wins": 1,
+          "kills": 9,
+          "deaths": 11,
+          "assists": 28,
+          "winRate": 100,
+          "kda": 3.36
+        },
+        {
+          "name": "Gangplank",
+          "games": 1,
+          "wins": 0,
+          "kills": 1,
+          "deaths": 8,
+          "assists": 0,
+          "winRate": 0,
+          "kda": 0.13
+        }
+      ],
+      "dataDragonVersion": "16.16.1",
+      "recentWinRate": 40,
+      "recentGames": 5,
+      "puuid": "y3tIQHog6GuJw2ktSaekKe0B_knRg63HnYmPt9dwIws9mZjjrbP05zXwsy6fgiCPBXAC7rtjf4iLzQ",
+      "internalRating": 915,
+      "internalGames": 3,
+      "internalRoles": {
+        "MID": {
+          "games": 3,
+          "wins": 0,
+          "rating": 915
+        }
+      },
+      "internalChampions": {
+        "Xerath": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.875
+        },
+        "Viktor": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 0.8571428571428571
+        },
+        "Annie": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 2.3333333333333335
+        }
+      },
+      "internalKda": 1.36,
+      "internalChampionScore": -16,
+      "lockedRole": "",
+      "playAliases": []
+    },
+    {
+      "id": 20,
+      "name": "햄토리",
+      "tag": "#도토리",
+      "tier": "DIAMOND",
+      "division": "II",
+      "lp": 83,
+      "role": "ADC",
+      "secondary": "SUPPORT",
+      "form": -36,
+      "color": "#6b7350",
+      "selected": false,
+      "most": [
+        {
+          "name": "Katarina",
+          "games": 3,
+          "wins": 1,
+          "kills": 17,
+          "deaths": 16,
+          "assists": 14,
+          "winRate": 33,
+          "kda": 1.94
+        },
+        {
+          "name": "Caitlyn",
+          "games": 1,
+          "wins": 0,
+          "kills": 1,
+          "deaths": 7,
+          "assists": 5,
+          "winRate": 0,
+          "kda": 0.86
+        },
+        {
+          "name": "Irelia",
+          "games": 1,
+          "wins": 0,
+          "kills": 1,
+          "deaths": 1,
+          "assists": 0,
+          "winRate": 0,
+          "kda": 1
+        }
+      ],
+      "dataDragonVersion": "16.17.1",
+      "recentWinRate": 20,
+      "recentGames": 5,
+      "puuid": "FCb5FFKUoRREbDj-edd-zEBVDWtgxAgzHQQKXfQkEAm6kvvJfdqgnPM6of8LWQzKKLbLI8RHZzU6ow",
+      "internalRating": 1649,
+      "internalGames": 5,
+      "internalRoles": {
+        "SUPPORT": {
+          "games": 3,
+          "wins": 0,
+          "rating": 1679
+        },
+        "ADC": {
+          "games": 2,
+          "wins": 0,
+          "rating": 1714
+        }
+      },
+      "internalChampions": {
+        "Sylas": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.4545454545454546
+        },
+        "Pyke": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.6666666666666667
+        },
+        "Neeko": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.6666666666666665
+        },
+        "Kai'Sa": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.3333333333333333
+        },
+        "Zeri": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 1.6666666666666667
+        }
+      },
+      "internalKda": 1.96,
+      "internalChampionScore": -13,
+      "lockedRole": "ADC",
+      "playAliases": []
+    },
+    {
+      "id": 21,
+      "name": "사빠딸",
+      "tag": "#0313",
+      "tier": "MASTER",
+      "division": "I",
+      "lp": 313,
+      "role": "MID",
+      "secondary": "ADC",
+      "form": 12,
+      "color": "#655986",
+      "selected": false,
+      "most": [
+        {
+          "name": "Tristana",
+          "games": 1,
+          "wins": 1,
+          "kills": 13,
+          "deaths": 5,
+          "assists": 3,
+          "winRate": 100,
+          "kda": 3.2
+        },
+        {
+          "name": "LeeSin",
+          "games": 1,
+          "wins": 1,
+          "kills": 9,
+          "deaths": 9,
+          "assists": 11,
+          "winRate": 100,
+          "kda": 2.22
+        },
+        {
+          "name": "Zeri",
+          "games": 1,
+          "wins": 1,
+          "kills": 10,
+          "deaths": 8,
+          "assists": 20,
+          "winRate": 100,
+          "kda": 3.75
+        }
+      ],
+      "dataDragonVersion": "16.17.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "YeDlUXY0U6-BLNG8-4Kevk9PAvojFTGd7fyGry_wapqRQfNLPV_tNaKlVXTkBbRvZWe9ZoFbMbayGQ",
+      "internalRating": 2062,
+      "internalGames": 0,
+      "internalRoles": {},
+      "internalChampions": {},
+      "internalKda": 0,
+      "internalChampionScore": 0,
+      "lockedRole": "ADC",
+      "playAliases": [
+        {
+          "puuid": "1f076393-7742-5595-b128-6c7682f193e2",
+          "gameName": "햄토리",
+          "tagLine": "도토리"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "name": "역주행스피드레이서전민정",
+      "tag": "#전민정",
+      "tier": "PLATINUM",
+      "division": "II",
+      "lp": 96,
+      "role": "SUPPORT",
+      "secondary": "MID",
+      "form": 12,
+      "color": "#965c4b",
+      "selected": false,
+      "most": [
+        {
+          "name": "Zilean",
+          "games": 3,
+          "wins": 2,
+          "kills": 0,
+          "deaths": 10,
+          "assists": 35,
+          "winRate": 67,
+          "kda": 3.5
+        },
+        {
+          "name": "Seraphine",
+          "games": 1,
+          "wins": 1,
+          "kills": 3,
+          "deaths": 2,
+          "assists": 22,
+          "winRate": 100,
+          "kda": 12.5
+        },
+        {
+          "name": "Lulu",
+          "games": 1,
+          "wins": 0,
+          "kills": 0,
+          "deaths": 4,
+          "assists": 12,
+          "winRate": 0,
+          "kda": 3
+        }
+      ],
+      "dataDragonVersion": "16.17.1",
+      "recentWinRate": 60,
+      "recentGames": 5,
+      "puuid": "jKHzzLBA4ygZ2ThzPsN-RursOHvsHJ9xYxBN0U67x0S4FkTLND5loIUiekFvtN8DiNcVnG5x1_hGkA",
+      "internalRating": 1372,
+      "internalGames": 4,
+      "internalRoles": {
+        "ADC": {
+          "games": 4,
+          "wins": 2,
+          "rating": 1372
+        }
+      },
+      "internalChampions": {
+        "Braum": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 3.5
+        },
+        "Seraphine": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 13
+        },
+        "Zilean": {
+          "games": 1,
+          "wins": 1,
+          "kdaTotal": 6
+        },
+        "Amumu": {
+          "games": 1,
+          "wins": 0,
+          "kdaTotal": 4.5
+        }
+      },
+      "internalKda": 6.75,
+      "internalChampionScore": 11,
+      "playAliases": []
     }
   ],
   "seriesState": {
     "active": {
-      "id": 1787492632721,
-      "createdAt": 1787492632721,
+      "id": 1787767616297,
+      "createdAt": 1787767616297,
       "blue": [
-        {
-          "id": 14,
-          "name": "아무것도하지말자하",
-          "tag": "#1111",
-          "role": "TOP",
-          "power": 920,
-          "internalGames": 12,
-          "tier": "BRONZE"
-        },
-        {
-          "id": 7,
-          "name": "인생망했다",
-          "tag": "#1111",
-          "role": "JUNGLE",
-          "power": 1499,
-          "internalGames": 31,
-          "tier": "PLATINUM"
-        },
         {
           "id": 6,
           "name": "백설기콩떡",
           "tag": "#1224",
-          "role": "MID",
-          "power": 1745,
-          "internalGames": 32,
-          "tier": "EMERALD"
-        },
-        {
-          "id": 2,
-          "name": "2611130932135616",
-          "tag": "#KR1",
-          "role": "ADC",
-          "power": 1431,
-          "internalGames": 30,
-          "tier": "EMERALD"
-        },
-        {
-          "id": 11,
-          "name": "발목분쇄기 SON",
-          "tag": "#KR2",
-          "role": "SUPPORT",
-          "power": 2172,
-          "internalGames": 21,
-          "tier": "MASTER"
-        }
-      ],
-      "red": [
-        {
-          "id": 3,
-          "name": "신휴지",
-          "tag": "#1004",
           "role": "TOP",
-          "power": 1181,
-          "internalGames": 17,
+          "power": 1432,
+          "internalGames": 46,
           "tier": "PLATINUM"
         },
         {
@@ -2535,79 +3177,104 @@
           "name": "전수찬오른붕",
           "tag": "#KR11",
           "role": "JUNGLE",
-          "power": 1448,
-          "internalGames": 35,
+          "power": 1462,
+          "internalGames": 49,
           "tier": "EMERALD"
         },
         {
-          "id": 10,
-          "name": "Piremi",
-          "tag": "#0916",
-          "role": "MID",
-          "power": 1651,
-          "internalGames": 35,
-          "tier": "PLATINUM"
-        },
-        {
-          "id": 12,
-          "name": "자 페",
+          "id": 8,
+          "name": "둥글e",
           "tag": "#KR1",
+          "role": "MID",
+          "power": 1270,
+          "internalGames": 41,
+          "tier": "GOLD"
+        },
+        {
+          "id": 21,
+          "name": "사빠딸",
+          "tag": "#0313",
           "role": "ADC",
-          "power": 1748,
-          "internalGames": 13,
-          "tier": "EMERALD"
+          "power": 2042,
+          "internalGames": 0,
+          "tier": "MASTER"
         },
         {
           "id": 13,
           "name": "운 지",
           "tag": "#UNZI",
           "role": "SUPPORT",
-          "power": 1795,
-          "internalGames": 12,
+          "power": 1777,
+          "internalGames": 26,
           "tier": "DIAMOND"
         }
       ],
-      "blueCaptainId": 11,
-      "redCaptainId": 13,
+      "red": [
+        {
+          "id": 10,
+          "name": "Piremi",
+          "tag": "#0916",
+          "role": "TOP",
+          "power": 1504,
+          "internalGames": 49,
+          "tier": "PLATINUM"
+        },
+        {
+          "id": 7,
+          "name": "인생망했다",
+          "tag": "#1111",
+          "role": "JUNGLE",
+          "power": 1443,
+          "internalGames": 45,
+          "tier": "PLATINUM"
+        },
+        {
+          "id": 18,
+          "name": "9 Things",
+          "tag": "#123",
+          "role": "MID",
+          "power": 1159,
+          "internalGames": 7,
+          "tier": "UNRANKED"
+        },
+        {
+          "id": 11,
+          "name": "발목분쇄기 SON",
+          "tag": "#KR2",
+          "role": "ADC",
+          "power": 2234,
+          "internalGames": 31,
+          "tier": "MASTER"
+        },
+        {
+          "id": 12,
+          "name": "자 페",
+          "tag": "#KR1",
+          "role": "SUPPORT",
+          "power": 1624,
+          "internalGames": 24,
+          "tier": "EMERALD"
+        }
+      ],
+      "blueCaptainId": 21,
+      "redCaptainId": 11,
       "sets": [
         {
           "number": 1,
-          "gameId": "8352709199",
-          "winner": "BLUE",
-          "imported": true,
-          "matchId": "8352709199",
-          "rolesConfirmed": true
+          "gameId": "",
+          "winner": "",
+          "imported": false
         },
         {
           "number": 2,
-          "gameId": "8352795194",
-          "winner": "RED",
-          "imported": true,
-          "matchId": "8352795194",
-          "rolesConfirmed": true
-        },
-        {
-          "number": 3,
-          "gameId": "8352863123",
-          "winner": "RED",
-          "imported": true,
-          "matchId": "8352863123",
-          "rolesConfirmed": true
-        },
-        {
-          "number": 4,
-          "gameId": "8352912125",
-          "winner": "RED",
-          "imported": true,
-          "matchId": "8352912125",
-          "rolesConfirmed": true
+          "gameId": "",
+          "winner": "",
+          "imported": false
         }
       ],
-      "pogId": 12,
-      "pogScore": 71,
-      "finished": true,
-      "finalWinner": "RED",
-      "finishedAt": 1787502836968
+      "pogId": "",
+      "pogScore": 0,
+      "finished": false
     },
     "history": [
       {
@@ -3336,6 +4003,276 @@
         "finished": true,
         "finalWinner": "RED",
         "finishedAt": 1787502836968
+      },
+      {
+        "id": 1787588564072,
+        "createdAt": 1787588564072,
+        "blue": [
+          {
+            "id": 10,
+            "name": "Piremi",
+            "tag": "#0916",
+            "role": "TOP",
+            "power": 1484,
+            "internalGames": 39,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 1,
+            "name": "bebebbi",
+            "tag": "#KR1",
+            "role": "JUNGLE",
+            "power": 1124,
+            "internalGames": 23,
+            "tier": "UNRANKED"
+          },
+          {
+            "id": 18,
+            "name": "9 Things",
+            "tag": "#123",
+            "role": "MID",
+            "power": 1070,
+            "internalGames": 0,
+            "tier": "UNRANKED"
+          },
+          {
+            "id": 13,
+            "name": "운 지",
+            "tag": "#UNZI",
+            "role": "ADC",
+            "power": 1902,
+            "internalGames": 16,
+            "tier": "DIAMOND"
+          },
+          {
+            "id": 12,
+            "name": "자 페",
+            "tag": "#KR1",
+            "role": "SUPPORT",
+            "power": 1690,
+            "internalGames": 17,
+            "tier": "EMERALD"
+          }
+        ],
+        "red": [
+          {
+            "id": 2,
+            "name": "2611130932135616",
+            "tag": "#KR1",
+            "role": "TOP",
+            "power": 1334,
+            "internalGames": 34,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 7,
+            "name": "인생망했다",
+            "tag": "#1111",
+            "role": "JUNGLE",
+            "power": 1449,
+            "internalGames": 35,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 6,
+            "name": "백설기콩떡",
+            "tag": "#1224",
+            "role": "MID",
+            "power": 1757,
+            "internalGames": 36,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 9,
+            "name": "전수찬오른붕",
+            "tag": "#KR11",
+            "role": "ADC",
+            "power": 1462,
+            "internalGames": 39,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 8,
+            "name": "둥글e",
+            "tag": "#KR1",
+            "role": "SUPPORT",
+            "power": 1153,
+            "internalGames": 31,
+            "tier": "GOLD"
+          }
+        ],
+        "blueCaptainId": 13,
+        "redCaptainId": 6,
+        "sets": [
+          {
+            "number": 1,
+            "gameId": "8354041852",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8354041852",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 2,
+            "gameId": "8354072915",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8354072915",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 3,
+            "gameId": "8354105885",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8354105885",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 4,
+            "gameId": "8354129708",
+            "winner": "BLUE",
+            "imported": true,
+            "matchId": "8354129708",
+            "rolesConfirmed": true
+          }
+        ],
+        "pogId": 13,
+        "pogScore": 70.3,
+        "finished": true,
+        "finalWinner": "BLUE",
+        "finishedAt": 1787599608342
+      },
+      {
+        "id": 1787755868387,
+        "createdAt": 1787755868387,
+        "blue": [
+          {
+            "id": 12,
+            "name": "자 페",
+            "tag": "#KR1",
+            "role": "TOP",
+            "power": 1592,
+            "internalGames": 21,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 7,
+            "name": "인생망했다",
+            "tag": "#1111",
+            "role": "JUNGLE",
+            "power": 1506,
+            "internalGames": 42,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 6,
+            "name": "백설기콩떡",
+            "tag": "#1224",
+            "role": "MID",
+            "power": 1598,
+            "internalGames": 43,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 9,
+            "name": "전수찬오른붕",
+            "tag": "#KR11",
+            "role": "ADC",
+            "power": 1476,
+            "internalGames": 46,
+            "tier": "EMERALD"
+          },
+          {
+            "id": 20,
+            "name": "햄토리",
+            "tag": "#도토리",
+            "role": "SUPPORT",
+            "power": 1709,
+            "internalGames": 0,
+            "tier": "DIAMOND"
+          }
+        ],
+        "red": [
+          {
+            "id": 10,
+            "name": "Piremi",
+            "tag": "#0916",
+            "role": "TOP",
+            "power": 1469,
+            "internalGames": 46,
+            "tier": "PLATINUM"
+          },
+          {
+            "id": 11,
+            "name": "발목분쇄기 SON",
+            "tag": "#KR2",
+            "role": "JUNGLE",
+            "power": 2189,
+            "internalGames": 28,
+            "tier": "MASTER"
+          },
+          {
+            "id": 18,
+            "name": "9 Things",
+            "tag": "#123",
+            "role": "MID",
+            "power": 1089,
+            "internalGames": 4,
+            "tier": "UNRANKED"
+          },
+          {
+            "id": 13,
+            "name": "운 지",
+            "tag": "#UNZI",
+            "role": "ADC",
+            "power": 1863,
+            "internalGames": 23,
+            "tier": "DIAMOND"
+          },
+          {
+            "id": 8,
+            "name": "둥글e",
+            "tag": "#KR1",
+            "role": "SUPPORT",
+            "power": 1145,
+            "internalGames": 38,
+            "tier": "GOLD"
+          }
+        ],
+        "blueCaptainId": 20,
+        "redCaptainId": 11,
+        "sets": [
+          {
+            "number": 1,
+            "gameId": "8356226276",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8356226276",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 2,
+            "gameId": "8356288699",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8356288699",
+            "rolesConfirmed": true
+          },
+          {
+            "number": 3,
+            "gameId": "8356339109",
+            "winner": "RED",
+            "imported": true,
+            "matchId": "8356339109",
+            "rolesConfirmed": true
+          }
+        ],
+        "pogId": 11,
+        "pogScore": 76.4,
+        "finished": true,
+        "finalWinner": "RED",
+        "finishedAt": 1787764129599
       }
     ]
   },
@@ -3343,29 +4280,7 @@
     "alternative": 0,
     "blue": [
       {
-        "id": 14,
-        "role": "TOP"
-      },
-      {
-        "id": 7,
-        "role": "JUNGLE"
-      },
-      {
         "id": 6,
-        "role": "MID"
-      },
-      {
-        "id": 2,
-        "role": "ADC"
-      },
-      {
-        "id": 11,
-        "role": "SUPPORT"
-      }
-    ],
-    "red": [
-      {
-        "id": 3,
         "role": "TOP"
       },
       {
@@ -3373,11 +4288,11 @@
         "role": "JUNGLE"
       },
       {
-        "id": 10,
+        "id": 8,
         "role": "MID"
       },
       {
-        "id": 12,
+        "id": 21,
         "role": "ADC"
       },
       {
@@ -3385,7 +4300,31 @@
         "role": "SUPPORT"
       }
     ],
-    "selectedAt": 1787492580914
+    "red": [
+      {
+        "id": 10,
+        "role": "TOP"
+      },
+      {
+        "id": 7,
+        "role": "JUNGLE"
+      },
+      {
+        "id": 18,
+        "role": "MID"
+      },
+      {
+        "id": 11,
+        "role": "ADC"
+      },
+      {
+        "id": 12,
+        "role": "SUPPORT"
+      }
+    ],
+    "selectedAt": 1787764909402
   },
-  "updatedAt": 1787581080536
+  "updatedAt": 1787922907769,
+  "importedFrom": "https://ck-lab-tau.vercel.app",
+  "importedAt": 1787923900948
 }
