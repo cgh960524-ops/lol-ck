@@ -68,6 +68,4 @@ export async function handleRequest(req,res){
   }catch(error){console.error(error.details||error);json(res,error.status||500,{error:error.message||"서버 오류가 발생했습니다."})}
 }
 
-export default handleRequest;
-
 if(!process.env.VERCEL)createServer(handleRequest).listen(port,host,()=>console.log(`응CK연구소: http://${host}:${port}`));
