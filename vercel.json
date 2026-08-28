@@ -3,11 +3,11 @@
   "functions": {
     "api/[...path].mjs": {
       "maxDuration": 60,
-      "includeFiles": ["index.html", "client.js", "*.css"]
+      "includeFiles": "{index.html,client.js,*.css}"
     },
     "server.mjs": {
       "maxDuration": 60,
-      "includeFiles": ["index.html", "client.js", "*.css"]
+      "includeFiles": "{index.html,client.js,*.css}"
     }
   }
 }
