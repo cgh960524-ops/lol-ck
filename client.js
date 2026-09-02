@@ -59,7 +59,7 @@ function upsertPlayer(data){
  return Boolean(existing);
 }
 const norm=(name,tag)=>`${name||""}#${tag||""}`.replace(/\s/g,"").toLowerCase();
-function findRegistered(mp){return players.find(p=>p.puuid===mp.puuid)||players.find(p=>norm(p.name,p.tag.replace(/^#/,""))===norm(mp.gameName,mp.tagLine))||players.find(p=>(p.playAliases||[]).some(a=>a.puuid===mp.puuid||norm(a.gameName,a.tagLine)===norm(mp.gameName,mp.tagLine)))}
+function findRegistered(mp){return players.find(p=>!p.archived&&(p.playAliases||[]).some(a=>a.puuid===mp.puuid||norm(a.gameName,a.tagLine)===norm(mp.gameName,mp.tagLine)))||players.find(p=>!p.archived&&p.puuid===mp.puuid)||players.find(p=>!p.archived&&norm(p.name,p.tag.replace(/^#/,""))===norm(mp.gameName,mp.tagLine))}
 const confirmedRole=mp=>["manual","team-confirmed","series-confirmed"].includes(mp.roleSource)&&ROLES.includes(mp.role)?mp.role:null;
 function applySeriesRoleCorrections(){let changed=false;for(const series of [...(seriesState.history||[]),...(seriesState.active?[seriesState.active]:[])]){const roster=[...(series.blue||[]),...(series.red||[])];for(const set of series.sets||[]){if(!set.gameId)continue;const match=internalMatches.find(m=>String(m.gameId)===String(set.gameId));if(!match)continue;for(const slot of roster){const participant=match.participants.find(mp=>String(findRegistered(mp)?.id)===String(slot.id));if(participant&&ROLES.includes(slot.role)&&(participant.role!==slot.role||participant.roleSource!=="series-confirmed")){participant.role=slot.role;participant.roleSource="series-confirmed";changed=true}}}}if(changed)saveMatches()}
 const relativeMetric=(value,reference)=>Math.max(-1,Math.min(1,(Number(value||0)-Number(reference||0))/(Math.abs(Number(value||0))+Math.abs(Number(reference||0))+1)*2));
