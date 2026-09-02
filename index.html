@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="nickname-tags.css?v=20260902-nicknames" />
   <link rel="stylesheet" href="roster-import.css?v=20260902-roster-import" />
   <link rel="stylesheet" href="retro-ladder.css?v=20260902-retro-ladder" />
+  <link rel="stylesheet" href="ladder-visibility.css?v=20260902-ladder-result" />
 </head>
 <body>
   <div class="noise"></div>
@@ -84,6 +85,6 @@
   <dialog id="deletePlayerDialog" class="delete-player-dialog"><div class="delete-player-shell"><button class="close" id="closeDeletePlayer" type="button">×</button><p class="step">PLAYER MANAGEMENT</p><h2>플레이어 삭제</h2><p id="deletePlayerMessage" class="dialog-copy"></p><div class="delete-warning">내전 원본 경기와 과거 시리즈 기록은 보존됩니다. 참가자 목록과 연결 계정에서만 제거됩니다.</div><div class="delete-actions"><button id="cancelDeletePlayer" type="button">취소</button><button id="confirmDeletePlayer" type="button">삭제하기</button></div></div></dialog>
   <dialog id="rosterImportDialog" class="roster-import-dialog"><form method="dialog" id="rosterImportForm"><button class="close" value="cancel">×</button><p class="step">ROSTER TEXT MATCH</p><h2>참가자 명단 붙여넣기</h2><p class="dialog-copy">디스코드 명단을 그대로 붙여넣으세요. 닉네임·별칭·연결 계정을 비교해 가장 가까운 참가자를 선택합니다.</p><label>확정 인원 텍스트<textarea name="rosterText" rows="7" required placeholder="1.승우 2.응디 3.수정 4.두혁 5.민규"></textarea></label><button class="primary" id="rosterImportSubmit"><span>명단 분석하고 선택하기</span></button><div id="rosterImportResult" class="roster-import-result hidden"></div></form></dialog>
   <div id="toast" role="status"></div>
-  <script type="module" src="client.js?v=20260902-retro-ladder"></script>
+  <script type="module" src="client.js?v=20260902-ladder-result"></script>
 </body>
 </html>
