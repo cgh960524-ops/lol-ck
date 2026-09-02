@@ -4,3 +4,6 @@
 
 /* Toasts use an explicit dark surface because --ink is light in this theme. */
 #toast{background:#0b1421!important;color:#f4f8ff!important;border:1px solid #3977f6!important;padding:14px 20px!important;bottom:24px!important;box-shadow:0 14px 42px rgba(0,0,0,.58)!important}
+
+/* Drag a position label onto any other slot to swap the two players. */
+.live-team-slot{transition:background .15s,border-color .15s,transform .15s}.lane-drag-handle{display:grid;place-items:center;align-self:stretch;min-height:34px;border:1px solid #334766;border-radius:6px;background:#15233a;color:#8fb7ff!important;cursor:grab;user-select:none;touch-action:none}.lane-drag-handle:active{cursor:grabbing}.live-team-slot.dragging{opacity:.48}.live-team-slot.drag-target{background:#18345b!important;box-shadow:inset 0 0 0 2px #4c8fff;transform:translateY(-1px)}
