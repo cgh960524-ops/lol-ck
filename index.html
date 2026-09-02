@@ -23,12 +23,13 @@
   <link rel="stylesheet" href="player-stats.css" />
   <link rel="stylesheet" href="custom-team.css" />
   <link rel="stylesheet" href="rebrand.css" />
+  <link rel="stylesheet" href="leaderboard.css" />
 </head>
 <body>
   <div class="noise"></div>
   <header class="topbar">
     <a class="brand" href="#"><span class="brand-mark">CK</span><span>응CK연구소</span></a>
-    <nav><a class="active" href="#players">팀 만들기</a><a href="#history">경기 기록</a></nav>
+    <nav><a class="active" href="#players">팀 만들기</a><a href="#history">경기 기록</a><a href="#leaderboard">리더보드</a></nav>
     <div class="header-actions"><button class="ghost subtle" id="openBulk">여러 명 등록</button><button class="ghost" id="openAdd">+ 플레이어 등록</button></div>
   </header>
 
@@ -58,6 +59,10 @@
     </section>
 
     <section class="history" id="history"><div><p class="step">INTERNAL MATCH</p><h2>내전 데이터</h2><p class="history-copy">게임 ID를 누적할수록 실제 경기력 중심으로 롤력과 포지션별 숙련도가 정교하게 보정됩니다.</p><button class="ghost history-add" id="openMatch">+ 내전 ID 추가</button><button class="ghost alias-add" id="openAlias">플레이 계정 연결</button><div class="history-stats"><span>누적 경기 <b id="matchCount">0</b></span><span>분석 참가 <b id="ratedPlayerCount">0</b></span><span>연결 계정 <b id="aliasCount">0</b></span></div></div><div class="match-history" id="matchHistory"><div class="history-card"><span class="status">기록 대기</span><p>아직 저장된 내전이 없습니다.</p><small>리그 클라이언트를 실행하고 게임 ID를 가져오세요.</small></div></div></section>
+    <section class="leaderboard-section" id="leaderboard">
+      <div class="leaderboard-head"><div><p class="step">INTERNAL GAME LEADERBOARD</p><h2>응CK 리더보드</h2><p>저장된 내전 경기와 확정 포지션 데이터만 집계합니다. 선수 행을 누르면 세부 지표를 확인할 수 있습니다.</p></div><div class="leaderboard-summary" id="leaderboardSummary"></div></div>
+      <div class="leaderboard-grid"><article id="powerLeaderboard"></article><article id="pogLeaderboard"></article><article id="dpsLeaderboard"></article><article id="kdaLeaderboard"></article><article id="winLeaderboard"></article><article id="gamesLeaderboard"></article></div>
+    </section>
     <section class="series-section" id="seriesSection"><div><p class="step">MATCH EVENT</p><h2>진행 중인 내전</h2></div><div id="seriesSummary" class="series-empty">팀 구성을 확정하면 세트 이벤트가 시작됩니다.</div></section>
   </main>
 
