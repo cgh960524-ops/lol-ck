@@ -13,7 +13,6 @@ const uploadToken = process.env.UPLOADER_TOKEN || "";
 const types = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".svg":"image/svg+xml", ".txt":"text/plain; charset=utf-8" };
 
 const json = (res,status,body) => { res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}); res.end(JSON.stringify(body)); };
-const riotVerification = res => { res.writeHead(200,{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store"}); res.end("7a0714356-6c25-49b5-84f6-160c673e2bcb"); };
 const wait = ms => new Promise(resolve=>setTimeout(resolve,ms));
 const readBody = async req => { const chunks=[]; let size=0; for await (const chunk of req) { size+=chunk.length; if(size>6_000_000) throw Object.assign(new Error("요청 데이터가 너무 큽니다."),{status:413}); chunks.push(chunk); } return JSON.parse(Buffer.concat(chunks).toString("utf8")||"{}"); };
 async function loadMatches(){ const value=await loadJson("internal-matches",dataFile,[]);return Array.isArray(value)?value:[] }
@@ -50,7 +49,6 @@ async function getPlayerData(riotId,requestedCount){
 export async function handleRequest(req,res){
   const url=new URL(req.url,`http://${req.headers.host||"localhost"}`),pathname=url.pathname;
   try{
-    if(pathname==="/api/riot-verification")return riotVerification(res);
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
     if(pathname==="/api/player")return json(res,200,await getPlayerData(url.searchParams.get("riotId")||"",url.searchParams.get("matches")));
     if(pathname==="/api/internal-matches"&&req.method==="GET")return json(res,200,await loadMatches());
