@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/riot.txt", "destination": "/api/riot-verification" }
+  ],
   "functions": {
     "api/[...path].mjs": {
       "maxDuration": 60,
