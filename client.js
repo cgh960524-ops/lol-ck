@@ -209,6 +209,7 @@ document.addEventListener("drop",event=>{const row=event.target.closest("#blueTe
 document.addEventListener("dragend",()=>{liveTeamDragSource=null;document.querySelectorAll(".live-team-slot.drag-target,.live-team-slot.dragging").forEach(x=>x.classList.remove("drag-target","dragging"))});
 function renderMatchOdds(){if(!current||!$("#blueOdds"))return;const blueProbability=Math.max(.01,Math.min(.99,current.blueWinRate??.5)),redProbability=1-blueProbability;$("#blueOddsName").textContent=$("#blueTeamName").textContent;$("#redOddsName").textContent=$("#redTeamName").textContent;$("#blueOdds").textContent=(1/blueProbability).toFixed(2);$("#redOdds").textContent=(1/redProbability).toFixed(2)}
 const matchOddsObserver=new MutationObserver(renderMatchOdds);["blueTeamName","redTeamName","blueWin","redWin"].forEach(id=>{const element=document.getElementById(id);if(element)matchOddsObserver.observe(element,{childList:true,characterData:true,subtree:true})});renderMatchOdds();
+const startSeriesFromCurrent=$("#saveMatch").onclick;$("#saveMatch").onclick=()=>{if(seriesState.active&&!seriesState.active.finished&&!seriesState.active.sets?.some(set=>set.imported))seriesState.active=null;startSeriesFromCurrent()};
 updateAliasCount();
 renderSeries();
 syncAppState();
