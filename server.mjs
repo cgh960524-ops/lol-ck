@@ -59,8 +59,15 @@ async function verifyDiscordRequest(req,raw){
 }
 const discordReply=(content,extra={})=>({type:4,data:{content,flags:64,...extra}});
 const optionValue=(interaction,name)=>interaction.data?.options?.find(option=>option.name===name)?.value;
-const normName=value=>String(value||"").replace(/\s/g,"").toLowerCase();
-function findDiscordPlayer(players,query){const needle=normName(query);return players.find(player=>[player.name,...(player.nicknames||[]),...(player.aliases||[])].some(name=>normName(name).includes(needle)||needle.includes(normName(name))))}
+const normName=value=>String(value||"").normalize("NFKC").replace(/^@/,"").replace(/\s/g,"").toLowerCase();
+function discordPlayerNames(player){
+  return [player.name,`${player.name||""}${player.tag||""}`,player.nickname,player.alias,...(Array.isArray(player.nicknames)?player.nicknames:[]),...(Array.isArray(player.aliases)?player.aliases:[])].filter(Boolean);
+}
+function findDiscordPlayer(players,query){
+  const needle=normName(query);if(!needle)return null;
+  const searchable=players.filter(player=>!player.archived).map(player=>({player,names:discordPlayerNames(player).map(normName)}));
+  return searchable.find(entry=>entry.names.includes(needle))?.player||searchable.find(entry=>entry.names.some(name=>name.length>=2&&(name.includes(needle)||needle.includes(name))))?.player||null;
+}
 function discordTeamLines(series,side){return (side==="BLUE"?series.blue:series.red).map(player=>`${roleKo[player.role]||player.role} · ${player.name} · ${Math.round(Number(player.power)||0).toLocaleString()}`).join("\n").slice(0,1024)}
 async function handleDiscordInteraction(interaction){
   if(interaction.type===1)return {type:1};
