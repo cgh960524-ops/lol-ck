@@ -62,6 +62,8 @@ async function verifyDiscordRequest(req,raw){
 const discordReply=(content,extra={})=>({type:4,data:{content,flags:64,...extra}});
 const optionValue=(interaction,name)=>interaction.data?.options?.find(option=>option.name===name)?.value;
 const discordTierScore={UNRANKED:1000,IRON:800,BRONZE:950,SILVER:1100,GOLD:1250,PLATINUM:1420,EMERALD:1580,DIAMOND:1780,MASTER:2050,GRANDMASTER:2200,CHALLENGER:2380};
+const discordTierKo={UNRANKED:"언랭크",IRON:"아이언",BRONZE:"브론즈",SILVER:"실버",GOLD:"골드",PLATINUM:"플래티넘",EMERALD:"에메랄드",DIAMOND:"다이아몬드",MASTER:"마스터",GRANDMASTER:"그랜드마스터",CHALLENGER:"챌린저"};
+const discordDivisionNumber={I:"1",II:"2",III:"3",IV:"4"};
 const discordInternalWeight=games=>games<=0?0:games===1?.25:games===2?.42:games===3?.55:games<=5?.7:games<=7?.82:games<=10?.9:games<20?.93:.95;
 const discordBasePower=player=>(discordTierScore[player.tier]||1000)+(Number(player.form)||0);
 function discordEffectiveRoleData(player,role){const actual=player.internalRoles?.[role],prior=player.rolePriors?.[role],games=actual?.games||0,priorGames=prior?.gamesEquivalent||0;if(!priorGames)return actual;return {games:games+priorGames,rating:Math.round(((actual?.rating||prior.rating)*games+prior.rating*priorGames)/Math.max(1,games+priorGames))}}
@@ -93,6 +95,17 @@ function recruitmentPayload(recruitment){
   return {content:`🎮 **${discordSafe(recruitment.startTime)} 내전 참가 모집**`,embeds:[{title:`선착순 참가 신청 · ${members.length}/10명`,description:`${countdown}시작 시각 ${clock}\n\n${lines}\n\n${full?"✅ 참가 인원이 확정됐습니다.":"아래 버튼을 눌러 참가하거나 취소할 수 있습니다."}`,color:full?5763719:3447003,url:publicAppUrl,fields:[{name:"시작 시간",value:clock,inline:true},{name:"남은 시간",value:recruitment.startAt?`<t:${recruitment.startAt}:R>`:"-",inline:true}],footer:{text:`ck-recruitment:${recruitment.id}:${recruitment.startAt||0}`}}],components:[{type:1,components:[{type:2,style:3,label:full?"참가 마감":"참가 신청",custom_id:`ck_join:${recruitment.id}`,disabled:full},{type:2,style:2,label:"참가 취소",custom_id:`ck_leave:${recruitment.id}`}]}]};
 }
 function cancelledRecruitmentPayload(recruitment){return {content:"🛑 **내전 참가 모집이 취소됐습니다.**",embeds:[{title:"모집 취소",description:`${discordSafe(recruitment.startTime||"예정된")} 내전 참가 신청이 방장에 의해 종료됐습니다.`,color:10038562,url:publicAppUrl}],components:[{type:1,components:[{type:2,style:2,label:"취소된 모집",custom_id:`ck_join:${recruitment.id}`,disabled:true}]}]}}
+async function handlePlayerRegistrationComponent(interaction){
+  const [action,userId]=String(interaction.data?.custom_id||"").split(":"),clickerId=discordUserId(interaction);
+  if(!userId||userId!==clickerId)return discordReply("이 등록 요청은 명령어를 실행한 본인만 확인할 수 있습니다.");
+  const state=await loadAppState(),pending=state.discordPlayerRegistrations?.[userId];
+  if(!pending)return {type:7,data:{content:"만료되었거나 이미 처리된 등록 요청입니다.",embeds:[],components:[]}};
+  delete state.discordPlayerRegistrations[userId];
+  if(action==="ck_player_cancel"){state.updatedAt=Date.now();await saveAppState(state);return {type:7,data:{content:`❌ **${discordSafe(pending.data.gameName)}#${discordSafe(pending.data.tagLine)}** 등록을 취소했습니다.`,embeds:[],components:[]}}}
+  if(action!=="ck_player_confirm")return discordReply("지원하지 않는 등록 요청입니다.");
+  const {player,updated}=upsertDiscordPlayer(state,pending.data,pending.alias);state.updatedAt=Date.now();await saveAppState(state);
+  return {type:7,data:{content:`✅ **${discordSafe(player.name)}${discordSafe(player.tag)}** ${updated?"정보 갱신":"플레이어 등록"} 완료`,embeds:[{title:updated?"플레이어 정보 갱신 완료":"플레이어 등록 완료",description:`Discord 별칭 · **${discordSafe(pending.alias)}**\n현재 티어 · ${discordTierKo[player.tier]||player.tier}${discordDivisionNumber[player.division]||""}\n주/부 포지션 · ${roleKo[player.role]||player.role} / ${roleKo[player.secondary]||player.secondary}\n초기 롤력 · **${discordPlayerPower(player).toLocaleString()}**`,color:5814783,url:publicAppUrl}],components:[]}};
+}
 async function handleRecruitmentComponent(interaction){
   const [action,id]=String(interaction.data?.custom_id||"").split(":"),state=await loadAppState();let recruitment=state.discordRecruitment;
   if(recruitment&&String(recruitment.id)!==id)return discordReply("새 모집으로 교체되어 종료된 참가 신청입니다.");
@@ -115,7 +128,7 @@ async function handleRecruitmentComponent(interaction){
 function discordTeamLines(series,side){return (side==="BLUE"?series.blue:series.red).map(player=>`${roleKo[player.role]||player.role} · ${player.name} · ${Math.round(Number(player.power)||0).toLocaleString()}`).join("\n").slice(0,1024)}
 async function handleDiscordInteraction(interaction){
   if(interaction.type===1)return {type:1};
-  if(interaction.type===3)return handleRecruitmentComponent(interaction);
+  if(interaction.type===3)return String(interaction.data?.custom_id||"").startsWith("ck_player_")?handlePlayerRegistrationComponent(interaction):handleRecruitmentComponent(interaction);
   if(interaction.type!==2)return discordReply("지원하지 않는 요청입니다.");
   const command=interaction.data?.name;
   if(command==="내전"){
@@ -127,9 +140,9 @@ async function handleDiscordInteraction(interaction){
     if(String(interaction.channel_id)!==discordPlayerRegistrationChannelId)return discordReply("이 명령어는 **#롤-플레이어등록** 채널에서만 사용할 수 있습니다.");
     const gameName=String(optionValue(interaction,"롤닉네임")||"").trim(),tagLine=String(optionValue(interaction,"태그")||"").trim().replace(/^#/,"");
     if(!gameName||!tagLine)return discordReply("롤 닉네임과 태그를 모두 입력해주세요.");
-    const alias=discordDisplayName(interaction),data=await getPlayerData(`${gameName}#${tagLine}`,5),{player,updated}=upsertDiscordPlayer(state,data,alias);
-    state.updatedAt=Date.now();await saveAppState(state);
-    return {type:4,data:{embeds:[{title:updated?"플레이어 정보 갱신 완료":"플레이어 등록 완료",description:`**${discordSafe(player.name)}${discordSafe(player.tag)}**\nDiscord 별칭 · **${discordSafe(alias)}**\n현재 티어 · ${discordSafe(player.tier)} ${discordSafe(player.division||"")} ${Number(player.lp)||0}LP\n주/부 포지션 · ${roleKo[player.role]||player.role} / ${roleKo[player.secondary]||player.secondary}\n초기 롤력 · **${discordPlayerPower(player).toLocaleString()}**`,color:5814783,url:publicAppUrl}],components:[{type:1,components:[{type:2,style:5,label:"응CK 연구소에서 보기",url:publicAppUrl}]}]}};
+    const alias=discordDisplayName(interaction),data=await getPlayerData(`${gameName}#${tagLine}`,5),userId=discordUserId(interaction),tierLabel=`${discordTierKo[data.tier]||data.tier}${discordDivisionNumber[data.division]||""}`;
+    state.discordPlayerRegistrations=state.discordPlayerRegistrations&&typeof state.discordPlayerRegistrations==="object"?state.discordPlayerRegistrations:{};state.discordPlayerRegistrations[userId]={data,alias,createdAt:Date.now()};state.updatedAt=Date.now();await saveAppState(state);
+    return {type:4,data:{content:`**${discordSafe(data.gameName)}#${discordSafe(data.tagLine)} ${discordSafe(tierLabel)}**가 맞습니까?`,embeds:[{title:"플레이어 정보 확인",description:`롤 닉네임 · **${discordSafe(data.gameName)}**\n태그 · **#${discordSafe(data.tagLine)}**\n현재 티어 · **${discordSafe(tierLabel)}**\n등록할 Discord 별칭 · **${discordSafe(alias)}**\n\n정보가 맞다면 아래 버튼을 눌러주세요.`,color:15844367}],components:[{type:1,components:[{type:2,style:3,label:"맞습니다 · 등록",custom_id:`ck_player_confirm:${userId}`},{type:2,style:4,label:"아닙니다 · 취소",custom_id:`ck_player_cancel:${userId}`}]}]}};
   }
   if(command==="내전취소"){const recruitment=state.discordRecruitment;if(!recruitment||recruitment.cancelled)return discordReply("현재 활성화된 내전 참가 모집이 없습니다.");recruitment.cancelled=true;recruitment.cancelledAt=Date.now();for(const member of recruitment.participants||[]){const player=players.find(item=>String(item.id)===String(member.playerId));if(player)player.selected=false}state.discordRecruitment=recruitment;state.updatedAt=Date.now();await saveAppState(state);return {type:4,data:cancelledRecruitmentPayload(recruitment)}}
   if(command==="내전모집")return {type:4,data:{content:"🎮 **응CK 내전 참가자를 모집합니다!**",embeds:[{title:"내전 참가 신청",description:"아래 버튼을 눌러 응CK 연구소에서 참가자를 선택해주세요. 10명이 확정되면 팀 대안과 예상 승률을 만들 수 있습니다.",color:3447003}],components:[{type:1,components:[{type:2,style:5,label:"참가자 선택하기",url:publicAppUrl}]}]}};
@@ -185,7 +198,7 @@ export async function handleRequest(req,res){
     if(pathname==="/api/discord/interactions"&&req.method==="POST"){
       const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!await verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
       let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
-      const deferredCommand=interaction.type===2&&["내전취소","플레이어등록"].includes(interaction.data?.name),deferredComponent=interaction.type===3&&/^ck_(join|leave):/.test(String(interaction.data?.custom_id||""));
+      const deferredCommand=interaction.type===2&&["내전취소","플레이어등록"].includes(interaction.data?.name),deferredComponent=interaction.type===3&&/^ck_(join|leave|player_confirm|player_cancel):/.test(String(interaction.data?.custom_id||""));
       if(deferredCommand||deferredComponent){json(res,200,{type:deferredComponent?6:5});waitUntil(finishDeferredDiscordInteraction(interaction));return}
       return json(res,200,await handleDiscordInteraction(interaction));
     }
@@ -195,7 +208,7 @@ export async function handleRequest(req,res){
     if(pathname==="/api/app-state"&&req.method==="GET")return json(res,200,await loadAppState());
     if(pathname==="/api/app-state"&&(req.method==="POST"||req.method==="PUT")){
       const body=await readBody(req),players=Array.isArray(body.players)?body.players.slice(0,200):[],seriesState=body.seriesState&&typeof body.seriesState==="object"?body.seriesState:{active:null,history:[]};
-      const previous=await loadAppState(),state={version:1,players,seriesState,ladderChoice:body.ladderChoice||null,discordRecruitment:previous.discordRecruitment||null,updatedAt:Date.now()};await saveAppState(state);await notifySeriesChanges(previous,state);return json(res,200,{ok:true,updatedAt:state.updatedAt});
+      const previous=await loadAppState(),state={version:1,players,seriesState,ladderChoice:body.ladderChoice||null,discordRecruitment:previous.discordRecruitment||null,discordPlayerRegistrations:previous.discordPlayerRegistrations||{},updatedAt:Date.now()};await saveAppState(state);await notifySeriesChanges(previous,state);return json(res,200,{ok:true,updatedAt:state.updatedAt});
     }
     if(pathname==="/api/internal-match"&&req.method==="GET"){const match=(await loadMatches()).find(m=>m.gameId===url.searchParams.get("id"));if(!match)throw Object.assign(new Error("서버에 없는 경기입니다. 방장 PC의 응CK 업로더로 먼저 전송해주세요."),{status:404});return json(res,200,match)}
     if(pathname==="/api/uploader/riot-key"&&req.method==="POST"){
