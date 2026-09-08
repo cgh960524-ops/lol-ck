@@ -107,7 +107,7 @@ export async function handleRequest(req,res){
   const url=new URL(req.url,`http://${req.headers.host||"localhost"}`),pathname=url.pathname;
   try{
     if(pathname==="/api/discord/interactions"&&req.method==="POST"){
-      const raw=await readRawBody(req);if(!verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
+      const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
       let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
       return json(res,200,await handleDiscordInteraction(interaction));
     }
