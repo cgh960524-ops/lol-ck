@@ -66,7 +66,9 @@ function discordPlayerNames(player){
 function findDiscordPlayer(players,query){
   const needle=normName(query);if(!needle)return null;
   const searchable=players.filter(player=>!player.archived).map(player=>({player,names:discordPlayerNames(player).map(normName)}));
-  return searchable.find(entry=>entry.names.includes(needle))?.player||searchable.find(entry=>entry.names.some(name=>name.length>=2&&(name.includes(needle)||needle.includes(name))))?.player||null;
+  const exact=searchable.filter(entry=>entry.names.includes(needle));if(exact.length===1)return exact[0].player;if(exact.length>1)return null;
+  const partial=searchable.filter(entry=>entry.names.some(name=>needle.length>=2&&name.length>=2&&(name.includes(needle)||needle.includes(name))));
+  return partial.length===1?partial[0].player:null;
 }
 function discordTeamLines(series,side){return (side==="BLUE"?series.blue:series.red).map(player=>`${roleKo[player.role]||player.role} · ${player.name} · ${Math.round(Number(player.power)||0).toLocaleString()}`).join("\n").slice(0,1024)}
 async function handleDiscordInteraction(interaction){
@@ -77,7 +79,7 @@ async function handleDiscordInteraction(interaction){
   if(command==="참가자"){const selected=players.filter(player=>player.selected);return discordReply(selected.length?`**현재 선택 ${selected.length}/10명**\n${selected.map((player,index)=>`${index+1}. ${player.name} · 롤력 ${Math.round(Number(player.internalRating)||0).toLocaleString()}`).join("\n")}`:"현재 선택된 참가자가 없습니다.")}
   if(command==="현재내전"){const series=seriesState.active;if(!series)return discordReply("현재 진행 중인 내전이 없습니다.");const score=scoreOf(series);return {type:4,data:{embeds:[{title:`${seriesTeamName(series,"BLUE")} ${score.blue} : ${score.red} ${seriesTeamName(series,"RED")}`,color:3447003,fields:[{name:`🔵 ${seriesTeamName(series,"BLUE")}`,value:discordTeamLines(series,"BLUE"),inline:true},{name:`🔴 ${seriesTeamName(series,"RED")}`,value:discordTeamLines(series,"RED"),inline:true}],url:publicAppUrl}],components:[{type:1,components:[{type:2,style:5,label:"응CK 연구소 열기",url:publicAppUrl}]}]}}
   }
-  if(command==="롤력"){const query=optionValue(interaction,"닉네임"),player=findDiscordPlayer(players,query);if(!player)return discordReply(`'${query}' 플레이어를 찾지 못했습니다.`);return {type:4,data:{embeds:[{title:`${player.name}${player.tag||""}`,description:`롤력 **${Math.round(Number(player.internalRating)||0).toLocaleString()}**\n내전 ${Number(player.internalGames)||0}경기 · KDA ${Number(player.internalKda||0).toFixed(2)}\n주 포지션 ${roleKo[player.role]||player.role} · 부 포지션 ${roleKo[player.secondary]||player.secondary}`,color:5814783,url:publicAppUrl}]}}
+  if(command==="롤력"){const query=optionValue(interaction,"닉네임"),player=findDiscordPlayer(players,query);if(!player)return discordReply(`'${query}'와 정확히 일치하는 플레이어 또는 별칭을 찾지 못했습니다.`);const aliasMatched=!discordPlayerNames(player).slice(0,2).map(normName).includes(normName(query));return {type:4,data:{embeds:[{title:`${player.name}${player.tag||""}`,description:`${aliasMatched?`별칭 **${query}**으로 연결\n`:""}롤력 **${Math.round(Number(player.internalRating)||0).toLocaleString()}**\n내전 ${Number(player.internalGames)||0}경기 · KDA ${Number(player.internalKda||0).toFixed(2)}\n주 포지션 ${roleKo[player.role]||player.role} · 부 포지션 ${roleKo[player.secondary]||player.secondary}`,color:5814783,url:publicAppUrl}]}}
   }
   if(command==="리더보드"){const ranked=[...players].filter(player=>!player.archived).sort((a,b)=>(Number(b.internalRating)||0)-(Number(a.internalRating)||0)).slice(0,10);return {type:4,data:{embeds:[{title:"🏆 응CK 롤력 리더보드",description:ranked.map((player,index)=>`${index+1}. **${player.name}** · ${Math.round(Number(player.internalRating)||0).toLocaleString()} (${Number(player.internalGames)||0}경기)`).join("\n")||"집계 데이터가 없습니다.",color:15844367,url:publicAppUrl}]}}
   }
