@@ -121,6 +121,13 @@ async function handleDiscordInteraction(interaction){
   }
   return discordReply("알 수 없는 명령어입니다.");
 }
+async function finishDeferredDiscordInteraction(interaction){
+  try{
+    const result=await handleDiscordInteraction(interaction),data=result?.data||{content:"처리가 완료됐습니다."},base=`https://discord.com/api/v10/webhooks/${process.env.DISCORD_APPLICATION_ID||interaction.application_id}/${interaction.token}`;
+    const ephemeral=Boolean(Number(data.flags||0)&64),response=await fetch(ephemeral?base:`${base}/messages/@original`,{method:ephemeral?"POST":"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    if(!response.ok)console.error("Discord deferred response failed",response.status,(await response.text()).slice(0,300));
+  }catch(error){console.error("Discord deferred interaction failed",error)}
+}
 const requireUploaderAuth=req=>{if(!uploadToken)throw Object.assign(new Error("서버에 UPLOADER_TOKEN이 설정되지 않았습니다."),{status:503});if(String(req.headers.authorization||"")!==`Bearer ${uploadToken}`)throw Object.assign(new Error("업로더 인증키가 올바르지 않습니다."),{status:401})};
 function validateMatch(match){
   if(!match || !/^\d{6,12}$/.test(String(match.gameId||""))) throw Object.assign(new Error("올바른 게임 ID가 아닙니다."),{status:400});
@@ -152,6 +159,8 @@ export async function handleRequest(req,res){
     if(pathname==="/api/discord/interactions"&&req.method==="POST"){
       const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!await verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
       let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
+      const deferredCommand=interaction.type===2&&interaction.data?.name==="내전",deferredComponent=interaction.type===3&&/^ck_(join|leave):/.test(String(interaction.data?.custom_id||""));
+      if(deferredCommand||deferredComponent){json(res,200,{type:deferredComponent?6:5});await finishDeferredDiscordInteraction(interaction);return}
       return json(res,200,await handleDiscordInteraction(interaction));
     }
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
