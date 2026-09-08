@@ -1,0 +1,18 @@
+/* Final dark-theme readability pass. Loaded last so legacy light-theme rules cannot hide text. */
+:root{--muted:#a8b6ca}
+body{font-family:Manrope,"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Gowun Dodum",sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select,textarea{font-family:inherit}
+small,.player-id,.tier,.member .rank,.member .lane,.player-metric span,.match-meta span,.history-set-lines span,.api-note,.dialog-copy{color:#a8b6ca}
+.hint,.text-btn,.lookup-guide span,.empty-state,.series-empty,.history-card{color:#9eacc0}
+.player-name,.player-metric strong,.member .name,.monthly-series-card>summary,.monthly-set-line span,.monthly-series-footer,.standalone-score{color:#f1f5fb}
+.player-id,.tier,.player-metric span,.member .rank,.member .lane,.match-meta span,.history-set-lines span,.monthly-series-card>summary time,.monthly-set-line,.monthly-set-line small,.monthly-standalone>summary{font-size:11px;line-height:1.45}
+.player-name{font-size:14px;line-height:1.35}.player-metric strong{font-size:13px}.player-metric.power-metric strong{font-size:18px}
+.role-chip,.role-lock,.refresh-player{color:#bac7d9;font-size:10px}.count{color:#aab7c9}.count strong{color:#8bb5ff}
+.history-month-btn{min-height:36px;color:#b3c0d2;font-size:12px}.history-month-btn span{color:#d6e1f0;opacity:1}.history-month-btn.active{background:#245da9;color:#fff;border-color:#70a7ff}
+.history-archive-toolbar small,.history-archive-toolbar label{color:#b0bdd0;font-size:11px}.history-archive-toolbar select{background:#0c1625;color:#f2f6fc;border-color:#40536f;font-size:12px}
+.history-month-summary span{color:#aab8cb;font-size:11px}.history-month-summary b{color:#f5f8fd;font-size:15px}
+.monthly-series-card{background:#111c2c;border-color:#30415a}.monthly-series-card>summary:hover{background:#17263c}.monthly-series-card>summary time,.monthly-series-card>summary i,.monthly-series-card>summary em,.monthly-set-line small,.monthly-series-footer small,.monthly-standalone>summary{color:#a9b7ca}
+.monthly-series-card>summary>span{font-size:13px}.monthly-series-card>summary strong{color:#fff;font-size:17px}.monthly-set-line b{color:#83afff}.monthly-series-footer button{background:#2f75ed;color:#fff;font-size:11px;font-weight:800}
+button:disabled,.primary:disabled,.shuffle:disabled{opacity:.68;color:#d5deeb!important;cursor:not-allowed}.close{color:#c4cede!important}
+input::placeholder,textarea::placeholder{color:#718198;opacity:1}
+@media(max-width:620px){body{font-size:14px}.player-id,.tier,.player-metric span,.member .rank,.member .lane{font-size:10px}.monthly-series-card>summary>span{font-size:12px}.monthly-series-card>summary strong{font-size:16px}.monthly-set-line,.monthly-set-line small{font-size:10px}.history-month-summary{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.history-month-summary span{padding:9px 7px}.history-month-summary b{font-size:13px}}
