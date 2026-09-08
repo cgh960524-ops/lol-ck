@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { verifyKey } from "discord-interactions";
+import { waitUntil } from "@vercel/functions";
 import { readFile } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -79,11 +80,11 @@ const discordDisplayName=interaction=>String(interaction.member?.nick||interacti
 const discordUserId=interaction=>String(interaction.member?.user?.id||interaction.user?.id||"");
 function recruitmentPayload(recruitment){
   const members=recruitment.participants||[],full=members.length>=10,lines=members.map((member,index)=>`${index+1}. **${discordSafe(member.discordName)}**${member.playerName?` → ${discordSafe(member.playerName)}`:" · ⚠️ 플레이어 미연결"}`).join("\n")||"아직 참가 신청자가 없습니다.";
-  return {content:`🎮 **${discordSafe(recruitment.startTime)} 내전 참가 모집**`,embeds:[{title:`선착순 참가 신청 · ${members.length}/10명`,description:`시작 시간 **${discordSafe(recruitment.startTime)}**\n\n${lines}\n\n${full?"✅ 참가 인원이 확정됐습니다.":"아래 버튼을 눌러 참가하거나 취소할 수 있습니다."}`,color:full?5763719:3447003,url:publicAppUrl}],components:[{type:1,components:[{type:2,style:3,label:full?"참가 마감":"참가 신청",custom_id:`ck_join:${recruitment.id}`,disabled:full},{type:2,style:2,label:"참가 취소",custom_id:`ck_leave:${recruitment.id}`}]}]};
+  return {content:`🎮 **${discordSafe(recruitment.startTime)} 내전 참가 모집**`,embeds:[{title:`선착순 참가 신청 · ${members.length}/10명`,description:`시작 시간 **${discordSafe(recruitment.startTime)}**\n\n${lines}\n\n${full?"✅ 참가 인원이 확정됐습니다.":"아래 버튼을 눌러 참가하거나 취소할 수 있습니다."}`,color:full?5763719:3447003,url:publicAppUrl,fields:[{name:"시작 시간",value:discordSafe(recruitment.startTime),inline:true}],footer:{text:`ck-recruitment:${recruitment.id}`}}],components:[{type:1,components:[{type:2,style:3,label:full?"참가 마감":"참가 신청",custom_id:`ck_join:${recruitment.id}`,disabled:full},{type:2,style:2,label:"참가 취소",custom_id:`ck_leave:${recruitment.id}`}]}]};
 }
 async function handleRecruitmentComponent(interaction){
-  const [action,id]=String(interaction.data?.custom_id||"").split(":"),state=await loadAppState(),recruitment=state.discordRecruitment;
-  if(!recruitment||String(recruitment.id)!==id)return discordReply("종료되었거나 새 모집으로 교체된 참가 신청입니다.");
+  const [action,id]=String(interaction.data?.custom_id||"").split(":"),state=await loadAppState();let recruitment=state.discordRecruitment;
+  if(!recruitment||String(recruitment.id)!==id){const embed=interaction.message?.embeds?.[0],startTime=embed?.fields?.find(field=>field.name==="시작 시간")?.value;if(!startTime)return discordReply("종료되었거나 새 모집으로 교체된 참가 신청입니다.");recruitment={id,startTime,participants:[],createdAt:Date.now(),updatedAt:Date.now()};(state.players||[]).forEach(player=>{player.selected=false})}
   const userId=discordUserId(interaction),discordName=discordDisplayName(interaction),participants=Array.isArray(recruitment.participants)?recruitment.participants:[];
   if(action==="ck_leave"){
     const index=participants.findIndex(member=>member.discordId===userId);if(index<0)return discordReply("현재 참가 명단에 없습니다.");
@@ -103,12 +104,12 @@ async function handleDiscordInteraction(interaction){
   if(interaction.type===1)return {type:1};
   if(interaction.type===3)return handleRecruitmentComponent(interaction);
   if(interaction.type!==2)return discordReply("지원하지 않는 요청입니다.");
-  const command=interaction.data?.name,state=await loadAppState(),players=Array.isArray(state.players)?state.players:[],seriesState=state.seriesState||{active:null,history:[]};
+  const command=interaction.data?.name;
   if(command==="내전"){
     const startTime=String(optionValue(interaction,"시작시간")||"").trim();if(!startTime)return discordReply("시작시간을 입력해주세요. 예: 오늘 22:00");
-    players.forEach(player=>{player.selected=false});const recruitment={id:`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`,startTime:startTime.slice(0,60),participants:[],createdAt:Date.now(),updatedAt:Date.now()};
-    await saveAppState({...state,players,discordRecruitment:recruitment,updatedAt:Date.now()});return {type:4,data:recruitmentPayload(recruitment)};
+    const recruitment={id:`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`,startTime:startTime.slice(0,60),participants:[],createdAt:Date.now(),updatedAt:Date.now()};return {type:4,data:recruitmentPayload(recruitment)};
   }
+  const state=await loadAppState(),players=Array.isArray(state.players)?state.players:[],seriesState=state.seriesState||{active:null,history:[]};
   if(command==="내전모집")return {type:4,data:{content:"🎮 **응CK 내전 참가자를 모집합니다!**",embeds:[{title:"내전 참가 신청",description:"아래 버튼을 눌러 응CK 연구소에서 참가자를 선택해주세요. 10명이 확정되면 팀 대안과 예상 승률을 만들 수 있습니다.",color:3447003}],components:[{type:1,components:[{type:2,style:5,label:"참가자 선택하기",url:publicAppUrl}]}]}};
   if(command==="참가자"){const selected=players.filter(player=>player.selected);return discordReply(selected.length?`**현재 선택 ${selected.length}/10명**\n${selected.map((player,index)=>`${index+1}. ${player.name} · 롤력 ${discordPlayerPower(player).toLocaleString()}`).join("\n")}`:"현재 선택된 참가자가 없습니다.")}
   if(command==="현재내전"){const series=seriesState.active;if(!series)return discordReply("현재 진행 중인 내전이 없습니다.");const score=scoreOf(series);return {type:4,data:{embeds:[{title:`${seriesTeamName(series,"BLUE")} ${score.blue} : ${score.red} ${seriesTeamName(series,"RED")}`,color:3447003,fields:[{name:`🔵 ${seriesTeamName(series,"BLUE")}`,value:discordTeamLines(series,"BLUE"),inline:true},{name:`🔴 ${seriesTeamName(series,"RED")}`,value:discordTeamLines(series,"RED"),inline:true}],url:publicAppUrl}],components:[{type:1,components:[{type:2,style:5,label:"응CK 연구소 열기",url:publicAppUrl}]}]}}
@@ -159,8 +160,8 @@ export async function handleRequest(req,res){
     if(pathname==="/api/discord/interactions"&&req.method==="POST"){
       const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!await verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
       let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
-      const deferredCommand=interaction.type===2&&interaction.data?.name==="내전",deferredComponent=interaction.type===3&&/^ck_(join|leave):/.test(String(interaction.data?.custom_id||""));
-      if(deferredCommand||deferredComponent){json(res,200,{type:deferredComponent?6:5});await finishDeferredDiscordInteraction(interaction);return}
+      const deferredComponent=interaction.type===3&&/^ck_(join|leave):/.test(String(interaction.data?.custom_id||""));
+      if(deferredComponent){json(res,200,{type:6});waitUntil(finishDeferredDiscordInteraction(interaction));return}
       return json(res,200,await handleDiscordInteraction(interaction));
     }
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
