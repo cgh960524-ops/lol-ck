@@ -166,7 +166,7 @@ async function syncServerMatches(){
   if(!response.ok||!Array.isArray(serverMatches))throw new Error(serverMatches.error||"서버 기록을 불러오지 못했습니다.");
   const merged=new Map(internalMatches.map(m=>[String(m.gameId),m]));
   for(const match of serverMatches){const local=merged.get(String(match.gameId));if(local){for(const participant of match.participants){const saved=local.participants.find(p=>p.puuid&&p.puuid===participant.puuid)||local.participants.find(p=>norm(p.gameName,p.tagLine)===norm(participant.gameName,participant.tagLine));if(["team-confirmed","series-confirmed","manual"].includes(saved?.roleSource)){participant.role=saved.role;participant.roleSource=saved.roleSource}}}merged.set(String(match.gameId),match)}
-  internalMatches=[...merged.values()];applyHistoricalRoleCorrections();saveMatches();recalculateRatings();savePlayers();renderPlayers();renderMatchHistory();updateAliasCount();
+  internalMatches=[...merged.values()];applyHistoricalRoleCorrections();saveMatches();recalculateRatings();savePlayers();renderPlayers();renderMatchHistory();updateAliasCount();renderLeaderboard();
  }catch(error){console.warn("내전 서버 동기화 실패:",error.message)}
 }
 let ladderRungs=[],ladderStart=0,ladderTimer=null,ladderBgmOn=false,ladderBgmLoop=null,ladderClockTimer=null;
