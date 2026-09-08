@@ -9,6 +9,7 @@
     "check": "node --check server.mjs && node --check client.js && node --check api/[...path].mjs"
   },
   "dependencies": {
-    "@vercel/blob": "^2.0.0"
+    "@vercel/blob": "^2.0.0",
+    "discord-interactions": "^4.4.0"
   }
 }

@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { createPublicKey, verify } from "node:crypto";
+import { verifyKey } from "discord-interactions";
 import { readFile } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,10 +52,10 @@ async function notifySeriesChanges(previous,next){
     await sendDiscord({content:"🏆 **내전 시리즈 최종 결과**",embeds:[{title:`${discordSafe(winner)} 최종 승리`,description:`**${discordSafe(seriesTeamName(after,"BLUE"))} ${score.blue} : ${score.red} ${discordSafe(seriesTeamName(after,"RED"))}**\n\n🏅 POG · **${discordSafe(pog?.name||"-")}** (${Number(after.pogScore||0).toFixed(1)}점)`,color:15844367,url:publicAppUrl,timestamp:new Date().toISOString()}]});
   }
 }
-function verifyDiscordRequest(req,raw){
+async function verifyDiscordRequest(req,raw){
   const publicKey=String(process.env.DISCORD_PUBLIC_KEY||"").trim(),signature=String(req.headers["x-signature-ed25519"]||""),timestamp=String(req.headers["x-signature-timestamp"]||"");
   if(!/^[0-9a-f]{64}$/i.test(publicKey)||!/^[0-9a-f]{128}$/i.test(signature)||!timestamp){console.error("Discord signature metadata invalid",{publicKeyLength:publicKey.length,signatureLength:signature.length,hasTimestamp:Boolean(timestamp),rawLength:raw.length,bodyType:typeof req.body});return false}
-  try{const key=createPublicKey({key:Buffer.concat([Buffer.from("302a300506032b6570032100","hex"),Buffer.from(publicKey,"hex")]),format:"der",type:"spki"}),valid=verify(null,Buffer.concat([Buffer.from(timestamp),raw]),key,Buffer.from(signature,"hex"));if(!valid)console.error("Discord signature mismatch",{rawLength:raw.length,bodyType:typeof req.body});return valid}catch(error){console.error("Discord signature exception",error.message);return false}
+  try{const valid=await verifyKey(raw,signature,timestamp,publicKey);if(!valid)console.error("Discord signature mismatch",{rawLength:raw.length,bodyType:typeof req.body});return valid}catch(error){console.error("Discord signature exception",error.message);return false}
 }
 const discordReply=(content,extra={})=>({type:4,data:{content,flags:64,...extra}});
 const optionValue=(interaction,name)=>interaction.data?.options?.find(option=>option.name===name)?.value;
@@ -107,7 +107,7 @@ export async function handleRequest(req,res){
   const url=new URL(req.url,`http://${req.headers.host||"localhost"}`),pathname=url.pathname;
   try{
     if(pathname==="/api/discord/interactions"&&req.method==="POST"){
-      const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
+      const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!await verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
       let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
       return json(res,200,await handleDiscordInteraction(interaction));
     }
