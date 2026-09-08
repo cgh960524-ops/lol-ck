@@ -21,6 +21,35 @@ async function loadAppState(){ const value=await loadJson("app-state",appStateFi
 async function saveAppState(value){await saveJson("app-state",appStateFile,value)}
 async function loadRuntimeConfig(){return loadJson("runtime-config",runtimeConfigFile,{})}
 async function saveRuntimeConfig(config){await saveJson("runtime-config",runtimeConfigFile,config)}
+const discordWebhookUrl=process.env.DISCORD_WEBHOOK_URL||"";
+const publicAppUrl=process.env.PUBLIC_APP_URL||"https://lol-ck.vercel.app/";
+const roleKo={TOP:"탑",JUNGLE:"정글",MID:"미드",ADC:"원딜",SUPPORT:"서폿"};
+const discordSafe=value=>String(value??"").replace(/([\\`*_{}\[\]()<>#+\-.!|])/g,"\\$1").slice(0,1000);
+const seriesCaptain=(series,side)=>{const team=side==="BLUE"?series?.blue:series?.red,id=side==="BLUE"?series?.blueCaptainId:series?.redCaptainId;return (team||[]).find(player=>String(player.id)===String(id))||[...(team||[])].sort((a,b)=>(Number(b.power)||0)-(Number(a.power)||0))[0]||{name:side}};
+const seriesTeamName=(series,side)=>`${seriesCaptain(series,side).name} 팀`;
+const rosterText=(series,side)=>(side==="BLUE"?series.blue:series.red).map(player=>`${roleKo[player.role]||player.role} · ${discordSafe(player.name)} (${Math.round(Number(player.power)||0).toLocaleString()})`).join("\n").slice(0,1024);
+async function sendDiscord(payload){
+  if(!discordWebhookUrl)return;
+  try{const response=await fetch(discordWebhookUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,username:"응CK 연구소"})});if(!response.ok)throw new Error(`Discord webhook ${response.status}: ${(await response.text()).slice(0,200)}`)}catch(error){console.error("Discord notification failed:",error.message)}
+}
+function scoreOf(series){return {blue:(series.sets||[]).filter(set=>set.imported&&set.winner==="BLUE").length,red:(series.sets||[]).filter(set=>set.imported&&set.winner==="RED").length}}
+async function notifySeriesChanges(previous,next){
+  if(!discordWebhookUrl)return;
+  const before=previous?.seriesState?.active,after=next?.seriesState?.active;
+  if(after&&String(after.id)!==String(before?.id))await sendDiscord({embeds:[{title:"⚔️ 새로운 내전이 시작됐습니다",description:`**${discordSafe(seriesTeamName(after,"BLUE"))} VS ${discordSafe(seriesTeamName(after,"RED"))}**`,color:3447003,fields:[{name:`🔵 ${discordSafe(seriesTeamName(after,"BLUE"))}`,value:rosterText(after,"BLUE"),inline:true},{name:`🔴 ${discordSafe(seriesTeamName(after,"RED"))}`,value:rosterText(after,"RED"),inline:true}],url:publicAppUrl,timestamp:new Date().toISOString()}]});
+  if(after){
+    const previousSets=new Set((before?.sets||[]).filter(set=>set.imported).map(set=>String(set.gameId)));
+    for(const set of (after.sets||[]).filter(set=>set.imported&&!previousSets.has(String(set.gameId)))){
+      const score=scoreOf(after),match=(await loadMatches()).find(item=>String(item.gameId)===String(set.gameId)),winner=seriesTeamName(after,set.winner),participants=match?.participants||[],winningSide=participants.find(player=>player.win)?.teamId,winningPlayers=participants.filter(player=>player.teamId===winningSide),mvp=[...winningPlayers].sort((a,b)=>(Number(b.damage)||0)-(Number(a.damage)||0))[0],kills=teamId=>participants.filter(player=>player.teamId===teamId).reduce((sum,player)=>sum+(Number(player.kills)||0),0),teamIds=[...new Set(participants.map(player=>player.teamId))];
+      const stats=match?`킬 ${kills(teamIds[0])} : ${kills(teamIds[1])} · ${Math.round((Number(match.duration)||0)/60)}분${mvp?`\n승리팀 딜량 1위 · ${discordSafe(mvp.gameName)} ${Math.round(Number(mvp.damage)||0).toLocaleString()}`:""}`:"경기 데이터 집계 완료";
+      await sendDiscord({embeds:[{title:`✅ ${set.number}세트 · ${discordSafe(winner)} 승리`,description:`현재 스코어 **${score.blue} : ${score.red}**\n${stats}`,color:set.winner==="BLUE"?3447003:15158332,fields:[{name:"게임 ID",value:discordSafe(set.gameId),inline:true},{name:"결과 보기",value:`[응CK 연구소 열기](${publicAppUrl})`,inline:true}],timestamp:new Date().toISOString()}]});
+    }
+  }
+  if(after?.finished&&!before?.finished){
+    const score=scoreOf(after),winner=seriesTeamName(after,after.finalWinner),pog=[...(after.blue||[]),...(after.red||[])].find(player=>String(player.id)===String(after.pogId));
+    await sendDiscord({content:"🏆 **내전 시리즈 최종 결과**",embeds:[{title:`${discordSafe(winner)} 최종 승리`,description:`**${discordSafe(seriesTeamName(after,"BLUE"))} ${score.blue} : ${score.red} ${discordSafe(seriesTeamName(after,"RED"))}**\n\n🏅 POG · **${discordSafe(pog?.name||"-")}** (${Number(after.pogScore||0).toFixed(1)}점)`,color:15844367,url:publicAppUrl,timestamp:new Date().toISOString()}]});
+  }
+}
 const requireUploaderAuth=req=>{if(!uploadToken)throw Object.assign(new Error("서버에 UPLOADER_TOKEN이 설정되지 않았습니다."),{status:503});if(String(req.headers.authorization||"")!==`Bearer ${uploadToken}`)throw Object.assign(new Error("업로더 인증키가 올바르지 않습니다."),{status:401})};
 function validateMatch(match){
   if(!match || !/^\d{6,12}$/.test(String(match.gameId||""))) throw Object.assign(new Error("올바른 게임 ID가 아닙니다."),{status:400});
@@ -55,7 +84,7 @@ export async function handleRequest(req,res){
     if(pathname==="/api/app-state"&&req.method==="GET")return json(res,200,await loadAppState());
     if(pathname==="/api/app-state"&&(req.method==="POST"||req.method==="PUT")){
       const body=await readBody(req),players=Array.isArray(body.players)?body.players.slice(0,200):[],seriesState=body.seriesState&&typeof body.seriesState==="object"?body.seriesState:{active:null,history:[]};
-      const state={version:1,players,seriesState,ladderChoice:body.ladderChoice||null,updatedAt:Date.now()};await saveAppState(state);return json(res,200,{ok:true,updatedAt:state.updatedAt});
+      const previous=await loadAppState(),state={version:1,players,seriesState,ladderChoice:body.ladderChoice||null,updatedAt:Date.now()};await saveAppState(state);await notifySeriesChanges(previous,state);return json(res,200,{ok:true,updatedAt:state.updatedAt});
     }
     if(pathname==="/api/internal-match"&&req.method==="GET"){const match=(await loadMatches()).find(m=>m.gameId===url.searchParams.get("id"));if(!match)throw Object.assign(new Error("서버에 없는 경기입니다. 방장 PC의 응CK 업로더로 먼저 전송해주세요."),{status:404});return json(res,200,match)}
     if(pathname==="/api/uploader/riot-key"&&req.method==="POST"){
