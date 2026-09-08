@@ -92,7 +92,7 @@ async function handleRecruitmentComponent(interaction){
     if(participants.some(member=>member.discordId===userId))return discordReply("이미 참가 신청이 완료됐습니다.");
     if(participants.length>=10)return discordReply("선착순 10명이 모두 확정됐습니다.");
     const candidates=[interaction.member?.nick,interaction.member?.user?.global_name,interaction.member?.user?.username,interaction.user?.global_name,interaction.user?.username].filter(Boolean),player=candidates.map(name=>findDiscordPlayer(state.players||[],name)).find(Boolean);
-    if(player)player.selected=true;
+    if(player){player.selected=true;player.nicknames=Array.isArray(player.nicknames)?player.nicknames:[];if(discordName&&!discordPlayerNames(player).map(normName).includes(normName(discordName)))player.nicknames.push(discordName)}
     participants.push({discordId:userId,discordName,playerId:player?.id||null,playerName:player?.name||"",joinedAt:Date.now()});
   }else return discordReply("지원하지 않는 참가 신청입니다.");
   recruitment.participants=participants;recruitment.updatedAt=Date.now();state.discordRecruitment=recruitment;state.updatedAt=Date.now();await saveAppState(state);
