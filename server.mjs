@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createPublicKey, verify } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,6 +15,7 @@ const types = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=ut
 
 const json = (res,status,body) => { res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}); res.end(JSON.stringify(body)); };
 const wait = ms => new Promise(resolve=>setTimeout(resolve,ms));
+const readRawBody = async req => { const chunks=[]; let size=0; for await (const chunk of req) { size+=chunk.length; if(size>1_000_000) throw Object.assign(new Error("요청 데이터가 너무 큽니다."),{status:413}); chunks.push(chunk); } return Buffer.concat(chunks); };
 const readBody = async req => { const chunks=[]; let size=0; for await (const chunk of req) { size+=chunk.length; if(size>6_000_000) throw Object.assign(new Error("요청 데이터가 너무 큽니다."),{status:413}); chunks.push(chunk); } return JSON.parse(Buffer.concat(chunks).toString("utf8")||"{}"); };
 async function loadMatches(){ const value=await loadJson("internal-matches",dataFile,[]);return Array.isArray(value)?value:[] }
 async function saveMatches(matches){ await saveJson("internal-matches",dataFile,matches) }
@@ -50,6 +52,32 @@ async function notifySeriesChanges(previous,next){
     await sendDiscord({content:"🏆 **내전 시리즈 최종 결과**",embeds:[{title:`${discordSafe(winner)} 최종 승리`,description:`**${discordSafe(seriesTeamName(after,"BLUE"))} ${score.blue} : ${score.red} ${discordSafe(seriesTeamName(after,"RED"))}**\n\n🏅 POG · **${discordSafe(pog?.name||"-")}** (${Number(after.pogScore||0).toFixed(1)}점)`,color:15844367,url:publicAppUrl,timestamp:new Date().toISOString()}]});
   }
 }
+function verifyDiscordRequest(req,raw){
+  const publicKey=String(process.env.DISCORD_PUBLIC_KEY||"").trim(),signature=String(req.headers["x-signature-ed25519"]||""),timestamp=String(req.headers["x-signature-timestamp"]||"");
+  if(!/^[0-9a-f]{64}$/i.test(publicKey)||!/^[0-9a-f]{128}$/i.test(signature)||!timestamp)return false;
+  try{const key=createPublicKey({key:Buffer.concat([Buffer.from("302a300506032b6570032100","hex"),Buffer.from(publicKey,"hex")]),format:"der",type:"spki"});return verify(null,Buffer.concat([Buffer.from(timestamp),raw]),key,Buffer.from(signature,"hex"))}catch{return false}
+}
+const discordReply=(content,extra={})=>({type:4,data:{content,flags:64,...extra}});
+const optionValue=(interaction,name)=>interaction.data?.options?.find(option=>option.name===name)?.value;
+const normName=value=>String(value||"").replace(/\s/g,"").toLowerCase();
+function findDiscordPlayer(players,query){const needle=normName(query);return players.find(player=>[player.name,...(player.nicknames||[]),...(player.aliases||[])].some(name=>normName(name).includes(needle)||needle.includes(normName(name))))}
+function discordTeamLines(series,side){return (side==="BLUE"?series.blue:series.red).map(player=>`${roleKo[player.role]||player.role} · ${player.name} · ${Math.round(Number(player.power)||0).toLocaleString()}`).join("\n").slice(0,1024)}
+async function handleDiscordInteraction(interaction){
+  if(interaction.type===1)return {type:1};
+  if(interaction.type!==2)return discordReply("지원하지 않는 요청입니다.");
+  const command=interaction.data?.name,state=await loadAppState(),players=Array.isArray(state.players)?state.players:[],seriesState=state.seriesState||{active:null,history:[]};
+  if(command==="내전모집")return {type:4,data:{content:"🎮 **응CK 내전 참가자를 모집합니다!**",embeds:[{title:"내전 참가 신청",description:"아래 버튼을 눌러 응CK 연구소에서 참가자를 선택해주세요. 10명이 확정되면 팀 대안과 예상 승률을 만들 수 있습니다.",color:3447003}],components:[{type:1,components:[{type:2,style:5,label:"참가자 선택하기",url:publicAppUrl}]}]}};
+  if(command==="참가자"){const selected=players.filter(player=>player.selected);return discordReply(selected.length?`**현재 선택 ${selected.length}/10명**\n${selected.map((player,index)=>`${index+1}. ${player.name} · 롤력 ${Math.round(Number(player.internalRating)||0).toLocaleString()}`).join("\n")}`:"현재 선택된 참가자가 없습니다.")}
+  if(command==="현재내전"){const series=seriesState.active;if(!series)return discordReply("현재 진행 중인 내전이 없습니다.");const score=scoreOf(series);return {type:4,data:{embeds:[{title:`${seriesTeamName(series,"BLUE")} ${score.blue} : ${score.red} ${seriesTeamName(series,"RED")}`,color:3447003,fields:[{name:`🔵 ${seriesTeamName(series,"BLUE")}`,value:discordTeamLines(series,"BLUE"),inline:true},{name:`🔴 ${seriesTeamName(series,"RED")}`,value:discordTeamLines(series,"RED"),inline:true}],url:publicAppUrl}],components:[{type:1,components:[{type:2,style:5,label:"응CK 연구소 열기",url:publicAppUrl}]}]}}
+  }
+  if(command==="롤력"){const query=optionValue(interaction,"닉네임"),player=findDiscordPlayer(players,query);if(!player)return discordReply(`'${query}' 플레이어를 찾지 못했습니다.`);return {type:4,data:{embeds:[{title:`${player.name}${player.tag||""}`,description:`롤력 **${Math.round(Number(player.internalRating)||0).toLocaleString()}**\n내전 ${Number(player.internalGames)||0}경기 · KDA ${Number(player.internalKda||0).toFixed(2)}\n주 포지션 ${roleKo[player.role]||player.role} · 부 포지션 ${roleKo[player.secondary]||player.secondary}`,color:5814783,url:publicAppUrl}]}}
+  }
+  if(command==="리더보드"){const ranked=[...players].filter(player=>!player.archived).sort((a,b)=>(Number(b.internalRating)||0)-(Number(a.internalRating)||0)).slice(0,10);return {type:4,data:{embeds:[{title:"🏆 응CK 롤력 리더보드",description:ranked.map((player,index)=>`${index+1}. **${player.name}** · ${Math.round(Number(player.internalRating)||0).toLocaleString()} (${Number(player.internalGames)||0}경기)`).join("\n")||"집계 데이터가 없습니다.",color:15844367,url:publicAppUrl}]}}
+  }
+  if(command==="최근결과"){const series=[...(seriesState.history||[])].filter(item=>item.finished).sort((a,b)=>(Number(b.finishedAt)||0)-(Number(a.finishedAt)||0))[0];if(!series)return discordReply("완료된 내전 시리즈가 없습니다.");const score=scoreOf(series),pog=[...(series.blue||[]),...(series.red||[])].find(player=>String(player.id)===String(series.pogId));return {type:4,data:{embeds:[{title:"최근 내전 결과",description:`**${seriesTeamName(series,"BLUE")} ${score.blue} : ${score.red} ${seriesTeamName(series,"RED")}**\n승리 · ${seriesTeamName(series,series.finalWinner)}\n🏅 POG · ${pog?.name||"-"} (${Number(series.pogScore||0).toFixed(1)}점)`,color:15844367,url:publicAppUrl}]}}
+  }
+  return discordReply("알 수 없는 명령어입니다.");
+}
 const requireUploaderAuth=req=>{if(!uploadToken)throw Object.assign(new Error("서버에 UPLOADER_TOKEN이 설정되지 않았습니다."),{status:503});if(String(req.headers.authorization||"")!==`Bearer ${uploadToken}`)throw Object.assign(new Error("업로더 인증키가 올바르지 않습니다."),{status:401})};
 function validateMatch(match){
   if(!match || !/^\d{6,12}$/.test(String(match.gameId||""))) throw Object.assign(new Error("올바른 게임 ID가 아닙니다."),{status:400});
@@ -78,6 +106,11 @@ async function getPlayerData(riotId,requestedCount){
 export async function handleRequest(req,res){
   const url=new URL(req.url,`http://${req.headers.host||"localhost"}`),pathname=url.pathname;
   try{
+    if(pathname==="/api/discord/interactions"&&req.method==="POST"){
+      const raw=await readRawBody(req);if(!verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
+      let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
+      return json(res,200,await handleDiscordInteraction(interaction));
+    }
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
     if(pathname==="/api/player")return json(res,200,await getPlayerData(url.searchParams.get("riotId")||"",url.searchParams.get("matches")));
     if(pathname==="/api/internal-matches"&&req.method==="GET")return json(res,200,await loadMatches());
