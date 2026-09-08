@@ -79,6 +79,7 @@ function findDiscordPlayer(players,query){
   const partial=searchable.filter(entry=>entry.names.some(name=>needle.length>=2&&name.length>=2&&(name.includes(needle)||needle.includes(name))));
   return partial.length===1?partial[0].player:null;
 }
+const findRegisteredRiotAccount=(players,data)=>players.find(player=>!player.archived&&(player.puuid===data.puuid||normName(`${player.name||""}${player.tag||""}`)===normName(`${data.gameName||""}#${data.tagLine||""}`)));
 const discordDisplayName=interaction=>String(interaction.member?.nick||interaction.member?.user?.global_name||interaction.user?.global_name||interaction.member?.user?.username||interaction.user?.username||"Discord 사용자").trim();
 const discordUserId=interaction=>String(interaction.member?.user?.id||interaction.user?.id||"");
 function upsertDiscordPlayer(state,data,alias){
@@ -103,6 +104,7 @@ async function handlePlayerRegistrationComponent(interaction){
   delete state.discordPlayerRegistrations[userId];
   if(action==="ck_player_cancel"){state.updatedAt=Date.now();await saveAppState(state);return {type:7,data:{content:`❌ **${discordSafe(pending.data.gameName)}#${discordSafe(pending.data.tagLine)}** 등록을 취소했습니다.`,embeds:[],components:[]}}}
   if(action!=="ck_player_confirm")return discordReply("지원하지 않는 등록 요청입니다.");
+  const duplicate=findRegisteredRiotAccount(state.players||[],pending.data);if(duplicate){state.updatedAt=Date.now();await saveAppState(state);return {type:7,data:{content:`⚠️ **${discordSafe(duplicate.name)}${discordSafe(duplicate.tag)}** 계정은 이미 등록되어 있어 변경하지 않았습니다.`,embeds:[],components:[]}}}
   const {player,updated}=upsertDiscordPlayer(state,pending.data,pending.alias);state.updatedAt=Date.now();await saveAppState(state);
   return {type:7,data:{content:`✅ **${discordSafe(player.name)}${discordSafe(player.tag)}** ${updated?"정보 갱신":"플레이어 등록"} 완료`,embeds:[{title:updated?"플레이어 정보 갱신 완료":"플레이어 등록 완료",description:`Discord 별칭 · **${discordSafe(pending.alias)}**\n현재 티어 · ${discordTierKo[player.tier]||player.tier}${discordDivisionNumber[player.division]||""}\n주/부 포지션 · ${roleKo[player.role]||player.role} / ${roleKo[player.secondary]||player.secondary}\n초기 롤력 · **${discordPlayerPower(player).toLocaleString()}**`,color:5814783,url:publicAppUrl}],components:[]}};
 }
@@ -140,7 +142,8 @@ async function handleDiscordInteraction(interaction){
     if(String(interaction.channel_id)!==discordPlayerRegistrationChannelId)return discordReply("이 명령어는 **#롤-플레이어등록** 채널에서만 사용할 수 있습니다.");
     const gameName=String(optionValue(interaction,"롤닉네임")||"").trim(),tagLine=String(optionValue(interaction,"태그")||"").trim().replace(/^#/,"");
     if(!gameName||!tagLine)return discordReply("롤 닉네임과 태그를 모두 입력해주세요.");
-    const alias=discordDisplayName(interaction),data=await getPlayerData(`${gameName}#${tagLine}`,5),userId=discordUserId(interaction),tierLabel=`${discordTierKo[data.tier]||data.tier}${discordDivisionNumber[data.division]||""}`;
+    const alias=discordDisplayName(interaction),data=await getPlayerData(`${gameName}#${tagLine}`,5),duplicate=findRegisteredRiotAccount(players,data);if(duplicate)return discordReply(`⚠️ **${discordSafe(duplicate.name)}${discordSafe(duplicate.tag)}** 계정은 이미 플레이어 목록에 등록되어 있습니다. 기존 정보는 변경하지 않았습니다.`);
+    const userId=discordUserId(interaction),tierLabel=`${discordTierKo[data.tier]||data.tier}${discordDivisionNumber[data.division]||""}`;
     state.discordPlayerRegistrations=state.discordPlayerRegistrations&&typeof state.discordPlayerRegistrations==="object"?state.discordPlayerRegistrations:{};state.discordPlayerRegistrations[userId]={data,alias,createdAt:Date.now()};state.updatedAt=Date.now();await saveAppState(state);
     return {type:4,data:{content:`**${discordSafe(data.gameName)}#${discordSafe(data.tagLine)} ${discordSafe(tierLabel)}**가 맞습니까?`,embeds:[{title:"플레이어 정보 확인",description:`롤 닉네임 · **${discordSafe(data.gameName)}**\n태그 · **#${discordSafe(data.tagLine)}**\n현재 티어 · **${discordSafe(tierLabel)}**\n등록할 Discord 별칭 · **${discordSafe(alias)}**\n\n정보가 맞다면 아래 버튼을 눌러주세요.`,color:15844367}],components:[{type:1,components:[{type:2,style:3,label:"맞습니다 · 등록",custom_id:`ck_player_confirm:${userId}`},{type:2,style:4,label:"아닙니다 · 취소",custom_id:`ck_player_cancel:${userId}`}]}]}};
   }
