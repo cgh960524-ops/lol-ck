@@ -54,8 +54,8 @@ async function notifySeriesChanges(previous,next){
 }
 function verifyDiscordRequest(req,raw){
   const publicKey=String(process.env.DISCORD_PUBLIC_KEY||"").trim(),signature=String(req.headers["x-signature-ed25519"]||""),timestamp=String(req.headers["x-signature-timestamp"]||"");
-  if(!/^[0-9a-f]{64}$/i.test(publicKey)||!/^[0-9a-f]{128}$/i.test(signature)||!timestamp)return false;
-  try{const key=createPublicKey({key:Buffer.concat([Buffer.from("302a300506032b6570032100","hex"),Buffer.from(publicKey,"hex")]),format:"der",type:"spki"});return verify(null,Buffer.concat([Buffer.from(timestamp),raw]),key,Buffer.from(signature,"hex"))}catch{return false}
+  if(!/^[0-9a-f]{64}$/i.test(publicKey)||!/^[0-9a-f]{128}$/i.test(signature)||!timestamp){console.error("Discord signature metadata invalid",{publicKeyLength:publicKey.length,signatureLength:signature.length,hasTimestamp:Boolean(timestamp),rawLength:raw.length,bodyType:typeof req.body});return false}
+  try{const key=createPublicKey({key:Buffer.concat([Buffer.from("302a300506032b6570032100","hex"),Buffer.from(publicKey,"hex")]),format:"der",type:"spki"}),valid=verify(null,Buffer.concat([Buffer.from(timestamp),raw]),key,Buffer.from(signature,"hex"));if(!valid)console.error("Discord signature mismatch",{rawLength:raw.length,bodyType:typeof req.body});return valid}catch(error){console.error("Discord signature exception",error.message);return false}
 }
 const discordReply=(content,extra={})=>({type:4,data:{content,flags:64,...extra}});
 const optionValue=(interaction,name)=>interaction.data?.options?.find(option=>option.name===name)?.value;
