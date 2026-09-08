@@ -147,7 +147,7 @@ async function handleDiscordInteraction(interaction){
 async function finishDeferredDiscordInteraction(interaction){
   try{
     const result=await handleDiscordInteraction(interaction),data=result?.data||{content:"처리가 완료됐습니다."},base=`https://discord.com/api/v10/webhooks/${process.env.DISCORD_APPLICATION_ID||interaction.application_id}/${interaction.token}`;
-    const ephemeral=Boolean(Number(data.flags||0)&64),response=await fetch(ephemeral?base:`${base}/messages/@original`,{method:ephemeral?"POST":"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    delete data.flags;const response=await fetch(`${base}/messages/@original`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
     if(!response.ok)console.error("Discord deferred response failed",response.status,(await response.text()).slice(0,300));
   }catch(error){
     console.error("Discord deferred interaction failed",error);
