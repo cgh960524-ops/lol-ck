@@ -26,6 +26,7 @@ async function loadRuntimeConfig(){return loadJson("runtime-config",runtimeConfi
 async function saveRuntimeConfig(config){await saveJson("runtime-config",runtimeConfigFile,config)}
 const discordWebhookUrl=process.env.DISCORD_WEBHOOK_URL||"";
 const publicAppUrl=process.env.PUBLIC_APP_URL||"https://lol-ck.vercel.app/";
+const discordPlayerRegistrationChannelId=process.env.DISCORD_PLAYER_REGISTRATION_CHANNEL_ID||"1547004141363142747";
 const roleKo={TOP:"탑",JUNGLE:"정글",MID:"미드",ADC:"원딜",SUPPORT:"서폿"};
 const discordSafe=value=>String(value??"").replace(/([\\`*_{}\[\]()<>#+\-.!|])/g,"\\$1").slice(0,1000);
 const seriesCaptain=(series,side)=>{const team=side==="BLUE"?series?.blue:series?.red,id=side==="BLUE"?series?.blueCaptainId:series?.redCaptainId;return (team||[]).find(player=>String(player.id)===String(id))||[...(team||[])].sort((a,b)=>(Number(b.power)||0)-(Number(a.power)||0))[0]||{name:side}};
@@ -78,6 +79,13 @@ function findDiscordPlayer(players,query){
 }
 const discordDisplayName=interaction=>String(interaction.member?.nick||interaction.member?.user?.global_name||interaction.user?.global_name||interaction.member?.user?.username||interaction.user?.username||"Discord 사용자").trim();
 const discordUserId=interaction=>String(interaction.member?.user?.id||interaction.user?.id||"");
+function upsertDiscordPlayer(state,data,alias){
+  const players=Array.isArray(state.players)?state.players:(state.players=[]),existing=players.find(player=>player.puuid===data.puuid),nextId=players.length?Math.max(0,...players.map(player=>Number(player.id)||0))+1:1,id=existing?.id||nextId;
+  const player={...(existing||{}),id,name:data.gameName,tag:`#${data.tagLine}`,tier:data.tier,division:data.division,lp:data.lp,role:data.role,secondary:data.secondary,form:data.form,color:existing?.color||"#4f7df3",selected:existing?.selected||false,archived:false,most:data.most,dataDragonVersion:data.dataDragonVersion,recentWinRate:data.recentWinRate,recentGames:data.recentGames,puuid:data.puuid};
+  const aliasKey=normName(alias);for(const other of players)if(other!==existing&&Array.isArray(other.nicknames))other.nicknames=other.nicknames.filter(name=>normName(name)!==aliasKey);
+  player.nicknames=Array.isArray(existing?.nicknames)?[...existing.nicknames]:[];if(alias&&!discordPlayerNames(player).map(normName).includes(aliasKey))player.nicknames.push(alias);
+  if(existing)Object.assign(existing,player);else players.push(player);return {player,updated:Boolean(existing)};
+}
 function nextKstStart(period,hour,minute){const now=new Date(),parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(now).filter(part=>part.type!=="literal").map(part=>[part.type,Number(part.value)])),hour24=(Number(hour)%12)+(period==="오후"?12:0);let target=Date.UTC(parts.year,parts.month-1,parts.day,hour24-9,Number(minute)||0,0);if(target<=now.getTime())target+=86_400_000;return Math.floor(target/1000)}
 function recruitmentPayload(recruitment){
   const members=recruitment.participants||[],full=members.length>=10,lines=members.map((member,index)=>`${index+1}. **${discordSafe(member.discordName)}**${member.playerName?` → ${discordSafe(member.playerName)}`:" · ⚠️ 플레이어 미연결"}`).join("\n")||"아직 참가 신청자가 없습니다.";
@@ -115,6 +123,14 @@ async function handleDiscordInteraction(interaction){
     const startAt=nextKstStart(period,hour,minute),startTime=`${period} ${hour}:${String(minute).padStart(2,"0")}`,recruitment={id:`${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`,startTime,startAt,participants:[],createdAt:Date.now(),updatedAt:Date.now()};waitUntil((async()=>{const state=await loadAppState();(state.players||[]).forEach(player=>{player.selected=false});await saveAppState({...state,discordRecruitment:recruitment,updatedAt:Date.now()})})());return {type:4,data:recruitmentPayload(recruitment)};
   }
   const state=await loadAppState(),players=Array.isArray(state.players)?state.players:[],seriesState=state.seriesState||{active:null,history:[]};
+  if(command==="플레이어등록"){
+    if(String(interaction.channel_id)!==discordPlayerRegistrationChannelId)return discordReply("이 명령어는 **#롤-플레이어등록** 채널에서만 사용할 수 있습니다.");
+    const gameName=String(optionValue(interaction,"롤닉네임")||"").trim(),tagLine=String(optionValue(interaction,"태그")||"").trim().replace(/^#/,"");
+    if(!gameName||!tagLine)return discordReply("롤 닉네임과 태그를 모두 입력해주세요.");
+    const alias=discordDisplayName(interaction),data=await getPlayerData(`${gameName}#${tagLine}`,5),{player,updated}=upsertDiscordPlayer(state,data,alias);
+    state.updatedAt=Date.now();await saveAppState(state);
+    return {type:4,data:{embeds:[{title:updated?"플레이어 정보 갱신 완료":"플레이어 등록 완료",description:`**${discordSafe(player.name)}${discordSafe(player.tag)}**\nDiscord 별칭 · **${discordSafe(alias)}**\n현재 티어 · ${discordSafe(player.tier)} ${discordSafe(player.division||"")} ${Number(player.lp)||0}LP\n주/부 포지션 · ${roleKo[player.role]||player.role} / ${roleKo[player.secondary]||player.secondary}\n초기 롤력 · **${discordPlayerPower(player).toLocaleString()}**`,color:5814783,url:publicAppUrl}],components:[{type:1,components:[{type:2,style:5,label:"응CK 연구소에서 보기",url:publicAppUrl}]}]}};
+  }
   if(command==="내전취소"){const recruitment=state.discordRecruitment;if(!recruitment||recruitment.cancelled)return discordReply("현재 활성화된 내전 참가 모집이 없습니다.");recruitment.cancelled=true;recruitment.cancelledAt=Date.now();for(const member of recruitment.participants||[]){const player=players.find(item=>String(item.id)===String(member.playerId));if(player)player.selected=false}state.discordRecruitment=recruitment;state.updatedAt=Date.now();await saveAppState(state);return {type:4,data:cancelledRecruitmentPayload(recruitment)}}
   if(command==="내전모집")return {type:4,data:{content:"🎮 **응CK 내전 참가자를 모집합니다!**",embeds:[{title:"내전 참가 신청",description:"아래 버튼을 눌러 응CK 연구소에서 참가자를 선택해주세요. 10명이 확정되면 팀 대안과 예상 승률을 만들 수 있습니다.",color:3447003}],components:[{type:1,components:[{type:2,style:5,label:"참가자 선택하기",url:publicAppUrl}]}]}};
   if(command==="참가자"){const selected=players.filter(player=>player.selected);return discordReply(selected.length?`**현재 선택 ${selected.length}/10명**\n${selected.map((player,index)=>`${index+1}. ${player.name} · 롤력 ${discordPlayerPower(player).toLocaleString()}`).join("\n")}`:"현재 선택된 참가자가 없습니다.")}
@@ -133,7 +149,10 @@ async function finishDeferredDiscordInteraction(interaction){
     const result=await handleDiscordInteraction(interaction),data=result?.data||{content:"처리가 완료됐습니다."},base=`https://discord.com/api/v10/webhooks/${process.env.DISCORD_APPLICATION_ID||interaction.application_id}/${interaction.token}`;
     const ephemeral=Boolean(Number(data.flags||0)&64),response=await fetch(ephemeral?base:`${base}/messages/@original`,{method:ephemeral?"POST":"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
     if(!response.ok)console.error("Discord deferred response failed",response.status,(await response.text()).slice(0,300));
-  }catch(error){console.error("Discord deferred interaction failed",error)}
+  }catch(error){
+    console.error("Discord deferred interaction failed",error);
+    try{const base=`https://discord.com/api/v10/webhooks/${process.env.DISCORD_APPLICATION_ID||interaction.application_id}/${interaction.token}`,response=await fetch(`${base}/messages/@original`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({content:`처리에 실패했습니다 · ${String(error?.message||"서버 오류가 발생했습니다.").slice(0,300)}`,embeds:[],components:[]})});if(!response.ok)console.error("Discord deferred error response failed",response.status)}catch(responseError){console.error("Discord deferred error response exception",responseError)}
+  }
 }
 const requireUploaderAuth=req=>{if(!uploadToken)throw Object.assign(new Error("서버에 UPLOADER_TOKEN이 설정되지 않았습니다."),{status:503});if(String(req.headers.authorization||"")!==`Bearer ${uploadToken}`)throw Object.assign(new Error("업로더 인증키가 올바르지 않습니다."),{status:401})};
 function validateMatch(match){
@@ -166,7 +185,7 @@ export async function handleRequest(req,res){
     if(pathname==="/api/discord/interactions"&&req.method==="POST"){
       const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!await verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
       let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
-      const deferredCommand=interaction.type===2&&interaction.data?.name==="내전취소",deferredComponent=interaction.type===3&&/^ck_(join|leave):/.test(String(interaction.data?.custom_id||""));
+      const deferredCommand=interaction.type===2&&["내전취소","플레이어등록"].includes(interaction.data?.name),deferredComponent=interaction.type===3&&/^ck_(join|leave):/.test(String(interaction.data?.custom_id||""));
       if(deferredCommand||deferredComponent){json(res,200,{type:deferredComponent?6:5});waitUntil(finishDeferredDiscordInteraction(interaction));return}
       return json(res,200,await handleDiscordInteraction(interaction));
     }
