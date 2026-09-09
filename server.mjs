@@ -24,6 +24,13 @@ async function loadAppState(){ const value=await loadJson("app-state",appStateFi
 async function saveAppState(value){await saveJson("app-state",appStateFile,value)}
 async function loadRuntimeConfig(){return loadJson("runtime-config",runtimeConfigFile,{})}
 async function saveRuntimeConfig(config){await saveJson("runtime-config",runtimeConfigFile,config)}
+async function registerDiscordHallOfFameCommand(){
+  const applicationId=String(process.env.DISCORD_APPLICATION_ID||"").trim(),botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim();
+  if(!applicationId||!botToken)throw Object.assign(new Error("DISCORD_APPLICATION_ID 또는 DISCORD_BOT_TOKEN이 설정되지 않았습니다."),{status:503});
+  const response=await fetch(`https://discord.com/api/v10/applications/${applicationId}/commands`,{method:"POST",headers:{Authorization:`Bot ${botToken}`,"Content-Type":"application/json"},body:JSON.stringify({name:"명예의전당",description:"응CK 내전의 부문별 명예의전당 순위를 확인합니다.",type:1})});
+  if(!response.ok)throw Object.assign(new Error(`Discord 명령어 등록 실패 (${response.status})`),{status:502,details:await response.text()});
+  const command=await response.json();return {ok:true,id:command.id,name:command.name};
+}
 const discordWebhookUrl=process.env.DISCORD_WEBHOOK_URL||"";
 const publicAppUrl=process.env.PUBLIC_APP_URL||"https://lol-ck.vercel.app/";
 const discordPlayerRegistrationChannelId=process.env.DISCORD_PLAYER_REGISTRATION_CHANNEL_ID||"1547004141363142747";
@@ -68,6 +75,17 @@ const discordInternalWeight=games=>games<=0?0:games===1?.25:games===2?.42:games=
 const discordBasePower=player=>(discordTierScore[player.tier]||1000)+(Number(player.form)||0);
 function discordEffectiveRoleData(player,role){const actual=player.internalRoles?.[role],prior=player.rolePriors?.[role],games=actual?.games||0,priorGames=prior?.gamesEquivalent||0;if(!priorGames)return actual;return {games:games+priorGames,rating:Math.round(((actual?.rating||prior.rating)*games+prior.rating*priorGames)/Math.max(1,games+priorGames))}}
 function discordPlayerPower(player,assigned=player.role){const games=player.internalGames||0,weight=discordInternalWeight(games),roleData=discordEffectiveRoleData(player,assigned),roleGames=roleData?.games||0,confidence=roleGames/(roleGames+8),position=assigned==="SUPPORT"?-35:assigned===player.role?70:assigned===player.secondary?-20:-160+120*confidence,overall=player.internalRating||discordBasePower(player),internal=roleGames?roleData.rating*confidence+overall*(1-confidence):overall;return Math.round(discordBasePower(player)*(1-weight)+internal*weight+position+(Number(player.internalChampionScore)||0))}
+const hofSum=(games,key)=>games.reduce((total,{mp})=>total+(Number(mp[key])||0),0);
+const hofIdentity=(gameName,tagLine)=>normName(`${gameName||""}#${tagLine||""}`);
+function discordHallOfFame(players,matches){
+  const active=players.filter(player=>!player.archived),findPlayer=mp=>active.find(player=>(player.playAliases||[]).some(alias=>alias.puuid===mp.puuid||hofIdentity(alias.gameName,alias.tagLine)===hofIdentity(mp.gameName,mp.tagLine)))||active.find(player=>player.puuid===mp.puuid)||active.find(player=>hofIdentity(player.name,String(player.tag||"").replace(/^#/,""))===hofIdentity(mp.gameName,mp.tagLine)),grouped=new Map(active.map(player=>[String(player.id),{player,games:[]}]))
+  for(const match of matches)for(const mp of match.participants||[]){const player=findPlayer(mp);if(player)grouped.get(String(player.id))?.games.push({mp,match})}
+  const rows=[...grouped.values()].map(({player,games})=>{const metricGames=games.filter(({mp})=>["objectiveDamage","damageTaken","mitigated","ccTime","wardsPlaced","wardsKilled","turretDamage"].some(key=>Number(mp[key])>0)),count=metricGames.length,minutes=Math.max(1,metricGames.reduce((total,item)=>total+(Number(item.match.duration)||0),0)/60),deaths=hofSum(metricGames,"deaths"),utility=metricGames.reduce((total,{mp})=>total+(Number(mp.healsOnTeammates)||0)+(Number(mp.shieldsOnTeammates)||0)+(Number(mp.unitsHealed)>1?Number(mp.healing)||0:0),0),chaos=metricGames.reduce((total,{mp})=>total+(Number(mp.deaths)||0)*12-(Number(mp.vision)||0)*.2-(Number(mp.damage)||0)/Math.max(1,Number(mp.gold)||0)*2,0),safety=metricGames.reduce((total,{mp})=>total+(Number(mp.kills)||0)*2+(Number(mp.assists)||0)*1.5+(Number(mp.vision)||0)*.35-(Number(mp.deaths)||0)*5,0);return {name:player.name,games:count,objective:count?(hofSum(metricGames,"objectiveDamage")*.5+hofSum(metricGames,"turretDamage")*.3+(hofSum(metricGames,"turretKills")+hofSum(metricGames,"inhibitorKills"))*200)/count:0,steal:hofSum(metricGames,"objectivesStolen")+hofSum(metricGames,"objectivesStolenAssists")*.5,wall:count?(hofSum(metricGames,"damageTaken")+hofSum(metricGames,"mitigated")*.7)/minutes*Math.max(.55,1.15-deaths/count/20):0,vision:count?(hofSum(metricGames,"vision")+hofSum(metricGames,"wardsKilled")*5+hofSum(metricGames,"controlWards")*3)/minutes:0,support:count?utility/minutes:0,cc:count?(hofSum(metricGames,"ccTime")+hofSum(metricGames,"totalCcTime")*.25)/minutes:0,efficiency:count?hofSum(metricGames,"damage")/Math.max(1,hofSum(metricGames,"gold"))*1000:0,demolition:count?(hofSum(metricGames,"turretDamage")+hofSum(metricGames,"turretKills")*1500)/count:0,chaos:count?chaos/count:0,safety:count?safety/count:0,soloKills:hofSum(metricGames,"soloKills"),soloDeaths:hofSum(metricGames,"soloDeaths")}});
+  const eligible=rows.filter(row=>row.games>=5),definitions=[
+    ["☠ 오브젝트 학살자","objective",value=>Math.round(value).toLocaleString()],["◎ 스틸의 신","steal",value=>`${value.toFixed(1)}회`],["◆ 철벽","wall",value=>Math.round(value).toLocaleString()],["◉ 맵의 지배자","vision",value=>value.toFixed(1)],["♡ 구원의 손","support",value=>Math.round(value).toLocaleString()],["▣ 움직임 봉쇄","cc",value=>`${value.toFixed(1)}초`],["◇ 가성비의 제왕","efficiency",value=>Math.round(value).toLocaleString()],["⚒ 철거반장","demolition",value=>Math.round(value).toLocaleString()],["⚡ 돌발행동 장인","chaos",value=>`${value.toFixed(1)}점`],["♨ 안전제일 콘돔장인","safety",value=>`${value.toFixed(1)}점`],["⚔ 주사위 6도란","soloKills",value=>`${value}회`],["☠ 주사위 1도란","soloDeaths",value=>`${value}회`]
+  ];
+  return {eligible:eligible.length,fields:definitions.map(([name,key,format])=>{const ranked=eligible.filter(row=>row[key]>0).sort((a,b)=>b[key]-a[key]||b.games-a.games).slice(0,3);return {name,value:ranked.length?ranked.map((row,index)=>`${index+1}. **${discordSafe(row.name)}** · ${format(row[key])}`).join("\n"):"집계 기준을 충족한 기록이 없습니다.",inline:true}})};
+}
 const normName=value=>String(value||"").normalize("NFKC").replace(/^@/,"").replace(/\s/g,"").toLowerCase();
 function discordPlayerNames(player){
   return [player.name,`${player.name||""}${player.tag||""}`,player.nickname,player.alias,...(Array.isArray(player.nicknames)?player.nicknames:[]),...(Array.isArray(player.aliases)?player.aliases:[])].filter(Boolean);
@@ -156,6 +174,8 @@ async function handleDiscordInteraction(interaction){
   }
   if(command==="리더보드"){const ranked=[...players].filter(player=>!player.archived).sort((a,b)=>discordPlayerPower(b)-discordPlayerPower(a)).slice(0,10);return {type:4,data:{embeds:[{title:"🏆 응CK 롤력 리더보드",description:ranked.map((player,index)=>`${index+1}. **${player.name}** · ${discordPlayerPower(player).toLocaleString()} (${Number(player.internalGames)||0}경기)`).join("\n")||"집계 데이터가 없습니다.",color:15844367,url:publicAppUrl}]}}
   }
+  if(command==="명예의전당"){const hall=discordHallOfFame(players,await loadMatches()),groups=[hall.fields.slice(0,6),hall.fields.slice(6)];return {type:4,data:{embeds:groups.map((fields,index)=>({title:index?"🎖️ 응CK 명예의전당 · 특별 기록":"🏛️ 응CK 명예의전당",description:index?"솔킬·피솔킬과 플레이 성향을 포함한 재미 지표입니다.":`확장 지표가 있는 내전 5경기 이상 · 대상 ${hall.eligible}명`,color:index?10181046:15844367,url:`${publicAppUrl}#leaderboard`,fields}))}}
+  }
   if(command==="최근결과"){const series=[...(seriesState.history||[])].filter(item=>item.finished).sort((a,b)=>(Number(b.finishedAt)||0)-(Number(a.finishedAt)||0))[0];if(!series)return discordReply("완료된 내전 시리즈가 없습니다.");const score=scoreOf(series),pog=[...(series.blue||[]),...(series.red||[])].find(player=>String(player.id)===String(series.pogId));return {type:4,data:{embeds:[{title:"최근 내전 결과",description:`**${seriesTeamName(series,"BLUE")} ${score.blue} : ${score.red} ${seriesTeamName(series,"RED")}**\n승리 · ${seriesTeamName(series,series.finalWinner)}\n🏅 POG · ${pog?.name||"-"} (${Number(series.pogScore||0).toFixed(1)}점)`,color:15844367,url:publicAppUrl}]}}
   }
   return discordReply("알 수 없는 명령어입니다.");
@@ -213,6 +233,7 @@ export async function handleRequest(req,res){
       return json(res,200,await handleDiscordInteraction(interaction));
     }
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
+    if(pathname==="/api/discord/register-hall-of-fame"&&req.method==="POST"){requireUploaderAuth(req);return json(res,200,await registerDiscordHallOfFameCommand())}
     if(pathname==="/api/player")return json(res,200,await getPlayerData(url.searchParams.get("riotId")||"",url.searchParams.get("matches")));
     if(pathname==="/api/internal-matches"&&req.method==="GET")return json(res,200,await loadMatches());
     if(pathname==="/api/app-state"&&req.method==="GET")return json(res,200,await loadAppState());
