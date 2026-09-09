@@ -25,11 +25,10 @@ async function saveAppState(value){await saveJson("app-state",appStateFile,value
 async function loadRuntimeConfig(){return loadJson("runtime-config",runtimeConfigFile,{})}
 async function saveRuntimeConfig(config){await saveJson("runtime-config",runtimeConfigFile,config)}
 async function registerDiscordHallOfFameCommand(){
-  const applicationId=String(process.env.DISCORD_APPLICATION_ID||"").trim(),botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim();
+  const applicationId=String(process.env.DISCORD_APPLICATION_ID||"").trim(),botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),guildId=String(process.env.DISCORD_GUILD_ID||"1434891063327461481").trim();
   if(!applicationId||!botToken)throw Object.assign(new Error("DISCORD_APPLICATION_ID 또는 DISCORD_BOT_TOKEN이 설정되지 않았습니다."),{status:503});
-  const response=await fetch(`https://discord.com/api/v10/applications/${applicationId}/commands`,{method:"POST",headers:{Authorization:`Bot ${botToken}`,"Content-Type":"application/json"},body:JSON.stringify({name:"명예의전당",description:"응CK 내전의 부문별 명예의전당 순위를 확인합니다.",type:1})});
-  if(!response.ok)throw Object.assign(new Error(`Discord 명령어 등록 실패 (${response.status})`),{status:502,details:await response.text()});
-  const command=await response.json();return {ok:true,id:command.id,name:command.name};
+  const payload={name:"명예의전당",description:"응CK 내전의 부문별 명예의전당 순위를 확인합니다.",type:1},register=async url=>{const response=await fetch(url,{method:"POST",headers:{Authorization:`Bot ${botToken}`,"Content-Type":"application/json"},body:JSON.stringify(payload)});if(!response.ok)throw Object.assign(new Error(`Discord 명령어 등록 실패 (${response.status})`),{status:502,details:await response.text()});return response.json()},globalCommand=await register(`https://discord.com/api/v10/applications/${applicationId}/commands`),guildCommand=guildId?await register(`https://discord.com/api/v10/applications/${applicationId}/guilds/${guildId}/commands`):null;
+  return {ok:true,id:globalCommand.id,name:globalCommand.name,guildId,guildCommandId:guildCommand?.id||null};
 }
 const discordWebhookUrl=process.env.DISCORD_WEBHOOK_URL||"";
 const publicAppUrl=process.env.PUBLIC_APP_URL||"https://lol-ck.vercel.app/";
