@@ -55,7 +55,7 @@ async function postDiscordTeamAlternative(body){
   const startText=String(body.startText||"").slice(0,100),blue=seriesTeamName(series,"BLUE"),red=seriesTeamName(series,"RED"),blueRate=Math.round(Number(series.blueWinRate??.5)*100),redRate=100-blueRate;
   const payload={content:`📋 **${startText||"응CK 내전"} 팀 대안표**\n${blue} ${blueRate}%  VS  ${red} ${redRate}%`,allowed_mentions:{parse:[]},attachments:[{id:0,filename:"eungck-team-alternative.jpg",description:`${blue} 대 ${red} 팀 구성표`}]};
   const form=new FormData();form.append("payload_json",JSON.stringify(payload));form.append("files[0]",new Blob([bytes],{type:"image/jpeg"}),"eungck-team-alternative.jpg");
-  const target=webhook?`${webhook}${webhook.includes("?")?"&":"?"}wait=true`:`https://discord.com/api/v10/channels/${channelId}/messages`,headers=webhook?{}:{Authorization:`Bot ${botToken}`};
+  const useBot=Boolean(botToken&&channelId),target=useBot?`https://discord.com/api/v10/channels/${channelId}/messages`:`${webhook}${webhook.includes("?")?"&":"?"}wait=true`,headers=useBot?{Authorization:`Bot ${botToken}`}:{};
   const response=await fetch(target,{method:"POST",headers,body:form});
   if(!response.ok)throw Object.assign(new Error(`Discord 대안표 게시 실패 (${response.status})`),{status:502,details:await response.text()});
   const message=await response.json();series.discordAlternativeMessageId=message.id;series.discordAlternativePostedAt=Date.now();state.updatedAt=Date.now();await saveAppState(state);
