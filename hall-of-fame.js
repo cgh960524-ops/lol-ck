@@ -17,5 +17,11 @@ async function renderServerHallOfFame(){
     const summary=document.getElementById("leaderboardSummary");if(summary&&!summary.querySelector("[data-hof-count]"))summary.insertAdjacentHTML("beforeend",`<span data-hof-count>명예의전당 표본 <b>${eligible.length}명</b></span>`);
   }catch(error){console.warn("명예의전당 서버 집계 실패:",error.message)}
 }
-window.addEventListener("DOMContentLoaded",()=>setTimeout(renderServerHallOfFame,1400));
-let hofRepairTimer;new MutationObserver(()=>{if(document.querySelector("#chaosLeaderboard .leaderboard-row"))return;clearTimeout(hofRepairTimer);hofRepairTimer=setTimeout(renderServerHallOfFame,80)}).observe(document.querySelector(".award-grid"),{childList:true,subtree:true});
+const hofCardIds=["objectiveLeaderboard","stealLeaderboard","wallLeaderboard","visionLeaderboard","supportLeaderboard","ccLeaderboard","efficiencyLeaderboard","demolitionLeaderboard","chaosLeaderboard","safetyLeaderboard","soloKillLeaderboard","soloDeathLeaderboard"];
+const hofCardsComplete=()=>hofCardIds.every(id=>document.querySelector(`#${id} .leaderboard-row, #${id} .leaderboard-empty`));
+const ensureServerHallOfFame=()=>{if(!hofCardsComplete())renderServerHallOfFame()};
+window.addEventListener("DOMContentLoaded",()=>setTimeout(renderServerHallOfFame,350));
+window.addEventListener("pageshow",()=>setTimeout(renderServerHallOfFame,100));
+window.addEventListener("focus",()=>setTimeout(renderServerHallOfFame,100));
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(renderServerHallOfFame,100)});
+let hofRepairTimer;new MutationObserver(()=>{if(hofCardsComplete())return;clearTimeout(hofRepairTimer);hofRepairTimer=setTimeout(ensureServerHallOfFame,120)}).observe(document.querySelector(".award-grid"),{childList:true,subtree:true});
