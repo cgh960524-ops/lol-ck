@@ -45,8 +45,8 @@ async function sendDiscord(payload){
   try{const response=await fetch(discordWebhookUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,username:"응CK 연구소"})});if(!response.ok)throw new Error(`Discord webhook ${response.status}: ${(await response.text()).slice(0,200)}`)}catch(error){console.error("Discord notification failed:",error.message)}
 }
 async function postDiscordTeamAlternative(body){
-  const botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),channelId=String(process.env.DISCORD_ALTERNATIVES_CHANNEL_ID||"1538160845995905034").trim();
-  if(!botToken||!channelId)throw Object.assign(new Error("Discord 봇 토큰 또는 대안표 채널이 설정되지 않았습니다."),{status:503});
+  const botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),channelId=String(process.env.DISCORD_ALTERNATIVES_CHANNEL_ID||"1538160845995905034").trim(),webhook=String(process.env.DISCORD_WEBHOOK_URL||"").trim();
+  if(!webhook&&(!botToken||!channelId))throw Object.assign(new Error("Discord 웹훅 또는 봇 채널 설정이 필요합니다."),{status:503});
   const state=await loadAppState(),series=state.seriesState?.active;
   if(!series||String(series.id)!==String(body.seriesId||""))throw Object.assign(new Error("현재 진행 중인 내전과 팀 대안표가 일치하지 않습니다."),{status:409});
   const match=String(body.imageDataUrl||"").match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/);
@@ -55,7 +55,8 @@ async function postDiscordTeamAlternative(body){
   const startText=String(body.startText||"").slice(0,100),blue=seriesTeamName(series,"BLUE"),red=seriesTeamName(series,"RED"),blueRate=Math.round(Number(series.blueWinRate??.5)*100),redRate=100-blueRate;
   const payload={content:`📋 **${startText||"응CK 내전"} 팀 대안표**\n${blue} ${blueRate}%  VS  ${red} ${redRate}%`,allowed_mentions:{parse:[]},attachments:[{id:0,filename:"eungck-team-alternative.jpg",description:`${blue} 대 ${red} 팀 구성표`}]};
   const form=new FormData();form.append("payload_json",JSON.stringify(payload));form.append("files[0]",new Blob([bytes],{type:"image/jpeg"}),"eungck-team-alternative.jpg");
-  const response=await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`,{method:"POST",headers:{Authorization:`Bot ${botToken}`},body:form});
+  const target=webhook?`${webhook}${webhook.includes("?")?"&":"?"}wait=true`:`https://discord.com/api/v10/channels/${channelId}/messages`,headers=webhook?{}:{Authorization:`Bot ${botToken}`};
+  const response=await fetch(target,{method:"POST",headers,body:form});
   if(!response.ok)throw Object.assign(new Error(`Discord 대안표 게시 실패 (${response.status})`),{status:502,details:await response.text()});
   const message=await response.json();series.discordAlternativeMessageId=message.id;series.discordAlternativePostedAt=Date.now();state.updatedAt=Date.now();await saveAppState(state);
   return {ok:true,channelId,messageId:message.id};
