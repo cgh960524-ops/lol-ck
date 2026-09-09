@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="player-stats.css" />
   <link rel="stylesheet" href="custom-team.css" />
   <link rel="stylesheet" href="rebrand.css" />
-  <link rel="stylesheet" href="leaderboard.css?v=20260902-leaderboard2" />
+  <link rel="stylesheet" href="leaderboard.css?v=20260909-synergy" />
   <link rel="stylesheet" href="roster-cards.css?v=20260902-two-column" />
   <link rel="stylesheet" href="internal-most.css?v=20260902-internal-most" />
   <link rel="stylesheet" href="selected-summary.css?v=20260902-selection-reset" />
@@ -75,7 +75,7 @@
       <div class="leaderboard-head"><div><p class="step">INTERNAL GAME LEADERBOARD</p><h2>응CK 리더보드</h2><p>저장된 내전 경기와 확정 포지션 데이터만 집계합니다. 선수 행을 누르면 세부 지표를 확인할 수 있습니다.</p></div><div class="leaderboard-summary" id="leaderboardSummary"></div></div>
       <div class="leaderboard-grid"><article id="powerLeaderboard"></article><article id="pogLeaderboard"></article><article id="dpsLeaderboard"></article><article id="kdaLeaderboard"></article><article id="winLeaderboard"></article><article id="gamesLeaderboard"></article></div>
       <div class="award-head"><div><p class="step">EUNGCK HALL OF FAME</p><h2>응CK 명예의 전당</h2><p>확장 경기 지표를 경기당·분당 수치로 환산해 서로 다른 역할의 활약을 보여줍니다.</p></div><span>최소 5경기</span></div>
-      <div class="leaderboard-grid award-grid"><article id="objectiveLeaderboard"></article><article id="stealLeaderboard"></article><article id="wallLeaderboard"></article><article id="visionLeaderboard"></article><article id="supportLeaderboard"></article><article id="ccLeaderboard"></article><article id="efficiencyLeaderboard"></article><article id="demolitionLeaderboard"></article><article id="chaosLeaderboard"></article><article id="safetyLeaderboard"></article><article id="soloKillLeaderboard"></article><article id="soloDeathLeaderboard"></article></div>
+      <div class="leaderboard-grid award-grid"><article id="objectiveLeaderboard"></article><article id="stealLeaderboard"></article><article id="wallLeaderboard"></article><article id="visionLeaderboard"></article><article id="supportLeaderboard"></article><article id="ccLeaderboard"></article><article id="efficiencyLeaderboard"></article><article id="demolitionLeaderboard"></article><article id="chaosLeaderboard"></article><article id="safetyLeaderboard"></article><article id="soloKillLeaderboard"></article><article id="soloDeathLeaderboard"></article><article id="bestSynergyLeaderboard"></article><article id="worstSynergyLeaderboard"></article></div>
     </section>
     <section class="series-section" id="seriesSection"><div><p class="step">MATCH EVENT</p><h2>진행 중인 내전</h2></div><div id="seriesSummary" class="series-empty">팀 구성을 확정하면 세트 이벤트가 시작됩니다.</div></section>
   </main>
@@ -93,6 +93,6 @@
   <dialog id="rosterImportDialog" class="roster-import-dialog"><form method="dialog" id="rosterImportForm"><button class="close" value="cancel">×</button><p class="step">ROSTER TEXT MATCH</p><h2>참가자 명단 붙여넣기</h2><p class="dialog-copy">디스코드 명단을 그대로 붙여넣으세요. 닉네임·별칭·연결 계정을 비교해 가장 가까운 참가자를 선택합니다.</p><label>확정 인원 텍스트<textarea name="rosterText" rows="7" required placeholder="1.승우 2.응디 3.수정 4.두혁 5.민규"></textarea></label><button class="primary" id="rosterImportSubmit"><span>명단 분석하고 선택하기</span></button><div id="rosterImportResult" class="roster-import-result hidden"></div></form></dialog>
   <div id="toast" role="status"></div>
   <script type="module" src="client.js?v=20260909-hof-sync"></script>
-  <script type="module" src="hall-of-fame.js?v=20260909-server-repair2"></script>
+  <script type="module" src="hall-of-fame.js?v=20260909-synergy"></script>
 </body>
 </html>
