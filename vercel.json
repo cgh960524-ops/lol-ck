@@ -5,5 +5,11 @@
       "maxDuration": 60,
       "includeFiles": "**/*"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/discord/recruitment-reminder",
+      "schedule": "* * * * *"
+    }
+  ]
 }

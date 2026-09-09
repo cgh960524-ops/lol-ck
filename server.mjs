@@ -105,6 +105,22 @@ function findDiscordPlayer(players,query){
   const partial=searchable.filter(entry=>entry.names.some(name=>needle.length>=2&&name.length>=2&&(name.includes(needle)||needle.includes(name))));
   return partial.length===1?partial[0].player:null;
 }
+async function sendDiscordRecruitmentReminder(){
+  const state=await loadAppState(),recruitment=state.discordRecruitment,now=Math.floor(Date.now()/1000);
+  if(!recruitment||recruitment.cancelled||(state.discordCancelledRecruitmentIds||[]).includes(String(recruitment.id)))return {ok:true,sent:false,reason:"no-active-recruitment"};
+  if(recruitment.reminderSentAt)return {ok:true,sent:false,reason:"already-sent",sentAt:recruitment.reminderSentAt};
+  const startAt=Number(recruitment.startAt)||0,reminderAt=startAt-300;
+  if(!startAt||now<reminderAt||now>=startAt)return {ok:true,sent:false,reason:"not-due",startAt,reminderAt,now};
+  const participants=(recruitment.participants||[]).filter(member=>/^\d{15,22}$/.test(String(member.discordId||""))),userIds=[...new Set(participants.map(member=>String(member.discordId)))];
+  if(!userIds.length)return {ok:true,sent:false,reason:"no-discord-participants"};
+  const botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),channelId=String(process.env.DISCORD_GENERAL_CHANNEL_ID||"1434891064443011113").trim();
+  if(!botToken||!channelId)throw Object.assign(new Error("Discord 봇 토큰 또는 일반 채널 ID가 설정되지 않았습니다."),{status:503});
+  const timeText=new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(new Date(startAt*1000)),mentions=userIds.map(id=>`<@${id}>`).join(" ");
+  const response=await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`,{method:"POST",headers:{Authorization:`Bot ${botToken}`,"Content-Type":"application/json"},body:JSON.stringify({content:`🔔 금일 ${timeText} 내전 시작 5분 전입니다. 음성 채널로 모여주세요!\n${mentions}`,allowed_mentions:{parse:[],users:userIds}})});
+  if(!response.ok)throw Object.assign(new Error(`Discord 내전 알림 전송 실패 (${response.status})`),{status:502,details:await response.text()});
+  const message=await response.json();recruitment.reminderSentAt=Date.now();recruitment.reminderMessageId=message.id;state.updatedAt=Date.now();await saveAppState(state);
+  return {ok:true,sent:true,recruitmentId:recruitment.id,participantCount:userIds.length,messageId:message.id};
+}
 function reconcileDiscordRecruitment(state){const recruitment=state.discordRecruitment;if(!recruitment||recruitment.cancelled||!Array.isArray(recruitment.participants))return false;const players=Array.isArray(state.players)?state.players:[];let changed=false;for(const member of recruitment.participants){const current=players.find(player=>!player.archived&&String(player.id)===String(member.playerId)),matched=current||findDiscordPlayer(players,member.discordName);if(!matched)continue;if(String(member.playerId)!==String(matched.id)||member.playerName!==matched.name){member.playerId=matched.id;member.playerName=matched.name;changed=true}if(!matched.selected){matched.selected=true;changed=true}}if(changed){recruitment.updatedAt=Date.now();state.updatedAt=Date.now()}return changed}
 const findRegisteredRiotAccount=(players,data)=>players.find(player=>!player.archived&&(player.puuid===data.puuid||normName(`${player.name||""}${player.tag||""}`)===normName(`${data.gameName||""}#${data.tagLine||""}`)));
 const discordDisplayName=interaction=>String(interaction.member?.nick||interaction.member?.user?.global_name||interaction.user?.global_name||interaction.member?.user?.username||interaction.user?.username||"Discord 사용자").trim();
@@ -249,6 +265,7 @@ export async function handleRequest(req,res){
       return json(res,200,await handleDiscordInteraction(interaction));
     }
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
+    if(pathname==="/api/discord/recruitment-reminder"&&req.method==="GET"){const agent=String(req.headers["user-agent"]||""),authorized=agent.includes("vercel-cron/1.0")||(uploadToken&&String(req.headers.authorization||"")===`Bearer ${uploadToken}`);if(!authorized)return json(res,401,{error:"unauthorized"});return json(res,200,await sendDiscordRecruitmentReminder())}
     if(pathname==="/api/discord/register-hall-of-fame"&&req.method==="POST"){requireUploaderAuth(req);return json(res,200,await registerDiscordHallOfFameCommand())}
     if(pathname==="/api/discord/post-player-panel"&&req.method==="POST"){requireUploaderAuth(req);return json(res,200,await postDiscordPlayerRegistrationPanel())}
     if(pathname==="/api/discord/cancel-recruitment"&&req.method==="POST"){requireUploaderAuth(req);const body=await readBody(req),rawId=String(body.recruitmentId||"").trim(),targetId=(rawId.match(/ck-recruitment:([^:]+)/)?.[1]||rawId).trim();if(!targetId)throw Object.assign(new Error("모집 ID가 필요합니다."),{status:400});const state=await loadAppState(),active=state.discordRecruitment;if(active&&String(active.id)===targetId){for(const member of active.participants||[]){const player=(state.players||[]).find(item=>String(item.id)===String(member.playerId));if(player)player.selected=false}state.discordRecruitment=null}state.discordCancelledRecruitmentIds=[...new Set([...(state.discordCancelledRecruitmentIds||[]),targetId])].slice(-50);state.updatedAt=Date.now();await saveAppState(state);return json(res,200,{ok:true,recruitmentId:targetId,removedActive:Boolean(active&&String(active.id)===targetId)})}
