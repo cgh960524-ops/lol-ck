@@ -4,7 +4,7 @@ import vm from "node:vm";
 const root = new URL("../", import.meta.url);
 const backupRoot = new URL("../backups/", import.meta.url);
 const snapshots = (await readdir(backupRoot)).sort();
-const selected = process.argv[2] || snapshots.at(-1);
+const selected = process.argv.slice(2).find(argument => !argument.startsWith("--")) || snapshots.at(-1);
 if (!selected) throw new Error("No production snapshot found.");
 
 const state = JSON.parse(await readFile(new URL(`${selected}/app-state.json`, backupRoot), "utf8"));
