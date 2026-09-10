@@ -1,0 +1,7 @@
+.player-stats-dialog{width:min(1180px,calc(100% - 28px))}
+.champ-stat-expanded b{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.champ-role-list{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;text-align:left!important}
+.champ-role-badge{display:inline-flex;align-items:center;border:1px solid #3c6fb7;border-radius:99px;background:#16345d;color:#9fc4ff!important;padding:2px 6px;font-size:8px;font-weight:800;line-height:1.25;white-space:nowrap}
+.champ-role-badge.secondary{border-color:#39485e;background:#192537;color:#9caabd!important}
+.stats-card>h3 small{margin-left:6px;color:#71839d;font-size:9px}
+@media(max-width:760px){.champ-stat-expanded b{align-items:flex-start;flex-direction:column;gap:4px}.champ-role-list{gap:3px}.champ-role-badge{padding:2px 5px}}
