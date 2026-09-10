@@ -14,6 +14,7 @@ async function renderServerHallOfFame(){
     const [stateResponse,matchesResponse]=await Promise.all([fetch("/api/app-state",{cache:"no-store"}),fetch("/api/internal-matches",{cache:"no-store"})]);
     const state=await stateResponse.json(),matches=await matchesResponse.json(),players=(state.players||[]).filter(player=>!player.archived);
     const findPlayer=mp=>players.find(player=>(player.playAliases||[]).some(alias=>alias.puuid===mp.puuid||hofNorm(alias.gameName,alias.tagLine)===hofNorm(mp.gameName,mp.tagLine)))||players.find(player=>player.puuid===mp.puuid)||players.find(player=>hofNorm(player.name,String(player.tag||"").replace(/^#/,""))===hofNorm(mp.gameName,mp.tagLine));
+    for(const series of [...(state.seriesState?.history||[]),...(state.seriesState?.active?[state.seriesState.active]:[])]){const roster=[...(series.blue||[]),...(series.red||[])];for(const set of series.sets||[]){const match=matches.find(item=>String(item.gameId)===String(set.gameId));if(!match)continue;for(const mp of match.participants||[]){const player=findPlayer(mp),slot=player&&roster.find(member=>String(member.id)===String(player.id)),role=slot&&(set.roleOverrides?.[String(slot.id)]||slot.role);if(role)mp.role=role}}}
     const grouped=new Map(players.map(player=>[String(player.id),{player,games:[]}]))
     const pairStats=new Map();
     for(const match of matches)for(const mp of match.participants||[]){const player=findPlayer(mp);if(player)grouped.get(String(player.id))?.games.push({mp,match})}
