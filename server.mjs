@@ -44,6 +44,21 @@ async function sendDiscord(payload){
   if(!discordWebhookUrl)return;
   try{const response=await fetch(discordWebhookUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,username:"응CK 연구소"})});if(!response.ok)throw new Error(`Discord webhook ${response.status}: ${(await response.text()).slice(0,200)}`)}catch(error){console.error("Discord notification failed:",error.message)}
 }
+let discordSettlementChannelCache="";
+async function discordSettlementChannel(){
+ const configured=String(process.env.DISCORD_SETTLEMENT_CHANNEL_ID||"").trim();if(configured)return configured;if(discordSettlementChannelCache)return discordSettlementChannelCache;
+ const botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),guildId=String(process.env.DISCORD_GUILD_ID||"").trim();if(!botToken||!guildId)return "";
+ const response=await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`,{headers:{Authorization:`Bot ${botToken}`}});if(!response.ok)throw new Error(`Discord 정산 채널 조회 실패 (${response.status})`);
+ const channels=await response.json(),channel=channels.find(item=>item.type===0&&String(item.name||"").replace(/^#/,"").trim()==="정산");discordSettlementChannelCache=String(channel?.id||"");return discordSettlementChannelCache;
+}
+async function sendDiscordSettlement(series){
+ try{const score=scoreOf(series),wins=Math.max(score.blue,score.red),prize=wins>=3?50000:wins>=2?25000:0;if(!prize)return;
+  const botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),channelId=await discordSettlementChannel();if(!botToken||!channelId){console.error("Discord settlement notification skipped: bot token or #정산 channel missing");return}
+  const side=series.finalWinner,team=side==="BLUE"?(series.blue||[]):(series.red||[]),winner=seriesTeamName(series,side),format=wins>=3?"5판 3선승제":"3판 2선승제",players=team.map((player,index)=>`${index+1}. **${discordSafe(player.name)}** · ${prize.toLocaleString()}원`).join("\n"),total=prize*team.length;
+  const payload={content:"💰 **내전 상금 정산 안내**",embeds:[{title:`${discordSafe(winner)} 승리팀 정산`,description:`${format} · 최종 스코어 **${score.blue} : ${score.red}**\n\n${players}`,color:15844367,fields:[{name:"1인당 상금",value:`**${prize.toLocaleString()}원**`,inline:true},{name:"총 정산액",value:`**${total.toLocaleString()}원**`,inline:true},{name:"패배팀",value:"정산 없음",inline:true}],footer:{text:`시리즈 ${series.seriesNumber||series.id}`},url:publicAppUrl,timestamp:new Date().toISOString()}],allowed_mentions:{parse:[]}};
+  const response=await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`,{method:"POST",headers:{Authorization:`Bot ${botToken}`,"Content-Type":"application/json"},body:JSON.stringify(payload)});if(!response.ok)throw new Error(`Discord 정산 알림 실패 (${response.status}): ${(await response.text()).slice(0,200)}`);series.discordSettlementSentAt=Date.now();series.discordSettlementChannelId=channelId;
+ }catch(error){console.error("Discord settlement notification failed:",error.message)}
+}
 async function postDiscordTeamAlternative(body){
   const botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),channelId=String(process.env.DISCORD_ALTERNATIVES_CHANNEL_ID||"1538160845995905034").trim(),webhook=String(process.env.DISCORD_WEBHOOK_URL||"").trim();
   if(!webhook&&(!botToken||!channelId))throw Object.assign(new Error("Discord 웹훅 또는 봇 채널 설정이 필요합니다."),{status:503});
@@ -75,6 +90,7 @@ async function notifySeriesChanges(previous,next){
     }
   }
   if(after?.finished&&!before?.finished){
+    if(!after.discordSettlementSentAt)await sendDiscordSettlement(after);
     const score=scoreOf(after),winner=seriesTeamName(after,after.finalWinner),pog=[...(after.blue||[]),...(after.red||[])].find(player=>String(player.id)===String(after.pogId));
     await sendDiscord({content:"🏆 **내전 시리즈 최종 결과**",embeds:[{title:`${discordSafe(winner)} 최종 승리`,description:`**${discordSafe(seriesTeamName(after,"BLUE"))} ${score.blue} : ${score.red} ${discordSafe(seriesTeamName(after,"RED"))}**\n\n🏅 POG · **${discordSafe(pog?.name||"-")}** (${Number(after.pogScore||0).toFixed(1)}점)`,color:15844367,url:publicAppUrl,timestamp:new Date().toISOString()}]});
   }
