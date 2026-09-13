@@ -47,7 +47,7 @@ async function sendDiscord(payload){
 let discordSettlementChannelCache="";
 async function discordSettlementChannel(){
  const configured=String(process.env.DISCORD_SETTLEMENT_CHANNEL_ID||"").trim();if(configured)return configured;if(discordSettlementChannelCache)return discordSettlementChannelCache;
- const botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),guildId=String(process.env.DISCORD_GUILD_ID||"").trim();if(!botToken||!guildId)return "";
+ const botToken=String(process.env.DISCORD_BOT_TOKEN||"").trim(),guildId=String(process.env.DISCORD_GUILD_ID||"1434891063327461481").trim();if(!botToken||!guildId)return "";
  const response=await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`,{headers:{Authorization:`Bot ${botToken}`}});if(!response.ok)throw new Error(`Discord 정산 채널 조회 실패 (${response.status})`);
  const channels=await response.json(),channel=channels.find(item=>item.type===0&&String(item.name||"").replace(/^#/,"").trim()==="정산");discordSettlementChannelCache=String(channel?.id||"");return discordSettlementChannelCache;
 }
