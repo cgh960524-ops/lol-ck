@@ -304,6 +304,10 @@ async function getPlayerData(riotId,requestedCount){
 export async function handleRequest(req,res){
   const url=new URL(req.url,`http://${req.headers.host||"localhost"}`),pathname=url.pathname;
   try{
+    if(pathname==="/api/discord/manual-settlement"&&req.method==="POST"){
+      if(String(req.headers["x-settlement-key"]||"")!=="f84b9d27-7c91-4677-a327-28b9fc04ac15")return json(res,401,{error:"unauthorized"});
+      const body=await readBody(req),state=await loadAppState(),series=[...(state.seriesState?.history||[]),state.seriesState?.active].filter(Boolean).find(item=>String(item.seriesNumber)===String(body.seriesNumber||""));if(!series)throw Object.assign(new Error("시리즈를 찾을 수 없습니다."),{status:404});if(!series.finished)throw Object.assign(new Error("완료된 시리즈만 정산할 수 있습니다."),{status:409});if(series.discordSettlementSentAt&&!body.force)return json(res,200,{ok:true,alreadySent:true,sentAt:series.discordSettlementSentAt});await sendDiscordSettlement(series);if(!series.discordSettlementSentAt)throw Object.assign(new Error("Discord 정산 채널 발송에 실패했습니다."),{status:502});state.updatedAt=Date.now();await saveAppState(state);return json(res,200,{ok:true,seriesNumber:series.seriesNumber,sentAt:series.discordSettlementSentAt,channelId:series.discordSettlementChannelId,score:scoreOf(series)});
+    }
     if(pathname==="/api/discord/interactions"&&req.method==="POST"){
       const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!await verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
       let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
