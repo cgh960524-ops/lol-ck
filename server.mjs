@@ -309,7 +309,6 @@ async function getPlayerData(riotId,requestedCount){
 export async function handleRequest(req,res){
   const url=new URL(req.url,`http://${req.headers.host||"localhost"}`),pathname=url.pathname;
   try{
-    if(pathname==="/api/discord/refresh-settlement"&&req.method==="POST"){const body=await readBody(req);if(String(req.headers["x-settlement-key"]||"")!=="38870298-1523-4546-9225-187bfa23faf2")return json(res,401,{error:"unauthorized"});const state=await loadAppState(),series=[...(state.seriesState?.history||[]),state.seriesState?.active].filter(Boolean).find(item=>String(item.seriesNumber)===String(body.seriesNumber||""));if(!series)throw Object.assign(new Error("시리즈를 찾을 수 없습니다."),{status:404});const result=await refreshDiscordSettlementMessage(series,state.players||[]);state.updatedAt=Date.now();await saveAppState(state);return json(res,200,{ok:true,seriesNumber:series.seriesNumber,...result})}
     if(pathname==="/api/discord/interactions"&&req.method==="POST"){
       const raw=req.body!==undefined?Buffer.from(Buffer.isBuffer(req.body)?req.body:typeof req.body==="string"?req.body:JSON.stringify(req.body)):await readRawBody(req);if(!await verifyDiscordRequest(req,raw))return json(res,401,{error:"invalid request signature"});
       let interaction;try{interaction=JSON.parse(raw.toString("utf8"))}catch{throw Object.assign(new Error("올바른 Discord 요청이 아닙니다."),{status:400})}
