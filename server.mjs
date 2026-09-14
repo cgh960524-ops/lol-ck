@@ -339,6 +339,9 @@ export async function handleRequest(req,res){
       requireUploaderAuth(req);
       const match=validateMatch(await readBody(req)),matches=await loadMatches(),index=matches.findIndex(m=>m.gameId===match.gameId);if(index>=0)matches[index]=match;else matches.push(match);await saveMatches(matches);return json(res,index>=0?200:201,{ok:true,replaced:index>=0,gameId:match.gameId,total:matches.length});
     }
+    if(pathname==="/api/internal-matches/upload-bulk"&&req.method==="POST"){
+      requireUploaderAuth(req);const body=await readBody(req),incoming=(Array.isArray(body.matches)?body.matches:[]).slice(0,200).map(validateMatch);if(!incoming.length)throw Object.assign(new Error("업로드할 경기 데이터가 없습니다."),{status:400});const matches=await loadMatches(),byId=new Map(matches.map(match=>[String(match.gameId),match]));for(const match of incoming)byId.set(String(match.gameId),match);const merged=[...byId.values()];await saveMatches(merged);return json(res,200,{ok:true,received:incoming.length,total:merged.length});
+    }
     const file=pathname==="/"?"index.html":pathname.slice(1),data=staticAssets[file];if(data===undefined){res.writeHead(404).end("Not Found");return}res.writeHead(200,{"Content-Type":types[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});res.end(data);
   }catch(error){console.error(error.details||error);json(res,error.status||500,{error:error.message||"서버 오류가 발생했습니다."})}
 }
