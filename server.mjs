@@ -336,8 +336,9 @@ export async function handleRequest(req,res){
       requireUploaderAuth(req);const body=await readBody(req),riotApiKey=String(body.riotApiKey||"").trim();if(!/^RGAPI-[A-Za-z0-9-]{20,}$/.test(riotApiKey))throw Object.assign(new Error("올바른 Riot API 키 형식이 아닙니다."),{status:400});const config=await loadRuntimeConfig();config.riotApiKey=riotApiKey;config.updatedAt=Date.now();await saveRuntimeConfig(config);return json(res,200,{ok:true,configured:true});
     }
     if(pathname==="/api/internal-matches/upload"&&req.method==="POST"){
-      requireUploaderAuth(req);
-      const match=validateMatch(await readBody(req)),matches=await loadMatches(),index=matches.findIndex(m=>m.gameId===match.gameId);if(index>=0)matches[index]=match;else matches.push(match);await saveMatches(matches);return json(res,index>=0?200:201,{ok:true,replaced:index>=0,gameId:match.gameId,total:matches.length});
+      requireUploaderAuth(req);const body=await readBody(req);
+      if(Array.isArray(body.matches)){const incoming=body.matches.slice(0,200).map(validateMatch);if(!incoming.length)throw Object.assign(new Error("업로드할 경기 데이터가 없습니다."),{status:400});const matches=await loadMatches(),byId=new Map(matches.map(match=>[String(match.gameId),match]));for(const match of incoming)byId.set(String(match.gameId),match);const merged=[...byId.values()];await saveMatches(merged);return json(res,200,{ok:true,received:incoming.length,total:merged.length})}
+      const match=validateMatch(body),matches=await loadMatches(),index=matches.findIndex(m=>m.gameId===match.gameId);if(index>=0)matches[index]=match;else matches.push(match);await saveMatches(matches);return json(res,index>=0?200:201,{ok:true,replaced:index>=0,gameId:match.gameId,total:matches.length});
     }
     if(pathname==="/api/internal-matches/upload-bulk"&&req.method==="POST"){
       requireUploaderAuth(req);const body=await readBody(req),incoming=(Array.isArray(body.matches)?body.matches:[]).slice(0,200).map(validateMatch);if(!incoming.length)throw Object.assign(new Error("업로드할 경기 데이터가 없습니다."),{status:400});const matches=await loadMatches(),byId=new Map(matches.map(match=>[String(match.gameId),match]));for(const match of incoming)byId.set(String(match.gameId),match);const merged=[...byId.values()];await saveMatches(merged);return json(res,200,{ok:true,received:incoming.length,total:merged.length});
