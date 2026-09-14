@@ -16,8 +16,10 @@ async function renderServerHallOfFame(){
     const findPlayer=mp=>players.find(player=>(player.playAliases||[]).some(alias=>alias.puuid===mp.puuid||hofNorm(alias.gameName,alias.tagLine)===hofNorm(mp.gameName,mp.tagLine)))||players.find(player=>player.puuid===mp.puuid)||players.find(player=>hofNorm(player.name,String(player.tag||"").replace(/^#/,""))===hofNorm(mp.gameName,mp.tagLine));
     for(const series of [...(state.seriesState?.history||[]),...(state.seriesState?.active?[state.seriesState.active]:[])]){const roster=[...(series.blue||[]),...(series.red||[])];for(const set of series.sets||[]){const match=matches.find(item=>String(item.gameId)===String(set.gameId));if(!match)continue;for(const mp of match.participants||[]){const player=findPlayer(mp),slot=player&&roster.find(member=>String(member.id)===String(player.id)),role=slot&&(set.roleOverrides?.[String(slot.id)]||slot.role);if(role)mp.role=role}}}
     const grouped=new Map(players.map(player=>[String(player.id),{player,games:[]}]))
+    const objectiveLastHits=new Map(players.map(player=>[String(player.id),{total:0,dragon:0,horde:0,herald:0,baron:0,elder:0}]));
     const pairStats=new Map();
     for(const match of matches)for(const mp of match.participants||[]){const player=findPlayer(mp);if(player)grouped.get(String(player.id))?.games.push({mp,match})}
+    for(const match of matches)for(const event of match.epicObjectives||[]){const player=findPlayer({puuid:event.killerPuuid});if(!player)continue;const stats=objectiveLastHits.get(String(player.id));if(!stats)continue;const type=String(event.monsterType||"").toUpperCase(),subType=String(event.monsterSubType||"").toUpperCase();stats.total++;if(type==="HORDE")stats.horde++;else if(type==="RIFTHERALD")stats.herald++;else if(type==="BARON_NASHOR")stats.baron++;else if(type==="DRAGON"&&subType==="ELDER_DRAGON")stats.elder++;else if(type==="DRAGON")stats.dragon++}
     for(const match of matches){
       const resolved=(match.participants||[]).map(mp=>({mp,player:findPlayer(mp)})).filter(item=>item.player);
       for(const teamId of [...new Set(resolved.map(item=>item.mp.teamId))]){
@@ -49,3 +51,27 @@ window.addEventListener("pageshow",()=>setTimeout(renderServerHallOfFame,100));
 window.addEventListener("focus",()=>setTimeout(renderServerHallOfFame,100));
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(renderServerHallOfFame,100)});
 let hofRepairTimer;new MutationObserver(()=>{if(hofCardsComplete())return;clearTimeout(hofRepairTimer);hofRepairTimer=setTimeout(ensureServerHallOfFame,120)}).observe(document.querySelector(".award-grid"),{childList:true,subtree:true});
+
+async function renderTimelineObjectiveBoards(){
+  try{
+    const [stateResponse,matchesResponse]=await Promise.all([fetch("/api/app-state",{cache:"no-store"}),fetch("/api/internal-matches",{cache:"no-store"})]);
+    const state=await stateResponse.json(),rawMatches=await matchesResponse.json(),matches=Array.isArray(rawMatches)?rawMatches:(rawMatches.matches||rawMatches.data||[]),players=(state.players||[]).filter(player=>!player.archived);
+    const findPlayer=mp=>players.find(player=>(player.playAliases||[]).some(alias=>alias.puuid===mp.puuid||hofNorm(alias.gameName,alias.tagLine)===hofNorm(mp.gameName,mp.tagLine)))||players.find(player=>player.puuid===mp.puuid)||players.find(player=>hofNorm(player.name,String(player.tag||"").replace(/^#/,""))===hofNorm(mp.gameName,mp.tagLine));
+    const stats=new Map(players.map(player=>[String(player.id),{player,total:0,dragon:0,horde:0,herald:0,baron:0,elder:0,steals:0,timelineGames:0}]));
+    for(const match of matches){
+      const hasTimeline=Boolean(match.timelineCollected||(match.epicObjectives||[]).length);
+      for(const mp of match.participants||[]){const player=findPlayer(mp),row=player&&stats.get(String(player.id));if(!row)continue;if(hasTimeline)row.timelineGames++;row.steals+=Number(mp.objectivesStolen)||0}
+      for(const event of match.epicObjectives||[]){const player=findPlayer({puuid:event.killerPuuid}),row=player&&stats.get(String(player.id));if(!row)continue;const type=String(event.monsterType||"").toUpperCase(),subType=String(event.monsterSubType||"").toUpperCase();row.total++;if(type==="HORDE")row.horde++;else if(type==="RIFTHERALD")row.herald++;else if(type==="BARON_NASHOR")row.baron++;else if(type==="DRAGON"&&subType==="ELDER_DRAGON")row.elder++;else if(type==="DRAGON")row.dragon++}
+    }
+    const render=(id,title,subtitle,rows,value,detail)=>{const card=document.getElementById(id);if(!card)return;card.className="leaderboard-card award-card";card.innerHTML=`<header><div><h3>${title}</h3><p>${subtitle}</p></div><span>TOP 5</span></header><div class="leaderboard-list">${rows.length?rows.slice(0,5).map((row,index)=>`<button class="leaderboard-row rank-${index+1}" data-leader-player="${row.player.id}"><b class="leaderboard-rank">${index+1}</b><span class="avatar" style="--avatar:${hofEsc(row.player.color||"#45658b")}">${hofEsc(row.player.name.slice(0,1))}</span><span class="leaderboard-name"><strong>${hofEsc(row.player.name)}</strong><small>${detail(row)}</small></span><em>${value(row)}</em></button>`).join(""):'<div class="leaderboard-empty">집계 가능한 기록이 아직 없습니다.</div>'}</div>`};
+    const objectiveRows=[...stats.values()].filter(row=>row.timelineGames>=5&&row.total>0).sort((a,b)=>b.total-a.total||b.baron-a.baron||b.elder-a.elder||b.dragon-a.dragon);
+    const stealRows=[...stats.values()].filter(row=>row.timelineGames>=5&&row.steals>0).sort((a,b)=>b.steals-a.steals||b.timelineGames-a.timelineGames);
+    render("objectiveLeaderboard","◉ 오브젝트 집착 맨","용·유충·전령·바론 실제 막타 횟수",objectiveRows,row=>`${row.total}회`,row=>`용 ${row.dragon} · 유충 ${row.horde} · 전령 ${row.herald} · 바론 ${row.baron}${row.elder?` · 장로 ${row.elder}`:""}`);
+    render("stealLeaderboard","◎ 스틸의 왕","클라이언트가 판정한 오브젝트 스틸 횟수",stealRows,row=>`${row.steals}회`,row=>`타임라인 ${row.timelineGames}경기`);
+  }catch(error){console.warn("타임라인 오브젝트 명예의전당 집계 실패:",error.message)}
+}
+const scheduleTimelineObjectiveBoards=()=>setTimeout(renderTimelineObjectiveBoards,750);
+window.addEventListener("DOMContentLoaded",scheduleTimelineObjectiveBoards);
+window.addEventListener("pageshow",scheduleTimelineObjectiveBoards);
+window.addEventListener("focus",scheduleTimelineObjectiveBoards);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)scheduleTimelineObjectiveBoards()});
