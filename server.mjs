@@ -1,3 +1,6 @@
+// Explicit unversioned dependency keeps this file in serverless bundles;
+// the browser-facing engine uses a cache-busting query when importing it.
+import "./rating-observation.js";
 import "./rating-engine.js";
 import { createServer } from "node:http";
 import { verifyKey } from "discord-interactions";
