@@ -22,14 +22,14 @@ try{
  const stale=structuredClone(state);for(const p of stale.players){delete p.ratingSeedV2;delete p.ratingSeedV21;p.ratingSeedV22={policy:'skill-baseline-v1',solo:9999};p.manualPowerFloor=9999;p.internalRating=9999;p.ratingV2={overall:9999};}
  const put=await fetch(origin+'/api/app-state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(stale)});assert.equal(put.status,200);
  const after=await(await fetch(origin+'/api/app-state')).json();assert.deepEqual(after.players.find(p=>p.id===p9.id).ratingV2,expected);assert.equal(JSON.stringify(after.seriesState),series);assert.deepEqual(JSON.parse(await readFile(process.env.DATA_FILE,'utf8')),matches);
- for(const asset of ['/','/rating-engine.js','/rating-evidence.css','/client.js'])assert.equal((await fetch(origin+asset)).status,200,asset);
+ for(const asset of ['/','/rating-engine.js','/rating-observation.js','/rating-reference.js','/rating-evidence.css','/client.js'])assert.equal((await fetch(origin+asset)).status,200,asset);
  if(process.env.PLAYWRIGHT_PACKAGE){
   const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PACKAGE));browser=await chromium.launch({headless:true,channel:'msedge'});const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.url().startsWith(origin+'/api/')&&r.status()>=400)errors.push(r.url()+': '+r.status())});
   await page.route('**/*',route=>route.request().url().startsWith(origin)?route.continue():route.abort());
   await page.goto(origin,{waitUntil:'domcontentloaded'});await page.locator('[data-stats-id="'+p9.id+'"]').first().click();await page.locator('.rating-role').last().waitFor();
   assert.equal(await page.locator('.rating-role').count(),5);assert.ok((await page.locator('.rating-roles').innerText()).includes(String(expected.roles.SUPPORT.rating).replace(/\B(?=(\d{3})+(?!\d))/g,',')));
   await page.locator('.power-history-toggle').click();await page.locator('.rating-history-select').selectOption('SUPPORT');assert.ok((await page.locator('.power-history-detail').innerText()).includes(expected.roles.SUPPORT.rating.toLocaleString()));
-  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok((await page.locator('.rating-roles').innerText()).includes('솔랭 복원 종료'));assert.ok((await page.locator('.power-explain').innerText()).includes('솔랭 복원 보정 종료'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
+  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok((await page.locator('.rating-roles').innerText()).includes('최근 추정'));assert.ok((await page.locator('.power-explain').innerText()).includes('초기 기준 졸업'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
   await page.locator('.rating-events summary').click();await page.screenshot({path:join(dir,'rating-desktop.png')});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(dir,'rating-mobile.png')});
   assert.equal(await page.locator('.rating-roles').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);assert.deepEqual(errors,[]);
