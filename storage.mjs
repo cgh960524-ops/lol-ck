@@ -1,5 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { randomUUID } from "node:crypto";
+const localSaveQueues=new Map();
 
 const blobToken = process.env.BLOB_READ_WRITE_TOKEN || "";
 const blobPrefix = process.env.BLOB_PREFIX || "ck-lab-data";
@@ -34,10 +36,19 @@ export async function saveJson(name, localFile, value) {
     });
     return;
   }
-  await mkdir(dirname(localFile), { recursive: true });
-  const temp = `${localFile}.tmp`;
-  await writeFile(temp, body, "utf8");
-  await rename(temp, localFile);
+  // Serialize local snapshots and tolerate transient Windows reader/AV locks.
+  const previous=localSaveQueues.get(localFile)||Promise.resolve();
+  const job=previous.catch(()=>{}).then(async()=>{
+    await mkdir(dirname(localFile), { recursive: true });
+    const temp=`${localFile}.${randomUUID()}.tmp`;
+    await writeFile(temp,body,"utf8");
+    for(let attempt=0;;attempt++){
+      try{await rename(temp,localFile);break}
+      catch(error){if(!["EPERM","EBUSY","EACCES"].includes(error.code)||attempt>=5)throw error;await new Promise(resolve=>setTimeout(resolve,20*(attempt+1)))}
+    }
+  });
+  localSaveQueues.set(localFile,job);
+  try{await job}finally{if(localSaveQueues.get(localFile)===job)localSaveQueues.delete(localFile)}
 }
 
 export const stateFiles = root => ({

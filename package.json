@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
-    "check": "node --check server.mjs && node --check client.js && node --check api/[...path].mjs"
+    "check": "node --check server.mjs && node --check client.js && node --check api/[...path].mjs && node --check rating-engine.js",
+    "test": "node --test tools/rating-engine.test.mjs",
+    "build:assets": "node tools/generate-static-assets.mjs ."
   },
   "dependencies": {
     "@vercel/blob": "^2.0.0",

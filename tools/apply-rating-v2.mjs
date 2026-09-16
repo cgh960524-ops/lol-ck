@@ -1,0 +1,30 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {resolve,join} from 'node:path';
+import assert from 'node:assert/strict';
+import '../rating-engine.js';
+const origin='https://lol-ck.vercel.app',dir=resolve(process.argv.find(x=>x.startsWith('--backup='))?.slice(9)||'../backup/2026-09-16T20-51-42-666Z-before-role-power-v2');
+const get=async path=>{const r=await fetch(origin+path,{signal:AbortSignal.timeout(30000)});if(!r.ok)throw new Error(path+' HTTP '+r.status);return r.json();};
+const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
+if(process.argv.includes('--snapshot')){
+ const [state,matches]=await Promise.all([get('/api/app-state'),get('/api/internal-matches')]);
+ await writeFile(join(dir,'pre-deploy-app-state.json'),JSON.stringify(state,null,2));await writeFile(join(dir,'pre-deploy-matches.json'),JSON.stringify(matches,null,2));
+ console.log(JSON.stringify({snapshot:true,players:state.players.length,matches:matches.length}));
+}else if(process.argv.includes('--apply')){
+ const [before,matchesBefore]=await Promise.all([get('/api/app-state'),get('/api/internal-matches')]);
+ assert.equal(before.ratingAlgorithm?.version,CKRating.VERSION,'New server must be deployed before migration');
+ await writeFile(join(dir,'before-persist-app-state.json'),JSON.stringify(before,null,2));
+ const config=JSON.parse((await readFile(resolve('../uploader/config.json'),'utf8')).replace(/^\uFEFF/,''));
+ assert.equal(new URL(config.serverUrl).origin,origin,'Never send the uploader credential to another origin');assert.ok(config.uploadToken);
+ const response=await fetch(origin+'/api/ratings/recalculate',{method:'POST',headers:{Authorization:'Bearer '+config.uploadToken},signal:AbortSignal.timeout(60000)});
+ if(!response.ok)throw new Error('Recalculation HTTP '+response.status);
+ const receipt=await response.json(),[after,matchesAfter]=await Promise.all([get('/api/app-state'),get('/api/internal-matches')]);
+ assert.equal(hash(matchesAfter),hash(matchesBefore),'Match data changed during verification; inspect concurrent activity');
+ assert.equal(hash(after.seriesState),hash(before.seriesState),'Series changed during verification; inspect concurrent activity');
+ assert.deepEqual(after.players.map(p=>p.id),before.players.map(p=>p.id));
+ const local=structuredClone(after.players);CKRating.recalculate(local,matchesAfter,after.seriesState);
+ for(const p of local)assert.deepEqual(p.ratingV2,after.players.find(x=>x.id===p.id).ratingV2,'Server/browser divergence: '+p.id);
+ const report={verifiedAt:new Date().toISOString(),origin,receipt,matches:matchesAfter.length,players:after.players.length,matchHash:hash(matchesAfter),seriesHash:hash(after.seriesState),sharedEngineVerified:true,playersAfter:after.players.map(p=>({id:p.id,name:p.name,overall:CKRating.overallScore(p),roles:Object.fromEntries(CKRating.ROLES.map(r=>[r,CKRating.positionScore(p,r)]))}))};
+ await writeFile(join(dir,'after-v2-app-state.json'),JSON.stringify(after,null,2));await writeFile(join(dir,'deployment-verification.json'),JSON.stringify(report,null,2));
+ console.log(JSON.stringify({...report,playersAfter:report.playersAfter.filter(p=>p.name==='9 Things')},null,2));
+}else throw new Error('Use --snapshot or --apply explicitly');
