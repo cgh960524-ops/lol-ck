@@ -16,9 +16,9 @@ try{
  const p9=state.players.find(p=>p.name==='9 Things'),expected=structuredClone(p9.ratingV2);
  assert.equal((await fetch(origin+'/api/ratings/recalculate',{method:'POST'})).status,401);
  const res=await fetch(origin+'/api/ratings/recalculate',{method:'POST',headers:{Authorization:'Bearer local-rating-test-only'}});assert.equal(res.status,200);
- const stored=JSON.parse(await readFile(process.env.APP_STATE_FILE,'utf8'));assert.equal(stored.players.find(p=>p.id===p9.id).ratingSeedV21.solo,1450);
- const toku=stored.players.find(p=>p.name.replace(/\s/g,'')==='토쿠');assert.ok(toku.ratingV2.overall<2600);assert.ok(toku.ratingV2.roles.SUPPORT.rating<2000);assert.equal(toku.ratingV2.provisional,true);
- const stale=structuredClone(state);for(const p of stale.players){delete p.ratingSeedV2;delete p.ratingSeedV21;p.manualPowerFloor=9999;p.internalRating=9999;p.ratingV2={overall:9999};}
+ const stored=JSON.parse(await readFile(process.env.APP_STATE_FILE,'utf8'));assert.equal(stored.players.find(p=>p.id===p9.id).ratingSeedV22.solo,1450);
+ const toku=stored.players.find(p=>p.name.replace(/\s/g,'')==='토쿠');assert.ok(toku.ratingV2.overall<2600);assert.ok(toku.ratingV2.roles.SUPPORT.rating<toku.ratingV2.roles.TOP.rating);assert.equal(toku.ratingV2.provisional,true);
+ const stale=structuredClone(state);for(const p of stale.players){delete p.ratingSeedV2;delete p.ratingSeedV21;p.ratingSeedV22={policy:'skill-baseline-v1',solo:9999};p.manualPowerFloor=9999;p.internalRating=9999;p.ratingV2={overall:9999};}
  const put=await fetch(origin+'/api/app-state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(stale)});assert.equal(put.status,200);
  const after=await(await fetch(origin+'/api/app-state')).json();assert.deepEqual(after.players.find(p=>p.id===p9.id).ratingV2,expected);assert.equal(JSON.stringify(after.seriesState),series);assert.deepEqual(JSON.parse(await readFile(process.env.DATA_FILE,'utf8')),matches);
  for(const asset of ['/','/rating-engine.js','/rating-evidence.css','/client.js'])assert.equal((await fetch(origin+asset)).status,200,asset);

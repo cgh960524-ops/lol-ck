@@ -11,7 +11,7 @@ test('deterministic replay, dedup and raw data immutability',()=>{const ps=playe
 test('simultaneous updates do not depend on participant/player order',()=>{const ms=[game(1),game(2)],a=recalc(players(),ms),b=recalc(players().reverse(),ms.map(m=>({...m,participants:[...m.participants].reverse()})));for(const p of a)assert.deepEqual(p.ratingV2,b.find(x=>x.id===p.id).ratingV2);});
 test('prefix has no future-match leakage',()=>{const a=recalc(players(),[game(1)]),b=recalc(players(),[game(1),game(2)]);for(const p of a)assert.deepEqual(p.ratingHistory[0],b.find(x=>x.id===p.id).ratingHistory[0]);});
 test('changing preferred role or refreshing tier never rewrites frozen history',()=>{const ps=recalc(players(),[game()]),old=clone(ps[0].ratingHistory);ps[0].role='SUPPORT';ps[0].secondary='MID';ps[0].tier='CHALLENGER';recalc(ps,[game()]);assert.deepEqual(ps[0].ratingHistory,old);});
-test('UNRANKED gets a neutral seed, not a permanently low anchor',()=>{const ps=players();ps[0].tier='UNRANKED';recalc(ps,[]);assert.equal(ps[0].ratingSeedV21.solo,1450);assert.equal(E.overallScore(ps[0]),1450);});
+test('UNRANKED gets a neutral seed, not a permanently low anchor',()=>{const ps=players();ps[0].tier='UNRANKED';recalc(ps,[]);assert.equal(ps[0].ratingSeedV22.solo,1450);assert.equal(E.overallScore(ps[0]),1450);});
 test('missing optional fields reduce evidence, not performance as a zero',()=>{const full=game(),missing=clone(full);for(const p of missing.participants)for(const k of ['damageTaken','mitigated','ccTime','healsOnTeammates','shieldsOnTeammates','objectiveDamage','turretDamage'])delete p[k];const a=recalc(players(),[full])[4],b=recalc(players(),[missing])[4];assert.equal(a.ratingHistory[0].performance,b.ratingHistory[0].performance);assert.ok(b.ratingHistory[0].quality<a.ratingHistory[0].quality);assert.ok(b.ratingV2.roles.SUPPORT.confidence<a.ratingV2.roles.SUPPORT.confidence);});
 test('unknown or ambiguous lane is never compared to an arbitrary opponent',()=>{const m=game();m.participants[0].roleSource='inferred';const p=recalc(players(),[m])[0];assert.equal(p.ratingHistory[0].reason,'unconfirmed');assert.equal(p.ratingHistory[0].change,0);assert.equal(p.ratingV2.roles.TOP.games,0);const m2=game();m2.participants[6].role='TOP';const p2=recalc(players(),[m2])[0];assert.equal(p2.ratingHistory[0].opponentId,null);assert.equal(p2.ratingHistory[0].personalChange,0);});
 test('a losing support can gain, a winning poor support can lose',()=>{const m=game(),strong=m.participants[9],weak=m.participants[4];Object.assign(strong,{assists:18,deaths:1,vision:130,ccTime:150,healsOnTeammates:12000,shieldsOnTeammates:10000});Object.assign(weak,{assists:1,deaths:10,vision:5,ccTime:2,healsOnTeammates:0,shieldsOnTeammates:0});const ps=recalc(players(),[m]);assert.ok(ps[9].ratingHistory[0].roleChange>0);assert.ok(ps[4].ratingHistory[0].roleChange<0);});
@@ -35,14 +35,14 @@ test('past peak is blended only into its documented role, never all five',()=>{
 });
 test('unplayed off-roles do not inherit main peak or changes from other roles',()=>{
  const p=players();p[0].tier='MASTER';p[0].form=60;p[0].soloPowerOverride=2600;
- const profile=E.initialProfile(p[0]);assert.equal(profile.roles.TOP.rating,2355);assert.equal(profile.roles.JUNGLE.rating,1745);assert.equal(profile.roles.SUPPORT.rating,1535);
- recalc(p,[game(),game(2)]);assert.equal(E.positionScore(p[0],'SUPPORT'),1535);assert.equal(p[0].ratingV2.roles.SUPPORT.games,0);assert.equal(p[0].ratingV2.roles.SUPPORT.provisional,true);
+ const profile=E.initialProfile(p[0]);assert.equal(profile.roles.TOP.rating,2355);assert.equal(profile.roles.JUNGLE.rating,2075);assert.equal(profile.roles.SUPPORT.rating,2030);
+ recalc(p,[game(),game(2)]);assert.equal(E.positionScore(p[0],'SUPPORT'),2030);assert.equal(p[0].ratingV2.roles.SUPPORT.games,0);assert.equal(p[0].ratingV2.roles.SUPPORT.provisional,true);
 });
 test('migration preserves legacy seed for audit and freezes the new role-local profile',()=>{
  const p=players();p[0].tier='MASTER';p[0].form=60;p[0].soloPowerOverride=2600;p[0].ratingSeedV2={value:2600,source:'solo-registration',role:'TOP',secondary:'JUNGLE',rolePriors:{}};
- const old=clone(p[0].ratingSeedV2);recalc(p,[game()]);const fresh=clone(p[0].ratingSeedV21),ratings=clone(p[0].ratingV2);
+ const old=clone(p[0].ratingSeedV2);recalc(p,[game()]);const fresh=clone(p[0].ratingSeedV22),ratings=clone(p[0].ratingV2);
  p[0].tier='IRON';p[0].role='SUPPORT';p[0].soloPowerOverride=3200;p[0].manualPowerFloor=9999;recalc(p,[game()]);
- assert.deepEqual(p[0].ratingSeedV2,old);assert.deepEqual(p[0].ratingSeedV21,fresh);assert.deepEqual(p[0].ratingV2,ratings);
+ assert.deepEqual(p[0].ratingSeedV2,old);assert.deepEqual(p[0].ratingSeedV22,fresh);assert.deepEqual(p[0].ratingV2,ratings);
 });
 test('provisional label uses games, distinct opponents and confidence for Set or JSON data',()=>{
  assert.equal(E.confidenceLabel({games:0}),'잠정 · 미배치');
@@ -51,5 +51,31 @@ test('provisional label uses games, distinct opponents and confidence for Set or
 });
 test('removing historical floor does not remove the same-role learning ability',()=>{
  const ps=players();ps[4].manualPowerFloor=2600;const ms=Array.from({length:20},(_,i)=>{const m=game(i+1);Object.assign(m.participants[4],{assists:18,deaths:1,vision:130,ccTime:150,healsOnTeammates:12000,shieldsOnTeammates:10000});return m;});
- recalc(ps,ms);assert.ok(E.positionScore(ps[4],'SUPPORT')>ps[4].ratingSeedV21.roles.SUPPORT.rating+100);assert.ok(E.overallScore(ps[4])<2600);
+ recalc(ps,ms);assert.ok(E.positionScore(ps[4],'SUPPORT')>ps[4].ratingSeedV22.roles.SUPPORT.rating+100);assert.ok(E.overallScore(ps[4])<2600);
+});
+
+test('master off-role retains general skill; unknown evidence is provisional, not platinum',()=>{
+ const p=players();p[0].tier='MASTER';p[0].form=0;recalc(p,[]);
+ assert.equal(E.positionScore(p[0],'TOP'),2050);assert.equal(E.positionScore(p[0],'JUNGLE'),2015);assert.equal(E.positionScore(p[0],'SUPPORT'),1970);
+ for(const r of Object.values(p[0].ratingV2.roles)){assert.equal(r.provisional,true);assert.equal(r.confidence,0);}
+ const low=E.initialProfile({...players()[0],tier:'SILVER',form:0});assert.equal(low.roles.TOP.rating,1100);assert.equal(low.roles.SUPPORT.rating,1020);
+});
+test('first unfamiliar-role game does not mechanically deduct the role offset from overall',()=>{
+ const p=players(),m=game();for(const mp of m.participants)mp.role='MID'; // No unambiguous matchup, equal teams.
+ recalc(p,[m]);const change=p[0].ratingHistory[0].roleChange;assert.equal(p[0].ratingV2.overall,1500+change);assert.equal(p[0].ratingV2.roles.MID.rating,1420+change);
+});
+test('V2.1 migration preserves its frozen solo and documented role peak, not current edits',()=>{
+ const p=players();p[0].ratingSeedV21={policy:'role-local-priors-v1',solo:2050,primary:'TOP',secondary:'JUNGLE',source:'solo-registration',roles:Object.fromEntries(E.ROLES.map(r=>[r,{rating:1500,base:1500,peak:r==='TOP'?2600:null,historySource:'frozen'}]))};
+ const saved=clone(p[0].ratingSeedV21);p[0].tier='IRON';p[0].soloPowerOverride=9999;
+ recalc(p,[]);assert.deepEqual(p[0].ratingSeedV21,saved);assert.equal(p[0].ratingSeedV22.solo,2050);assert.equal(p[0].ratingSeedV22.roles.TOP.rating,2325);assert.equal(p[0].ratingSeedV22.roles.JUNGLE.rating,2015);
+});
+test('neutral UNRANKED prior never pulls learned ability back toward 1450',()=>{
+ const p=players();p[4].tier='UNRANKED';const ms=Array.from({length:12},(_,i)=>{const m=game(i+1);Object.assign(m.participants[4],{assists:18,deaths:1,vision:130,ccTime:150,healsOnTeammates:12000,shieldsOnTeammates:10000});return m;});
+ recalc(p,ms);assert.ok(p[4].ratingHistory.every(h=>h.priorChange===0));assert.ok(p[4].ratingV2.roles.SUPPORT.rating>1550);
+});
+test('independent evidence regularizer is symmetric, not a minimum rating',()=>{
+ const p=players(),ms=Array.from({length:30},(_,i)=>{const m=game(i+1);Object.assign(m.participants[4],{assists:1,deaths:12,vision:3,ccTime:1,healsOnTeammates:0,shieldsOnTeammates:0});Object.assign(m.participants[9],{assists:18,deaths:1,vision:130,ccTime:150,healsOnTeammates:12000,shieldsOnTeammates:10000});return m;});
+ recalc(p,ms);assert.ok(p[4].ratingV2.roles.SUPPORT.rating<1400);assert.ok(p[9].ratingV2.roles.SUPPORT.rating>1600);
+ assert.ok(p[4].ratingHistory.some(h=>h.priorChange>0));assert.ok(p[9].ratingHistory.some(h=>h.priorChange<0));
+ for(const x of [p[4],p[9]])for(const h of x.ratingHistory)assert.ok(Math.abs(h.roleChange-h.personalChange-h.outcomeChange-h.priorChange)<2);
 });
