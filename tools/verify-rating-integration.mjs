@@ -14,6 +14,7 @@ try{
  const state=await (await fetch(origin+'/api/app-state')).json(),matches=JSON.parse(await readFile(process.env.DATA_FILE,'utf8')),series=JSON.stringify(state.seriesState),version=state.ratingAlgorithm.version;
  assert.equal(version,CKRating.VERSION);assert.equal(state.players.length,37);
  const p9=state.players.find(p=>p.name==='9 Things'),expected=structuredClone(p9.ratingV2);
+ assert.equal(p9.ratingV2.soloRestorationEnded,true);for(const p of state.players)for(const h of p.ratingHistory||[])if(h.internalGamesBefore>=30)assert.equal(h.priorChange,0);
  assert.equal((await fetch(origin+'/api/ratings/recalculate',{method:'POST'})).status,401);
  const res=await fetch(origin+'/api/ratings/recalculate',{method:'POST',headers:{Authorization:'Bearer local-rating-test-only'}});assert.equal(res.status,200);
  const stored=JSON.parse(await readFile(process.env.APP_STATE_FILE,'utf8'));assert.equal(stored.players.find(p=>p.id===p9.id).ratingSeedV22.solo,1450);
@@ -28,7 +29,7 @@ try{
   await page.goto(origin,{waitUntil:'domcontentloaded'});await page.locator('[data-stats-id="'+p9.id+'"]').first().click();await page.locator('.rating-role').last().waitFor();
   assert.equal(await page.locator('.rating-role').count(),5);assert.ok((await page.locator('.rating-roles').innerText()).includes(String(expected.roles.SUPPORT.rating).replace(/\B(?=(\d{3})+(?!\d))/g,',')));
   await page.locator('.power-history-toggle').click();await page.locator('.rating-history-select').selectOption('SUPPORT');assert.ok((await page.locator('.power-history-detail').innerText()).includes(expected.roles.SUPPORT.rating.toLocaleString()));
-  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
+  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok((await page.locator('.rating-roles').innerText()).includes('솔랭 복원 종료'));assert.ok((await page.locator('.power-explain').innerText()).includes('솔랭 복원 보정 종료'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
   await page.locator('.rating-events summary').click();await page.screenshot({path:join(dir,'rating-desktop.png')});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(dir,'rating-mobile.png')});
   assert.equal(await page.locator('.rating-roles').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);assert.deepEqual(errors,[]);

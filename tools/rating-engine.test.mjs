@@ -79,3 +79,27 @@ test('independent evidence regularizer is symmetric, not a minimum rating',()=>{
  assert.ok(p[4].ratingHistory.some(h=>h.priorChange>0));assert.ok(p[9].ratingHistory.some(h=>h.priorChange<0));
  for(const x of [p[4],p[9]])for(const h of x.ratingHistory)assert.ok(Math.abs(h.roleChange-h.personalChange-h.outcomeChange-h.priorChange)<2);
 });
+
+test('solo restoration retires on lifetime participation or role experience, not confidence',()=>{
+ assert.equal(E.soloRetention(10,0),1);assert.equal(E.soloRetention(20,0),.5);assert.equal(E.soloRetention(30,0),0);assert.equal(E.soloRetention(500,0),0);assert.equal(E.soloRetention(20,20),0);
+ const ms=Array.from({length:40},(_,i)=>game(i+1)),ps=recalc(players(),ms);
+ for(const p of ps){assert.equal(p.ratingV2.soloRestorationEnded,true);for(const h of p.ratingHistory.filter(h=>h.internalGamesBefore>=30)){assert.equal(h.priorChange,0);assert.equal(h.soloRetention,0);}assert.equal(p.ratingV2.overall,p.ratingV2.roles[p.role].rating);}
+});
+test('many unconfirmed games never extend solo restoration or invent comparison confidence',()=>{
+ const ms=Array.from({length:35},(_,i)=>{const m=game(i+1);if(i<30)m.participants[0].roleSource='inferred';return m;}),p=recalc(players(),ms)[0];
+ assert.equal(p.internalGames,35);assert.equal(p.ratingV2.unconfirmed,30);assert.equal(p.ratingV2.comparisonCount,5);assert.equal(p.ratingV2.soloRetention,0);assert.ok(p.ratingV2.roles.TOP.provisional);assert.ok(p.ratingHistory.every(h=>h.priorChange===0));
+});
+test('mature unplayed role starts at internal overall and stays provisional with zero evidence',()=>{
+ const ms=Array.from({length:35},(_,i)=>{const m=game(i+1);Object.assign(m.participants[0],{damage:1000,gold:5000,cs:30,deaths:12,assists:1});return m;}),p=recalc(players(),ms)[0];
+ assert.notEqual(p.ratingV2.overall,p.ratingSeedV22.solo);const mid=p.ratingV2.roles.MID;assert.equal(mid.rating,p.ratingV2.overall);assert.equal(mid.seedSource,'internal-transfer');assert.equal(mid.games,0);assert.equal(mid.comparisons,0);assert.equal(mid.confidence,0);assert.equal(mid.provisional,true);
+ const next=game(36);[next.participants[0].role,next.participants[2].role]=['MID','TOP'];const q=recalc(players(),[...ms,next])[0];assert.equal(q.ratingHistory.at(-1).roleBefore,mid.rating);assert.equal(q.ratingHistory.at(-1).priorChange,0);assert.deepEqual(q.ratingHistory.slice(0,35),p.ratingHistory);
+});
+test('large rating gap expectation is symmetric and saturates, not a free underdog bonus',()=>{
+ assert.equal(E.matchupExpectation(400),E.matchupExpectation(1400));assert.equal(E.matchupExpectation(-1400),-E.matchupExpectation(1400));assert.ok(E.matchupExpectation(100)<E.matchupExpectation(400));
+ const ps=players();ps[5].tier='CHALLENGER';ps[5].form=200;const m=game();Object.assign(m.participants[0],{gold:2000,cs:5,damage:100,kills:0,assists:0,deaths:20,vision:0,damageTaken:0,mitigated:0,ccTime:0,objectiveDamage:0,turretDamage:0,healsOnTeammates:0,shieldsOnTeammates:0});const h=recalc(ps,[m])[0].ratingHistory[0];assert.ok(h.personalChange<0);
+});
+test('missing and duplicate role matches expose distinct audit reasons',()=>{
+ const m=game();m.participants[5].puuid='unknown';m.participants[5].gameName='unlinked';const p=recalc(players(),[m])[0];assert.equal(p.ratingHistory[0].comparisonStatus,'opponent-unlinked');assert.equal(p.ratingV2.comparisonCount,0);
+ m.participants[5].roleSource='inferred';assert.equal(recalc(players(),[m])[0].ratingHistory[0].comparisonStatus,'opponent-role-unconfirmed');
+ m.participants[5].roleSource='manual';m.participants[6].role='TOP';assert.equal(recalc(players(),[m])[0].ratingHistory[0].comparisonStatus,'opponent-role-ambiguous');
+});
