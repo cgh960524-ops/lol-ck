@@ -1,7 +1,7 @@
 /* Shared, deterministic browser/server role-skill estimator. No I/O or POG bonuses. */
 (function (root) {
   'use strict';
-  const VERSION = 'role-skill-v2.20260917';
+  const VERSION = 'role-skill-v2.1.20260917';
   const ROLES = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
   const TIERS = { UNRANKED:1000, IRON:800, BRONZE:950, SILVER:1100, GOLD:1250, PLATINUM:1420, EMERALD:1580, DIAMOND:1780, MASTER:2050, GRANDMASTER:2200, CHALLENGER:2380 };
   const SOURCES = new Set(['manual','team-confirmed','series-confirmed']);
@@ -18,15 +18,36 @@
   const num = x => Number.isFinite(Number(x)) ? Number(x) : 0;
   const mean = xs => xs.length ? xs.reduce((s,x)=>s+x,0)/xs.length : 0;
   const norm = (name,tag) => `${name||''}#${String(tag||'').replace(/^#/,'')}`.replace(/\s/g,'').toLowerCase();
-  const basePower = p => Math.max((TIERS[p.tier]||1000)+num(p.form),num(p.soloPowerOverride));
-  const overallScore = p => Math.round(Math.max(p.ratingV2?.overall ?? (p.internalGames ? p.internalRating : basePower(p)),num(p.manualPowerFloor)));
-  function positionScore(p,role) {
-    const r=p.ratingV2?.roles?.[role];
-    if(r) return Math.round(r.rating);
-    const prior=p.rolePriors?.[role];
-    if(prior?.rating) return Math.round(num(prior.rating)*.7+overallScore(p)*.3);
-    return overallScore(p)-(role===p.role?0:role===p.secondary?35:100);
+  const POPULATION=1450;
+  // A past peak is role-local, not a permanent floor or a universal skill value.
+  const basePower=p=>p.tier==='UNRANKED'?POPULATION:clamp((TIERS[p.tier]||POPULATION)+num(p.form),400,3200);
+  function initialProfile(p){
+    if(p.ratingSeedV21?.policy==='role-local-priors-v1')return p.ratingSeedV21;
+    const old=p.ratingSeedV2,primary=ROLES.includes(old?.role)?old.role:ROLES.includes(p.role)?p.role:'MID',secondary=ROLES.includes(old?.secondary)?old.secondary:p.secondary;
+    // Keep a previous non-overridden registration seed stable across migration.
+    const overridden=num(p.soloPowerOverride)>0;
+    const solo=old&&!overridden?clamp(num(old.value)||POPULATION,400,3200):basePower(p);
+    const priors=structuredClone(old?.rolePriors||p.rolePriors||{});
+    // New records may explicitly store the peak's role; old records use frozen registration main.
+    const peakRole=ROLES.includes(p.soloPowerRole)?p.soloPowerRole:primary;
+    if(overridden&&num(p.soloPowerOverride)>num(priors[peakRole]?.rating))priors[peakRole]={rating:num(p.soloPowerOverride),source:p.soloPowerSource||'등록 시 해당 포지션 과거 실력'};
+    const roles={};
+    for(const role of ROLES){
+      const factor=role===primary?1:role===secondary?.5:.25,offset=role===primary?0:role===secondary?35:80;
+      // Only positive skill evidence transfers partially; low current tiers are not inflated.
+      const normal=POPULATION+Math.min(0,solo-POPULATION)+Math.max(0,solo-POPULATION)*factor-offset;
+      const peak=num(priors[role]?.rating),rating=clamp(normal+Math.max(0,peak-normal)*.5,400,3200);
+      roles[role]={rating,base:normal,peak:peak||null,source:peak?'role-history':'solo-transfer',historySource:priors[role]?.source||null};
+    }
+    return {policy:'role-local-priors-v1',solo,primary,secondary,roles,source:old?.source||(p.tier==='UNRANKED'?'unknown-population':'solo-registration')};
   }
+  const overallScore=p=>Math.round(p.ratingV2?.overall??(p.internalGames?p.internalRating:initialProfile(p).roles[initialProfile(p).primary].rating));
+  function positionScore(p,role){
+    const r=p.ratingV2?.version===VERSION?p.ratingV2.roles?.[role]:null;
+    return Math.round(r?.rating??initialProfile(p).roles[role]?.rating??overallScore(p));
+  }
+  const isProvisional=r=>!r||num(r.games)<8||(r.opponents instanceof Set?r.opponents.size:num(r.opponents))<3||num(r.confidence)<.35;
+  const confidenceLabel=r=>!r?.games?'잠정 · 미배치':isProvisional(r)?'잠정 · 표본 부족':r.confidence>=.65?'근거 충분':'학습 중';
   const confidence = p => num(p?.confidence);
   function playerResolver(players) {
     const aliases=new Map(),puuids=new Map(),names=new Map();
@@ -93,18 +114,15 @@
   function recalculate(players,matches,seriesState={}) {
     const find=playerResolver(players),prepared=prepareMatches(players,matches,seriesState),baseline=new Map(),population=1450,models=new Map(),diagnostics={version:VERSION,matches:0,unmatched:0,unconfirmed:0,duplicateLinks:0};
     for(const p of players){
-      const unknown=p.tier==='UNRANKED'&&!num(p.soloPowerOverride);
-      p.ratingSeedV2 ||= {value:unknown?population:basePower(p),source:unknown?'unknown-population':'solo-registration',uncertainty:unknown?330:220};
-      p.ratingSeedV2.role ||= p.role;
-      p.ratingSeedV2.secondary ||= p.secondary;
-      p.ratingSeedV2.rolePriors ||= structuredClone(p.rolePriors||{});
-      const seed=num(p.ratingSeedV2.value)||population;
-      models.set(String(p.id),{seed,unknown:p.ratingSeedV2.source==='unknown-population',roles:{},games:0,overall:seed,history:[],unconfirmed:0});
+      // V2 seeds are retained for audit/rollback. V2.1 uses a separate immutable profile.
+      if(p.ratingSeedV21?.policy!=='role-local-priors-v1')p.ratingSeedV21=initialProfile(p);
+      const profile=p.ratingSeedV21,seed=profile.roles[profile.primary].rating;
+      models.set(String(p.id),{seed,profile,unknown:profile.source==='unknown-population',roles:{},games:0,overall:seed,history:[],unconfirmed:0});
       p.internalGames=0;p.internalRoles={};p.internalChampions={};p.internalKills=0;p.internalDeaths=0;p.internalAssists=0;p.internalKda=0;p.internalChampionScore=0;p.ratingHistory=[];
     }
     function ensureRole(p,role) {
       const model=models.get(String(p.id));
-      if(!model.roles[role]){const prior=p.ratingSeedV2.rolePriors?.[role],transfer=model.games?model.overall*.4+model.seed*.6:model.seed,seed=prior?.rating?num(prior.rating)*.7+transfer*.3:transfer-(role===p.ratingSeedV2.role?0:role===p.ratingSeedV2.secondary?35:80);model.roles[role]={rating:seed,seed,games:0,weight:0,wins:0,performanceTotal:0,expectedTotal:0,opponents:new Set(),series:new Map(),recent:[],lastAt:0,confidence:0,uncertainty:model.unknown?330:250,prior:!!prior?.rating};}
+      if(!model.roles[role]){const prior=model.profile.roles[role],seed=prior.rating;model.roles[role]={rating:seed,seed,games:0,weight:0,wins:0,performanceTotal:0,expectedTotal:0,opponents:new Set(),series:new Map(),recent:[],lastAt:0,confidence:0,uncertainty:330,prior:!!prior.peak};}
       return model.roles[role];
     }
     function overall(model){const roles=Object.values(model.roles).filter(r=>r.games),total=roles.reduce((s,r)=>s+Math.sqrt(r.weight),0);return total?roles.reduce((s,r)=>s+r.rating*Math.sqrt(r.weight),0)/total:model.seed;}
@@ -146,8 +164,8 @@
       }
       diagnostics.matches++;updateBaselines(m,baseline);
     }
-    for(const p of players){const model=models.get(String(p.id)),roles={};for(const role of ROLES)ensureRole(p,role);for(const [role,r] of Object.entries(model.roles)){roles[role]={rating:Math.round(r.rating),games:r.games,wins:r.wins,confidence:Number(r.confidence.toFixed(3)),uncertainty:r.uncertainty,opponents:r.opponents.size,series:r.series.size,recentResidual:Number(mean(r.recent.slice(-5)).toFixed(3)),expectedTotal:r.expectedTotal,performanceTotal:r.performanceTotal};if(r.games)p.internalRoles[role]={...roles[role]};}p.ratingV2={version:VERSION,overall:Math.round(model.overall),roles,unconfirmed:model.unconfirmed,seed:model.seed,seedSource:p.ratingSeedV2.source};p.internalRating=Math.round(model.overall);p.ratingUncertainty=Math.round(mean(Object.values(roles).map(r=>r.uncertainty))||330);p.internalKda=p.internalGames?Number(((p.internalKills+p.internalAssists)/Math.max(1,p.internalDeaths)).toFixed(2)):0;p.ratingHistory=model.history.slice(-120);}
+    for(const p of players){const model=models.get(String(p.id)),roles={};for(const role of ROLES)ensureRole(p,role);for(const [role,r] of Object.entries(model.roles)){roles[role]={rating:Math.round(r.rating),provisional:isProvisional(r),seed:Math.round(r.seed),games:r.games,wins:r.wins,confidence:Number(r.confidence.toFixed(3)),uncertainty:r.uncertainty,opponents:r.opponents.size,series:r.series.size,recentResidual:Number(mean(r.recent.slice(-5)).toFixed(3)),expectedTotal:r.expectedTotal,performanceTotal:r.performanceTotal};if(r.games)p.internalRoles[role]={...roles[role]};}p.ratingV2={version:VERSION,overall:Math.round(model.overall),roles,unconfirmed:model.unconfirmed,seed:model.seed,seedSource:model.profile.source,soloSeed:model.profile.solo,provisional:Object.values(roles).filter(r=>r.games).length===0||Object.values(roles).filter(r=>r.games).reduce((s,r)=>s+r.games*r.confidence,0)/Math.max(1,p.internalGames)<.35||new Set(Object.values(model.roles).flatMap(r=>[...r.opponents])).size<3||p.internalGames<8};p.internalRating=Math.round(model.overall);p.ratingUncertainty=Math.round(mean(Object.values(roles).map(r=>r.uncertainty))||330);p.internalKda=p.internalGames?Number(((p.internalKills+p.internalAssists)/Math.max(1,p.internalDeaths)).toFixed(2)):0;p.ratingHistory=model.history.slice(-120);}
     return {players,matches:prepared,diagnostics};
   }
-  root.CKRating={VERSION,ROLES,basePower,overallScore,positionScore,confidence,confirmedRole,playerResolver,prepareMatches,recalculate};
+  root.CKRating={VERSION,ROLES,initialProfile,isProvisional,confidenceLabel,basePower,overallScore,positionScore,confidence,confirmedRole,playerResolver,prepareMatches,recalculate};
 })(globalThis);

@@ -12,12 +12,13 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.
 let browser;
 try{
  const state=await (await fetch(origin+'/api/app-state')).json(),matches=JSON.parse(await readFile(process.env.DATA_FILE,'utf8')),series=JSON.stringify(state.seriesState),version=state.ratingAlgorithm.version;
- assert.equal(version,'role-skill-v2.20260917');assert.equal(state.players.length,37);
+ assert.equal(version,CKRating.VERSION);assert.equal(state.players.length,37);
  const p9=state.players.find(p=>p.name==='9 Things'),expected=structuredClone(p9.ratingV2);
  assert.equal((await fetch(origin+'/api/ratings/recalculate',{method:'POST'})).status,401);
  const res=await fetch(origin+'/api/ratings/recalculate',{method:'POST',headers:{Authorization:'Bearer local-rating-test-only'}});assert.equal(res.status,200);
- const stored=JSON.parse(await readFile(process.env.APP_STATE_FILE,'utf8'));assert.equal(stored.players.find(p=>p.id===p9.id).ratingSeedV2.value,1450);
- const stale=structuredClone(state);for(const p of stale.players){delete p.ratingSeedV2;p.internalRating=9999;p.ratingV2={overall:9999};}
+ const stored=JSON.parse(await readFile(process.env.APP_STATE_FILE,'utf8'));assert.equal(stored.players.find(p=>p.id===p9.id).ratingSeedV21.solo,1450);
+ const toku=stored.players.find(p=>p.name.replace(/\s/g,'')==='토쿠');assert.ok(toku.ratingV2.overall<2600);assert.ok(toku.ratingV2.roles.SUPPORT.rating<2000);assert.equal(toku.ratingV2.provisional,true);
+ const stale=structuredClone(state);for(const p of stale.players){delete p.ratingSeedV2;delete p.ratingSeedV21;p.manualPowerFloor=9999;p.internalRating=9999;p.ratingV2={overall:9999};}
  const put=await fetch(origin+'/api/app-state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(stale)});assert.equal(put.status,200);
  const after=await(await fetch(origin+'/api/app-state')).json();assert.deepEqual(after.players.find(p=>p.id===p9.id).ratingV2,expected);assert.equal(JSON.stringify(after.seriesState),series);assert.deepEqual(JSON.parse(await readFile(process.env.DATA_FILE,'utf8')),matches);
  for(const asset of ['/','/rating-engine.js','/rating-evidence.css','/client.js'])assert.equal((await fetch(origin+asset)).status,200,asset);
@@ -27,6 +28,7 @@ try{
   await page.goto(origin,{waitUntil:'domcontentloaded'});await page.locator('[data-stats-id="'+p9.id+'"]').first().click();await page.locator('.rating-role').last().waitFor();
   assert.equal(await page.locator('.rating-role').count(),5);assert.ok((await page.locator('.rating-roles').innerText()).includes(String(expected.roles.SUPPORT.rating).replace(/\B(?=(\d{3})+(?!\d))/g,',')));
   await page.locator('.power-history-toggle').click();await page.locator('.rating-history-select').selectOption('SUPPORT');assert.ok((await page.locator('.power-history-detail').innerText()).includes(expected.roles.SUPPORT.rating.toLocaleString()));
+  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
   await page.locator('.rating-events summary').click();await page.screenshot({path:join(dir,'rating-desktop.png')});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(dir,'rating-mobile.png')});
   assert.equal(await page.locator('.rating-roles').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);assert.deepEqual(errors,[]);
