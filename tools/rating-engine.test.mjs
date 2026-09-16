@@ -36,7 +36,7 @@ test('past peak is blended only into its documented role, never all five',()=>{
 test('unplayed off-roles do not inherit main peak or changes from other roles',()=>{
  const p=players();p[0].tier='MASTER';p[0].form=60;p[0].soloPowerOverride=2600;
  const profile=E.initialProfile(p[0]);assert.equal(profile.roles.TOP.rating,2355);assert.equal(profile.roles.JUNGLE.rating,2075);assert.equal(profile.roles.SUPPORT.rating,2030);
- recalc(p,[game(),game(2)]);assert.equal(E.positionScore(p[0],'SUPPORT'),2030);assert.equal(p[0].ratingV2.roles.SUPPORT.games,0);assert.equal(p[0].ratingV2.roles.SUPPORT.provisional,true);
+ recalc(p,[game(),game(2)]);assert.equal(E.positionScore(p[0],'SUPPORT'),1786);assert.equal(p[0].ratingV2.roles.SUPPORT.evidenceRating,2030);assert.equal(p[0].ratingV2.roles.SUPPORT.games,0);assert.equal(p[0].ratingV2.roles.SUPPORT.provisional,true);
 });
 test('migration preserves legacy seed for audit and freezes the new role-local profile',()=>{
  const p=players();p[0].tier='MASTER';p[0].form=60;p[0].soloPowerOverride=2600;p[0].ratingSeedV2={value:2600,source:'solo-registration',role:'TOP',secondary:'JUNGLE',rolePriors:{}};
@@ -56,13 +56,13 @@ test('removing historical floor does not remove the same-role learning ability',
 
 test('master off-role retains general skill; unknown evidence is provisional, not platinum',()=>{
  const p=players();p[0].tier='MASTER';p[0].form=0;recalc(p,[]);
- assert.equal(E.positionScore(p[0],'TOP'),2050);assert.equal(E.positionScore(p[0],'JUNGLE'),2015);assert.equal(E.positionScore(p[0],'SUPPORT'),1970);
+ assert.equal(E.positionScore(p[0],'TOP'),2050);assert.equal(E.positionScore(p[0],'JUNGLE'),2015);assert.equal(E.positionScore(p[0],'SUPPORT'),1734);assert.equal(p[0].ratingV2.roles.SUPPORT.evidenceRating,1970);
  for(const r of Object.values(p[0].ratingV2.roles)){assert.equal(r.provisional,true);assert.equal(r.confidence,0);}
  const low=E.initialProfile({...players()[0],tier:'SILVER',form:0});assert.equal(low.roles.TOP.rating,1100);assert.equal(low.roles.SUPPORT.rating,1020);
 });
 test('first unfamiliar-role game does not mechanically deduct the role offset from overall',()=>{
  const p=players(),m=game();for(const mp of m.participants)mp.role='MID'; // No unambiguous matchup, equal teams.
- recalc(p,[m]);const change=p[0].ratingHistory[0].roleChange;assert.equal(p[0].ratingV2.overall,1500+change);assert.equal(p[0].ratingV2.roles.MID.rating,1420+change);
+ recalc(p,[m]);const change=p[0].ratingHistory[0].roleChange;assert.equal(p[0].ratingV2.overall,1500+change);assert.equal(p[0].ratingV2.roles.MID.evidenceRating,1420);assert.equal(p[0].ratingV2.roles.MID.rating,1250+change);
 });
 test('V2.1 migration preserves its frozen solo and documented role peak, not current edits',()=>{
  const p=players();p[0].ratingSeedV21={policy:'role-local-priors-v1',solo:2050,primary:'TOP',secondary:'JUNGLE',source:'solo-registration',roles:Object.fromEntries(E.ROLES.map(r=>[r,{rating:1500,base:1500,peak:r==='TOP'?2600:null,historySource:'frozen'}]))};
@@ -77,7 +77,7 @@ test('observable estimates can move both ways without solo-restoration rewards',
  const p=players(),ms=Array.from({length:30},(_,i)=>{const m=game(i+1);Object.assign(m.participants[4],{assists:1,deaths:12,vision:3,ccTime:1,healsOnTeammates:0,shieldsOnTeammates:0});Object.assign(m.participants[9],{assists:18,deaths:1,vision:130,ccTime:150,healsOnTeammates:12000,shieldsOnTeammates:10000});return m;});
  recalc(p,ms);assert.ok(p[4].ratingV2.roles.SUPPORT.rating<1400);assert.ok(p[9].ratingV2.roles.SUPPORT.rating>1600);
  assert.ok(p[4].ratingHistory.every(h=>h.priorChange===0));assert.ok(p[9].ratingHistory.every(h=>h.priorChange===0));
- for(const x of [p[4],p[9]])for(const h of x.ratingHistory)assert.ok(Math.abs(h.roleChange-h.personalChange-h.outcomeChange-h.priorChange)<2);
+ for(const x of [p[4],p[9]])for(const h of x.ratingHistory)assert.ok(Math.abs(h.roleChange-h.personalChange-h.outcomeChange-h.priorChange-(h.calibrationChange||0))<2);
 });
 
 test('solo restoration retires on lifetime participation or role experience, not confidence',()=>{
@@ -89,9 +89,9 @@ test('many unconfirmed games never extend solo restoration or invent comparison 
  const ms=Array.from({length:35},(_,i)=>{const m=game(i+1);if(i<30)m.participants[0].roleSource='inferred';return m;}),p=recalc(players(),ms)[0];
  assert.equal(p.internalGames,35);assert.equal(p.ratingV2.unconfirmed,30);assert.equal(p.ratingV2.comparisonCount,5);assert.equal(p.ratingV2.soloRetention,0);assert.ok(p.ratingV2.roles.TOP.provisional);assert.ok(p.ratingHistory.every(h=>h.priorChange===0));
 });
-test('mature unplayed role starts at internal overall and stays provisional with zero evidence',()=>{
+test('mature unplayed off-role starts conservatively without changing internal overall',()=>{
  const ms=Array.from({length:35},(_,i)=>{const m=game(i+1);Object.assign(m.participants[0],{damage:1000,gold:5000,cs:30,deaths:12,assists:1});return m;}),p=recalc(players(),ms)[0];
- assert.notEqual(p.ratingV2.overall,p.ratingSeedV22.solo);const mid=p.ratingV2.roles.MID;assert.equal(mid.rating,p.ratingV2.overall);assert.equal(mid.seedSource,'internal-transfer');assert.equal(mid.games,0);assert.equal(mid.comparisons,0);assert.equal(mid.confidence,0);assert.equal(mid.provisional,true);
+ assert.notEqual(p.ratingV2.overall,p.ratingSeedV22.solo);const mid=p.ratingV2.roles.MID;assert.equal(mid.evidenceRating,p.ratingV2.overall);assert.equal(mid.rating,Math.round(E.offRoleEstimate(p.ratingSeedV22,'MID',mid.evidenceRating,mid.transferAnchor).rating));assert.equal(mid.seedSource,'internal-transfer');assert.equal(mid.games,0);assert.equal(mid.comparisons,0);assert.equal(mid.confidence,0);assert.equal(mid.provisional,true);
  const next=game(36);[next.participants[0].role,next.participants[2].role]=['MID','TOP'];const q=recalc(players(),[...ms,next])[0];assert.equal(q.ratingHistory.at(-1).roleBefore,mid.rating);assert.equal(q.ratingHistory.at(-1).priorChange,0);assert.deepEqual(q.ratingHistory.slice(0,35),p.ratingHistory);
 });
 test('large rating gap expectation is symmetric and saturates, not a free underdog bonus',()=>{

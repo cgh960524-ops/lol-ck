@@ -29,7 +29,9 @@ try{
   await page.goto(origin,{waitUntil:'domcontentloaded'});await page.locator('[data-stats-id="'+p9.id+'"]').first().click();await page.locator('.rating-role').last().waitFor();
   assert.equal(await page.locator('.rating-role').count(),5);assert.ok((await page.locator('.rating-roles').innerText()).includes(String(expected.roles.SUPPORT.rating).replace(/\B(?=(\d{3})+(?!\d))/g,',')));
   await page.locator('.power-history-toggle').click();await page.locator('.rating-history-select').selectOption('SUPPORT');assert.ok((await page.locator('.power-history-detail').innerText()).includes(expected.roles.SUPPORT.rating.toLocaleString()));
-  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok((await page.locator('.rating-roles').innerText()).includes('최근 추정'));assert.ok((await page.locator('.power-explain').innerText()).includes('초기 기준 졸업'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
+  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok((await page.locator('.rating-roles').innerText()).includes('최근 관측 추정'));assert.ok((await page.locator('.power-explain').innerText()).includes('초기 기준 졸업'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
+  assert.ok((await page.locator('.rating-roles').innerText()).includes('포지션 전이 보정'));
+  await page.locator('.rating-history-select').selectOption('TOP');assert.ok((await page.locator('.power-history-detail').innerText()).includes(expected.roles.TOP.rating.toLocaleString()));
   await page.locator('.rating-events summary').click();await page.screenshot({path:join(dir,'rating-desktop.png')});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(dir,'rating-mobile.png')});
   assert.equal(await page.locator('.rating-roles').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);assert.deepEqual(errors,[]);

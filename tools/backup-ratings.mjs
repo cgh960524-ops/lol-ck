@@ -2,7 +2,9 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {resolve,join} from 'node:path';
-const dir=resolve('../backup',new Date().toISOString().replace(/[:.]/g,'-')+'-before-observed-skill-v3');
+const label=process.argv[2]||'before-observed-skill-v3';
+if(!/^[a-z0-9-]+$/.test(label))throw new Error('Invalid backup label');
+const dir=resolve('../backup',new Date().toISOString().replace(/[:.]/g,'-')+'-'+label);
 await mkdir(dir,{recursive:true});
 const hashes={};
 for(const [path,name] of [['/api/app-state','app-state.json'],['/api/internal-matches','internal-matches.json'],['/client.js','production-client.js'],['/rating-engine.js','production-rating-engine.js']]){
