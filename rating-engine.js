@@ -1,9 +1,10 @@
 import REFERENCE from './rating-reference.js';
-import {observe,estimate} from './rating-observation.js?v=20260917-v32';
+import {observe} from './rating-observation.js?v=20260917-v4';
+import {initialV4Profile,learningFactor,matchupUpdate,predictTeams} from './rating-policy.js?v=20260917-v4';
 /* Shared, deterministic browser/server role-skill estimator. No I/O or POG bonuses. */
 (function (root) {
   'use strict';
-  const VERSION = 'observed-skill-v3.2.20260917';
+  const VERSION = 'matchup-skill-v4.20260917';
   const ROLES = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
   const TIERS = { UNRANKED:1000, IRON:800, BRONZE:950, SILVER:1100, GOLD:1250, PLATINUM:1420, EMERALD:1580, DIAMOND:1780, MASTER:2050, GRANDMASTER:2200, CHALLENGER:2380 };
   const SOURCES = new Set(['manual','team-confirmed','series-confirmed']);
@@ -63,8 +64,8 @@ import {observe,estimate} from './rating-observation.js?v=20260917-v32';
   function positionScore(p,role){
     const r=p.ratingV2?.version===VERSION?p.ratingV2.roles?.[role]:null;
     if(r)return Math.round(r.rating);
-    const profile=initialProfile(p),raw=profile.roles[role]?.rating??overallScore(p);
-    return Math.round(offRoleEstimate(profile,role,raw,Math.min(raw,overallScore(p))).rating);
+    const profile=initialV4Profile(p,initialProfile(p));
+    return Math.round(profile.roles[role]?.rating??overallScore(p));
   }
   const isProvisional=r=>!r||num(r.games)<8||(r.evidenceSeries!==undefined&&r.evidenceSeries<3)||(r.opponents instanceof Set?r.opponents.size:num(r.opponents))<3||num(r.confidence)<.35;
   const confidenceLabel=r=>!r?.games?'잠정 · 미배치':isProvisional(r)?'잠정 · 표본 부족':r.confidence>=.65?'근거 충분':'학습 중';
@@ -88,80 +89,114 @@ import {observe,estimate} from './rating-observation.js?v=20260917-v32';
     for(const m of matches||[])if(m?.gameId&&Array.isArray(m.participants))unique.set(String(m.gameId),m);
     return [...unique.values()].map(m=>{
       const c=corrections.get(String(m.gameId)),day=new Date(num(m.gameCreation)+9*3600000).toISOString().slice(0,10),historical=HISTORICAL[day]||[];
-      return {...m,seriesId:c?.seriesId||`game:${m.gameId}`,ratingSnapshot:c?.snapshot,participants:m.participants.map(mp=>{const role=c?.roles.get(String(find(mp)?.id)),manual=historical.find(([name])=>String(mp.gameName||'').replace(/\s/g,'').toLowerCase().startsWith(name.toLowerCase()));return ROLES.includes(role)?{...mp,role,roleSource:'series-confirmed'}:manual?{...mp,role:manual[1],roleSource:'manual'}:{...mp};})};
+      return {...m,seriesId:c?.seriesId||`session:${new Date(num(m.gameCreation)+3*3600000).toISOString().slice(0,10)}:${m.participants.map(mp=>String(find(mp)?.id||norm(mp.gameName,mp.tagLine))).sort().join(',')}`,seriesSource:c?'confirmed':'inferred-session',ratingSnapshot:c?.snapshot,participants:m.participants.map(mp=>{const role=c?.roles.get(String(find(mp)?.id)),manual=historical.find(([name])=>String(mp.gameName||'').replace(/\s/g,'').toLowerCase().startsWith(name.toLowerCase()));return ROLES.includes(role)?{...mp,role,roleSource:'series-confirmed'}:manual?{...mp,role:manual[1],roleSource:'manual'}:{...mp};})};
     }).sort((a,b)=>num(a.gameCreation)-num(b.gameCreation)||String(a.gameId).localeCompare(String(b.gameId)));
   }
   const confirmedRole = mp => SOURCES.has(mp.roleSource)&&ROLES.includes(mp.role)?mp.role:null;
   const performance=(mp,opp,m,role)=>observe(mp,opp,m,role,REFERENCE);
   function recalculate(players,matches,seriesState={}) {
-    const find=playerResolver(players),prepared=prepareMatches(players,matches,seriesState),models=new Map(),diagnostics={version:VERSION,matches:0,unmatched:0,unconfirmed:0,duplicateLinks:0};
+    const find=playerResolver(players),prepared=prepareMatches(players,matches,seriesState),models=new Map();
+    const diagnostics={version:VERSION,matches:0,unmatched:0,unconfirmed:0,duplicateLinks:0,lowQuality:0,inferredSessions:new Set()};
     for(const p of players){
-      // All previous seeds remain untouched for audit/rollback.
       if(p.ratingSeedV22?.policy!=='skill-baseline-v1')p.ratingSeedV22=initialProfile(p);
-      const profile=p.ratingSeedV22,seed=profile.roles[profile.primary].rating;
-      models.set(String(p.id),{seed,profile,unknown:profile.source==='unknown-population',roles:{},games:0,overall:seed,history:[],unconfirmed:0});
+      if(p.ratingSeedV4?.policy!=='matchup-v4')p.ratingSeedV4=initialV4Profile(p,p.ratingSeedV22);
+      const profile=p.ratingSeedV4,seed=profile.roles[profile.primary].rating;
+      models.set(String(p.id),{profile,seed,roles:{},games:0,overall:seed,history:[],unconfirmed:0});
       p.internalGames=0;p.internalRoles={};p.internalChampions={};p.internalKills=0;p.internalDeaths=0;p.internalAssists=0;p.internalKda=0;p.internalChampionScore=0;p.ratingHistory=[];
     }
-    function ensureRole(p,role) {
+    function ensureRole(p,role,time=Infinity){
       const model=models.get(String(p.id));
-      if(!model.roles[role]){const prior=model.profile.roles[role],retention=soloRetention(model.games),hasInternal=Object.values(model.roles).some(r=>r.comparisons>0),transfer=hasInternal?model.overall:prior.rating,seed=clamp(prior.rating*retention+transfer*(1-retention),400,3200);model.roles[role]={rating:seed,seed,transferAnchor:Math.min(seed,model.overall),observedSeries:new Set(),observedOpponents:new Set(),seedSource:hasInternal&&retention<1?'internal-transfer':'registration',registrationShare:hasInternal?retention:1,games:0,comparisons:0,weight:0,wins:0,performanceTotal:0,expectedTotal:0,opponents:new Set(),series:new Map(),recent:[],observations:[],estimatedTarget:null,evidenceSeries:0,priorShare:1,lastAt:0,confidence:0,uncertainty:330,prior:!!prior.peak};}
-      const r=model.roles[role];if(r.assignedRating===undefined)r.assignedRating=offRoleEstimate(model.profile,role,r.rating,r.transferAnchor).rating;
-      return r;
+      if(!model.roles[role]){
+        const latest=(p.soloEvidenceHistory||[]).filter(x=>x.source==='riot-solo-420'&&x.observedAt<=time).sort((a,b)=>a.observedAt-b.observedAt).at(-1);
+        const active=latest?initialV4Profile({...p,ratingSeedV4:undefined,soloEvidence:latest},p.ratingSeedV22):model.profile;
+        const prior=active.roles[role],mature=model.games>=30&&!active.highTier;
+        const seed=mature?Math.min(prior.rating,model.overall):prior.rating;
+        model.roles[role]={rating:seed,seed,seedSource:mature?'internal-transfer':prior.source,games:0,comparisons:0,wins:0,weight:0,confidence:0,uncertainty:330,opponents:new Set(),series:new Set(),seriesGames:new Map(),opponentSeries:new Map(),recent:[],expectedTotal:0,performanceTotal:0,lastLearning:learningFactor(model.profile,role),estimatedTarget:null};
+      }
+      return model.roles[role];
     }
-    const appliedRole=(model,role,r)=>{const estimate=offRoleEstimate(model.profile,role,r.rating,r.transferAnchor,r.comparisons,r.observedSeries.size,r.observedOpponents.size);return {...estimate,calibrationTarget:estimate.rating,rating:r.assignedRating,calibrationDiscount:r.rating-r.assignedRating};};
-    function overall(model){const roles=Object.entries(model.roles).filter(([,r])=>r.games),total=roles.reduce((s,[,r])=>s+Math.sqrt(r.weight),0);return total?clamp(roles.reduce((s,[role,r])=>s+(r.rating+(model.profile.solo-model.profile.roles[role].base)*r.registrationShare*soloRetention(model.games,r.games))*Math.sqrt(r.weight),0)/total,400,3200):model.seed;}
+    const overall=model=>{
+      const rs=Object.values(model.roles).filter(r=>r.comparisons),total=rs.reduce((s,r)=>s+Math.sqrt(r.weight),0);
+      return total?rs.reduce((s,r)=>s+r.rating*Math.sqrt(r.weight),0)/total:model.seed;
+    };
     for(const m of prepared){
       if(num(m.duration)<300)continue;
+      if(m.seriesSource==='inferred-session')diagnostics.inferredSessions.add(m.seriesId);
       const seen=new Set(),entries=[];
-      for(const mp of m.participants){const p=find(mp);if(!p){diagnostics.unmatched++;continue;}const id=String(p.id);if(seen.has(id)){diagnostics.duplicateLinks++;continue;}seen.add(id);const role=confirmedRole(mp),model=models.get(id),r=role?ensureRole(p,role):null;entries.push({mp,p,model,role,r,id});}
-      const sides=[100,200].map(id=>entries.filter(e=>e.mp.teamId===id));
+      for(const mp of m.participants){
+        const p=find(mp);if(!p){diagnostics.unmatched++;continue;}
+        const id=String(p.id);if(seen.has(id)){diagnostics.duplicateLinks++;continue;}seen.add(id);
+        const role=confirmedRole(mp),model=models.get(id),r=role?ensureRole(p,role,num(m.gameCreation)):null;
+        entries.push({id,p,mp,role,model,r});
+      }
+      const sides=[100,200].map(id=>entries.filter(x=>x.mp.teamId===id));
       if(!sides[0].length||!sides[1].length)continue;
-      const pre=new Map(entries.map(e=>[e.id,{rating:e.r?.rating??e.model.overall,confidence:e.r?.confidence||0,assignedRating:e.r?appliedRole(e.model,e.role,e.r).rating:e.model.overall,overall:e.model.overall}])),averages=sides.map(side=>mean(side.map(e=>pre.get(e.id).assignedRating))),teamExpected=1/(1+10**((averages[1]-averages[0])/400)),pending=[];
+      const pre=new Map(entries.map(e=>[e.id,{rating:e.r?.rating??e.model.overall,confidence:e.r?.confidence||0}]));
+      const prediction=predictTeams(...sides.map(side=>side.map(e=>({role:e.role,power:pre.get(e.id).rating}))));
+      const pending=[];
       for(const e of entries){
-        const {mp,p,model,role,r,id}=e,sameRole=role?entries.filter(x=>x.mp.teamId!==mp.teamId&&x.role===role):[],ownRoleCount=role?m.participants.filter(x=>x.teamId===mp.teamId&&confirmedRole(x)===role).length:0,opponentRoleCount=role?m.participants.filter(x=>x.teamId!==mp.teamId&&confirmedRole(x)===role).length:0,opponent=sameRole.length===1&&ownRoleCount===1&&opponentRoleCount===1?sameRole[0]:null;
-        const comparisonStatus=!role?'role-unconfirmed':ownRoleCount!==1?'own-role-ambiguous':opponentRoleCount>1?'opponent-role-ambiguous':opponentRoleCount===0?'opponent-role-unconfirmed':!opponent?'opponent-unlinked':'matched';
-        const expected=mp.teamId===100?teamExpected:1-teamExpected,oppPre=opponent?pre.get(opponent.id):null,obs=performance(mp,opponent?.mp,m,role);
-        let before=r?.rating??model.overall,change=0,personal=0,outcome=0,priorChange=0,acceleration=1,expectedPerformance=0,residual=0;
-        if(r){
-          const repeated=r.series.get(m.seriesId)||0,independence=1/Math.sqrt(1+repeated*.5);
-          if(opponent&&obs.target!==null&&obs.quality>=.65){
-            // A bounded opponent-context correction uses measured matchup margins,
-            // never a win/underdog bounty. The fixed reference prevents a free +C shift.
-            const relativeTarget=oppPre.rating+REFERENCE.spread*obs.pairedSignal;
-            const contextWeight=.65*(.5+.5*oppPre.confidence);
-            obs.contextAdjustment=clamp((relativeTarget-obs.target)*contextWeight,-400,400);
-            obs.target=clamp(obs.target+obs.contextAdjustment,650,2850);
-            r.observations.push({seriesId:m.seriesId,target:obs.target,quality:obs.quality});
-            const keep=new Set([...new Set(r.observations.map(x=>x.seriesId))].slice(-12));
-            r.observations=r.observations.filter(x=>keep.has(x.seriesId));
-            const evidence=estimate(r.observations);
-            r.estimatedTarget=evidence.target;r.evidenceSeries=evidence.series;
-            r.priorShare=Math.min(soloRetention(model.games+1,r.games+1),Math.max(0,1-r.observations.length/12));
-            const target=r.seed*r.priorShare+evidence.target*(1-r.priorShare);
-            expectedPerformance=(before-REFERENCE.center)/REFERENCE.spread;
-            residual=(obs.target-before)/REFERENCE.spread;
-            change=clamp(target-before,-(r.games<5?140:95),r.games<5?140:95);
-            personal=change;
-          }
-          pending.push({e,change,expected,expectedPerformance,comparisonStatus,obs,residual,personal,outcome,priorChange,acceleration,before,opponent,independence});
-        }else{
-          diagnostics.unconfirmed++;model.unconfirmed++;
-          // Unknown roles are counted for KDA/champions but cannot train a guessed lane.
-          pending.push({e,change:0,expected,expectedPerformance:0,comparisonStatus,obs,residual:0,personal:0,outcome:0,priorChange:0,acceleration:1,before,opponent:null,independence:0});
-        }
+        const {mp,p,role,r,model}=e,own=m.participants.filter(x=>x.teamId===mp.teamId&&confirmedRole(x)===role);
+        const rivals=m.participants.filter(x=>x.teamId!==mp.teamId&&confirmedRole(x)===role);
+        const candidates=entries.filter(x=>x.mp.teamId!==mp.teamId&&x.role===role);
+        const opponent=role&&own.length===1&&rivals.length===1&&candidates.length===1?candidates[0]:null;
+        const comparisonStatus=!role?'role-unconfirmed':own.length!==1?'own-role-ambiguous':rivals.length>1?'opponent-role-ambiguous':rivals.length===0?'opponent-role-unconfirmed':!opponent?'opponent-unlinked':'matched';
+        const obs=performance(mp,opponent?.mp,m,role),before=pre.get(e.id).rating;
+        const valid=!!opponent&&obs.target!==null&&obs.quality>=.65;
+        const known=(p.soloEvidenceHistory||[]).filter(x=>x.source==='riot-solo-420'&&x.observedAt<=num(m.gameCreation)).sort((a,b)=>a.observedAt-b.observedAt);
+        const learning=learningFactor(model.profile,role,known.at(-1)||null,known);
+        const repeat=r?.seriesGames.get(m.seriesId)||0,opponentSeries=opponent?(r.opponentSeries.get(opponent.id)?.size||0):0;
+        const update=valid?matchupUpdate({before,opponent:pre.get(opponent.id).rating,opponentConfidence:pre.get(opponent.id).confidence,signal:obs.signal,pairedSignal:obs.pairedSignal,quality:obs.quality,comparisons:r.comparisons,repeat,opponentSeries,learning,metrics:obs.metrics,opponentMetrics:performance(opponent.mp,mp,m,role).metrics}):null;
+        pending.push({e,obs,before,opponent,comparisonStatus,valid,update,learning,repeat,expected:mp.teamId===100?prediction.blueWinRate:1-prediction.blueWinRate});
       }
       for(const step of pending){
-        const {e,change,expected,expectedPerformance,comparisonStatus,obs,residual,personal,outcome,priorChange,acceleration,before,opponent,independence}=step,{mp,p,model,r,role}=e;
-        const soloRetentionBefore=soloRetention(model.games,r?.games||0),internalGamesBefore=model.games;
-        if(r){r.rating=clamp(before+change,400,3200);r.games++;if(opponent&&obs.quality>=.65){r.comparisons++;r.observedSeries.add(m.seriesId);r.observedOpponents.add(opponent.id);}r.weight+=independence*(opponent&&obs.quality>=.65?obs.quality:0);r.wins+=Number(!!mp.win);r.expectedTotal+=expected;r.performanceTotal+=obs.signal;if(opponent)r.opponents.add(opponent.id);r.series.set(m.seriesId,(r.series.get(m.seriesId)||0)+1);r.recent.push(residual);r.lastAt=num(m.gameCreation);const diversity=.45+.55*Math.min(1,r.opponents.size/6);r.confidence=clamp(r.weight/(r.weight+6)*diversity*(.65+.35*obs.quality)*Math.min(1,r.evidenceSeries/4),0,.94);r.uncertainty=Math.round(330*(1-r.confidence)+35*r.confidence);const projected=appliedRole(model,role,r);if(opponent&&obs.quality>=.65)r.assignedRating=clamp(r.assignedRating+clamp(projected.calibrationTarget-r.assignedRating,-(r.games<=5?140:95),r.games<=5?140:95),400,3200);}
+        const {e,obs,before,opponent,comparisonStatus,valid,update,learning,repeat,expected}=step,{mp,p,role,r,model}=e;
+        const change=valid?clamp(before+update.change,400,3200)-before:0,oldOverall=model.overall,internalGamesBefore=model.games;
+        if(r){
+          r.games++;r.wins+=Number(!!mp.win);r.expectedTotal+=expected;r.performanceTotal+=obs.signal;r.lastLearning=learning;
+          if(valid){
+            r.rating=clamp(before+change,400,3200);r.comparisons++;
+            r.opponents.add(opponent.id);r.series.add(m.seriesId);r.seriesGames.set(m.seriesId,repeat+1);
+            const os=r.opponentSeries.get(opponent.id)||new Set();os.add(m.seriesId);r.opponentSeries.set(opponent.id,os);
+            r.weight+=obs.quality/(1+repeat);r.recent.push(update.residual);
+            r.estimatedTarget=clamp(before+650*update.residual,400,3200);
+            const diversity=.35+.65*Math.min(1,r.opponents.size/5);
+            r.confidence=clamp(r.weight/(r.weight+8)*diversity*Math.min(1,r.series.size/3),0,.94);
+            r.uncertainty=Math.round(330-295*r.confidence);
+          }else if(opponent)diagnostics.lowQuality++;
+        }else{diagnostics.unconfirmed++;model.unconfirmed++;}
         model.games++;p.internalGames++;p.internalKills+=num(mp.kills);p.internalDeaths+=num(mp.deaths);p.internalAssists+=num(mp.assists);
-        const ckey=`${role||'UNKNOWN'}|${mp.championKey||mp.championName||'Unknown'}`,c=p.internalChampions[ckey]||={name:mp.championName||'Unknown',championKey:mp.championKey||mp.championName,championId:num(mp.championId),role:role||'UNKNOWN',games:0,wins:0,kills:0,deaths:0,assists:0,damageTotal:0,goldTotal:0};c.games++;c.wins+=Number(!!mp.win);for(const key of ['kills','deaths','assists'])c[key]+=num(mp[key]);c.damageTotal+=num(mp.damage);c.goldTotal+=num(mp.gold);
-        const afterOverall=overall(model),applied=r?appliedRole(model,role,r):null,assignedBefore=pre.get(e.id).assignedRating;model.history.push({gameId:String(m.gameId),seriesId:m.seriesId,time:num(m.gameCreation),version:VERSION,role,comparisonStatus,internalGamesBefore,soloRetention:soloRetentionBefore,win:!!mp.win,before:Math.round(model.overall),after:Math.round(afterOverall),change:Math.round(afterOverall)-Math.round(model.overall),roleBefore:Math.round(assignedBefore),roleAfter:r?Math.round(applied.rating):null,roleChange:r?Math.round(applied.rating)-Math.round(assignedBefore):0,evidenceRoleBefore:Math.round(before),evidenceRoleAfter:r?Math.round(r.rating):null,calibrationChange:r?Number(((applied.rating-r.rating)-(assignedBefore-before)).toFixed(1)):0,calibrationDiscount:applied?Math.round(r.rating)-Math.round(applied.rating):0,roleEvidenceShare:applied?.roleEvidenceShare??0,expected:Number(expected.toFixed(3)),performance:Number(obs.signal.toFixed(3)),expectedPerformance:opponent?Number(expectedPerformance.toFixed(3)):null,residual:Number(residual.toFixed(3)),opponentId:opponent?.p.id||null,opponentPower:opponent?Math.round(pre.get(opponent.id).assignedRating):null,opponentEvidencePower:opponent?Math.round(pre.get(opponent.id).rating):null,personalChange:Number(personal.toFixed(1)),outcomeChange:Number(outcome.toFixed(1)),priorChange:Number(priorChange.toFixed(1)),acceleration,quality:Number(obs.quality.toFixed(2)),supportEngagement:obs.supportEngagement??null,supportUtilityCap:obs.supportUtilityCap??null,observationTarget:obs.target===null?null:Math.round(obs.target),contextAdjustment:Math.round(obs.contextAdjustment||0),estimatedTarget:r?.estimatedTarget==null?null:Math.round(r.estimatedTarget),evidenceSeries:r?.evidenceSeries||0,priorShare:r?.priorShare??1,reason:!role?'unconfirmed':!opponent?'no-opponent':obs.quality<.65?'low-quality':applied.rating-assignedBefore>1?'above':applied.rating-assignedBefore<-1?'below':'expected',metrics:obs.metrics});model.overall=afterOverall;
+        const ckey=`${role||'UNKNOWN'}|${mp.championKey||mp.championName||'Unknown'}`;
+        const c=p.internalChampions[ckey]||={name:mp.championName||'Unknown',championKey:mp.championKey||mp.championName,championId:num(mp.championId),role:role||'UNKNOWN',games:0,wins:0,kills:0,deaths:0,assists:0,damageTotal:0,goldTotal:0};
+        c.games++;c.wins+=Number(!!mp.win);for(const key of ['kills','deaths','assists'])c[key]+=num(mp[key]);c.damageTotal+=num(mp.damage);c.goldTotal+=num(mp.gold);
+        model.overall=overall(model);
+        model.history.push({gameId:String(m.gameId),seriesId:m.seriesId,seriesSource:m.seriesSource,time:num(m.gameCreation),version:VERSION,role,comparisonStatus,internalGamesBefore,soloRetention:soloRetention(internalGamesBefore,(r?.games||1)-1),win:!!mp.win,
+          before:Math.round(oldOverall),after:Math.round(model.overall),change:Math.round(model.overall)-Math.round(oldOverall),
+          roleBefore:Math.round(before),roleAfter:r?Math.round(r.rating):null,roleChange:r?Math.round(r.rating)-Math.round(before):0,
+          evidenceRoleBefore:Math.round(before),evidenceRoleAfter:r?Math.round(r.rating):null,calibrationChange:0,calibrationDiscount:0,roleEvidenceShare:r?.confidence||0,
+          expected:Number(expected.toFixed(3)),performance:Number(obs.signal.toFixed(3)),expectedPerformance:update?.expected??null,actualMatchup:update?.actual??null,residual:update?.residual??0,
+          opponentId:opponent?.p.id||null,opponentPower:opponent?Math.round(pre.get(opponent.id).rating):null,opponentEvidencePower:opponent?Math.round(pre.get(opponent.id).rating):null,
+          personalChange:Number(change.toFixed(2)),matchupChange:update?.matchupChange??0,referenceChange:update?.referenceChange??0,capAdjustment:(update?.capAdjustment||0)+change-(update?.change||0),outcomeChange:0,priorChange:0,acceleration:learning,
+          opponentReliability:update?.reliability??0,repeatFactor:update?.repeatFactor??0,opponentFactor:update?.opponentFactor??0,defensive:update?.defensive||false,defensiveFactor:update?.defensiveFactor??1,
+          quality:Number(obs.quality.toFixed(2)),excludedMetrics:obs.excludedMetrics||[],supportEngagement:obs.supportEngagement??null,
+          observationTarget:valid?Math.round(r.estimatedTarget):null,contextAdjustment:0,estimatedTarget:r?.estimatedTarget==null?null:Math.round(r.estimatedTarget),evidenceSeries:r?.series.size||0,priorShare:0,
+          reason:!role?'unconfirmed':!opponent?'no-opponent':!valid?'low-quality':change>1?'above':change<-1?'below':'expected',metrics:obs.metrics});
       }
       diagnostics.matches++;
     }
-    for(const p of players){const model=models.get(String(p.id)),roles={};for(const role of ROLES)ensureRole(p,role);for(const [role,r] of Object.entries(model.roles)){const applied=appliedRole(model,role,r);roles[role]={rating:Math.round(applied.rating),evidenceRating:Math.round(r.rating),transferAnchor:Math.round(r.transferAnchor),transferBaseline:Math.round(applied.transferBaseline),calibrationDiscount:Math.round(r.rating)-Math.round(applied.rating),calibrationTarget:Math.round(applied.calibrationTarget),roleEvidenceShare:applied.roleEvidenceShare,calibrationStatus:applied.calibrationStatus,observedSeries:r.observedSeries.size,observedOpponents:r.observedOpponents.size,provisional:isProvisional(r),seed:Math.round(r.seed),seedSource:r.seedSource,estimatedTarget:r.estimatedTarget===null?null:Math.round(r.estimatedTarget),evidenceSeries:r.evidenceSeries,priorShare:r.priorShare,soloRetention:soloRetention(model.games,r.games),comparisons:r.comparisons,games:r.games,wins:r.wins,confidence:Number(r.confidence.toFixed(3)),uncertainty:r.uncertainty,opponents:r.opponents.size,series:r.series.size,recentResidual:Number(mean(r.recent.slice(-5)).toFixed(3)),expectedTotal:r.expectedTotal,performanceTotal:r.performanceTotal};if(r.games)p.internalRoles[role]={...roles[role]};}p.ratingV2={version:VERSION,overall:Math.round(model.overall),roles,unconfirmed:model.unconfirmed,seed:model.seed,seedSource:model.profile.source,soloSeed:model.profile.solo,overallMethod:'observed-skill',referenceVersion:REFERENCE.version,soloRetention:soloRetention(model.games),soloRestorationEnded:soloRetention(model.games)===0,comparisonCount:Object.values(model.roles).reduce((s,r)=>s+r.comparisons,0),provisional:Object.values(roles).filter(r=>r.games).length===0||Object.values(roles).filter(r=>r.games).reduce((s,r)=>s+r.games*r.confidence,0)/Math.max(1,p.internalGames)<.35||new Set(Object.values(model.roles).flatMap(r=>[...r.opponents])).size<3||p.internalGames<8};p.internalRating=Math.round(model.overall);p.ratingUncertainty=Math.round(mean(Object.values(roles).map(r=>r.uncertainty))||330);p.internalKda=p.internalGames?Number(((p.internalKills+p.internalAssists)/Math.max(1,p.internalDeaths)).toFixed(2)):0;p.ratingHistory=model.history.slice(-120);}
+    for(const p of players){
+      const model=models.get(String(p.id)),roles={};for(const role of ROLES)ensureRole(p,role);
+      for(const [role,r] of Object.entries(model.roles)){
+        roles[role]={rating:Math.round(r.rating),evidenceRating:Math.round(r.rating),seed:Math.round(r.seed),seedSource:r.seedSource,transferAnchor:Math.round(r.seed),transferBaseline:Math.round(r.seed),calibrationDiscount:0,calibrationTarget:Math.round(r.rating),roleEvidenceShare:r.confidence,calibrationStatus:r.comparisons?'matchup-observed':'unplayed-estimate',observedSeries:r.series.size,observedOpponents:r.opponents.size,
+          provisional:isProvisional({...r,evidenceSeries:r.series.size}),estimatedTarget:r.estimatedTarget==null?null:Math.round(r.estimatedTarget),evidenceSeries:r.series.size,priorShare:0,soloRetention:soloRetention(model.games,r.games),comparisons:r.comparisons,games:r.games,wins:r.wins,confidence:Number(r.confidence.toFixed(3)),uncertainty:r.uncertainty,opponents:r.opponents.size,series:r.series.size,recentResidual:Number(mean(r.recent.slice(-5)).toFixed(3)),expectedTotal:r.expectedTotal,performanceTotal:r.performanceTotal,learningFactor:r.lastLearning};
+        if(r.games)p.internalRoles[role]={...roles[role]};
+      }
+      const played=Object.values(roles).filter(r=>r.comparisons);
+      p.ratingV2={version:VERSION,overall:Math.round(model.overall),roles,unconfirmed:model.unconfirmed,seed:model.seed,seedSource:model.profile.source,soloSeed:model.profile.solo,overallMethod:'matchup-relative',referenceVersion:REFERENCE.version,soloRetention:soloRetention(model.games),soloRestorationEnded:soloRetention(model.games)===0,comparisonCount:played.reduce((s,r)=>s+r.comparisons,0),provisional:!played.length||mean(played.map(r=>r.confidence))<.35,roleEvidenceVerified:model.profile.roleVerified,highTier:model.profile.highTier};
+      p.internalRating=Math.round(model.overall);p.ratingUncertainty=Math.round(mean(Object.values(roles).map(r=>r.uncertainty))||330);
+      p.internalKda=p.internalGames?Number(((p.internalKills+p.internalAssists)/Math.max(1,p.internalDeaths)).toFixed(2)):0;p.ratingHistory=model.history.slice(-120);
+    }
+    diagnostics.inferredSessions=diagnostics.inferredSessions.size;
     return {players,matches:prepared,diagnostics};
   }
-  root.CKRating={VERSION,ROLES,soloRetention,matchupExpectation,initialProfile,isProvisional,confidenceLabel,basePower,overallScore,positionScore,confidence,confirmedRole,playerResolver,prepareMatches,recalculate,offRoleEstimate,reference:REFERENCE};
+  root.CKRating={VERSION,ROLES,soloRetention,matchupExpectation,initialProfile,isProvisional,confidenceLabel,basePower,overallScore,positionScore,confidence,confirmedRole,playerResolver,prepareMatches,recalculate,offRoleEstimate,reference:REFERENCE,predictTeams};
 })(globalThis);

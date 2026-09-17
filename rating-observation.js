@@ -35,14 +35,17 @@ export function supportSignals(z){
 }
 export function observe(p,opp,m,role,ref){
  if(!opp||!WEIGHTS[role])return {signal:0,quality:0,metrics:[],championEvidence:0,target:null};
- const a=features(p,m),b=features(opp,m),metrics=[];
+ const a=features(p,m),b=features(opp,m),metrics=[],excludedMetrics=[];
+ const allFeatures=m.participants.map(x=>features(x,m));
  // Leave both compared players out of the team context. Missing gold is not zero.
  const peers=mp=>m.participants.filter(x=>x.teamId===mp.teamId&&x!==mp);
  const ta=peers(p),tb=peers(opp),complete=ta.length===4&&tb.length===4&&[...ta,...tb].every(x=>x.gold!=null&&Number.isFinite(Number(x.gold)));
  const advantage=complete?clamp(Math.log(Math.max(1,ta.reduce((s,x)=>s+n(x.gold),0))/Math.max(1,tb.reduce((s,x)=>s+n(x.gold),0))),-.8,.8):0;
  let total=0,sum=0,pairedTotal=0,evidence=0;const standardized=[];
  for(const [key,w] of Object.entries(WEIGHTS[role])){
-  const pool=ref.cells[`${role}|*|${key}`];if(!w||a[key]===undefined||b[key]===undefined||!pool)continue;
+  const pool=ref.cells[`${role}|*|${key}`];if(!w)continue;
+  const uninformative=['tank','control','protection','objective'].includes(key)&&!allFeatures.some(x=>x[key]>0);
+  if(a[key]===undefined||b[key]===undefined||!pool||uninformative||(key==='protection'&&pool.mean===0)){excludedMetrics.push(key);continue;}
   const ca=ref.cells[`${role}|${p.championKey||p.championName}|${key}`],cb=ref.cells[`${role}|${opp.championKey||opp.championName}|${key}`];
   const correction=c=>c?clamp((c.mean-pool.mean)*c.n/(c.n+20),-.25,.25):0;
   const context=['growth','objective'].includes(key)?advantage*.20:0;
@@ -57,7 +60,7 @@ export function observe(p,opp,m,role,ref){
   metrics.push({key,label:LABELS[key],signal:Number(absolute.toFixed(3)),absolute:Number(absolute.toFixed(3)),rawSignal:Number(clamp(az,-2.5,2.5).toFixed(3)),paired:Number(paired.toFixed(3)),weight:w});
  }
  const signal=total?sum/total:0;
- return {signal,supportEngagement:supportA?.engagement??null,supportUtilityCap:supportA?.utilityCapFactor??null,pairedSignal:total?pairedTotal/total:0,quality:total,metrics,championEvidence:total?evidence/total:0,target:total?clamp(ref.center+ref.spread*signal,650,2850):null};
+ return {signal,excludedMetrics,supportEngagement:supportA?.engagement??null,supportUtilityCap:supportA?.utilityCapFactor??null,pairedSignal:total?pairedTotal/total:0,quality:total,metrics,championEvidence:total?evidence/total:0,target:total?clamp(ref.center+ref.spread*signal,650,2850):null};
 }
 // Each series is a cluster: five identical sets cannot count as five independent opponents.
 export function estimate(observations){

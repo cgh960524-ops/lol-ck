@@ -19,18 +19,18 @@ try{
  const res=await fetch(origin+'/api/ratings/recalculate',{method:'POST',headers:{Authorization:'Bearer local-rating-test-only'}});assert.equal(res.status,200);
  const stored=JSON.parse(await readFile(process.env.APP_STATE_FILE,'utf8'));assert.equal(stored.players.find(p=>p.id===p9.id).ratingSeedV22.solo,1450);
  const toku=stored.players.find(p=>p.name.replace(/\s/g,'')==='토쿠');assert.ok(toku.ratingV2.overall<2600);assert.ok(toku.ratingV2.roles.SUPPORT.rating<toku.ratingV2.roles.TOP.rating);assert.equal(toku.ratingV2.provisional,true);
- const stale=structuredClone(state);for(const p of stale.players){delete p.ratingSeedV2;delete p.ratingSeedV21;p.ratingSeedV22={policy:'skill-baseline-v1',solo:9999};p.manualPowerFloor=9999;p.internalRating=9999;p.ratingV2={overall:9999};}
+ const stale=structuredClone(state);for(const p of stale.players){delete p.ratingSeedV2;delete p.ratingSeedV21;p.ratingSeedV22={policy:'skill-baseline-v1',solo:9999};p.ratingSeedV4={policy:'matchup-v4',solo:9999};p.manualPowerFloor=9999;p.internalRating=9999;p.ratingV2={overall:9999};}
  const put=await fetch(origin+'/api/app-state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(stale)});assert.equal(put.status,200);
  const after=await(await fetch(origin+'/api/app-state')).json();assert.deepEqual(after.players.find(p=>p.id===p9.id).ratingV2,expected);assert.equal(JSON.stringify(after.seriesState),series);assert.deepEqual(JSON.parse(await readFile(process.env.DATA_FILE,'utf8')),matches);
- for(const asset of ['/','/rating-engine.js','/rating-observation.js','/rating-reference.js','/rating-evidence.css','/client.js'])assert.equal((await fetch(origin+asset)).status,200,asset);
+ for(const asset of ['/','/rating-engine.js','/rating-observation.js','/rating-policy.js','/rating-reference.js','/rating-evidence.css','/client.js'])assert.equal((await fetch(origin+asset)).status,200,asset);
  if(process.env.PLAYWRIGHT_PACKAGE){
   const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PACKAGE));browser=await chromium.launch({headless:true,channel:'msedge'});const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.url().startsWith(origin+'/api/')&&r.status()>=400)errors.push(r.url()+': '+r.status())});
   await page.route('**/*',route=>route.request().url().startsWith(origin)?route.continue():route.abort());
   await page.goto(origin,{waitUntil:'domcontentloaded'});await page.locator('[data-stats-id="'+p9.id+'"]').first().click();await page.locator('.rating-role').last().waitFor();
   assert.equal(await page.locator('.rating-role').count(),5);assert.ok((await page.locator('.rating-roles').innerText()).includes(String(expected.roles.SUPPORT.rating).replace(/\B(?=(\d{3})+(?!\d))/g,',')));
   await page.locator('.power-history-toggle').click();await page.locator('.rating-history-select').selectOption('SUPPORT');assert.ok((await page.locator('.power-history-detail').innerText()).includes(expected.roles.SUPPORT.rating.toLocaleString()));
-  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok((await page.locator('.rating-roles').innerText()).includes('최근 관측 추정'));assert.ok((await page.locator('.power-explain').innerText()).includes('초기 기준 졸업'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
-  assert.ok((await page.locator('.rating-roles').innerText()).includes('포지션 전이 보정'));
+  assert.ok((await page.locator('.rating-roles').innerText()).includes('잠정'));assert.ok((await page.locator('.rating-roles').innerText()).includes('맞상대 누적 수행'));assert.ok((await page.locator('.power-explain').innerText()).includes('솔랭 점수 복원은 없습니다'));assert.ok(!(await page.locator('.power-explain').innerText()).includes('하한 9,999점 적용'));
+  assert.ok((await page.locator('.rating-roles').innerText()).includes('표본 부족 추가 감점 없음'));
   await page.locator('.rating-history-select').selectOption('TOP');assert.ok((await page.locator('.power-history-detail').innerText()).includes(expected.roles.TOP.rating.toLocaleString()));
   await page.locator('.rating-events summary').click();await page.screenshot({path:join(dir,'rating-desktop.png')});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(dir,'rating-mobile.png')});
