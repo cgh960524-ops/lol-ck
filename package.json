@@ -7,7 +7,7 @@
     "dev": "node server.mjs",
     "start": "node server.mjs",
     "check": "node --check server.mjs && node --check client.js && node --check api/[...path].mjs && node --check rating-engine.js",
-    "test": "node --test tools/rating-engine.test.mjs tools/rating-v3.test.mjs tools/rating-v31.test.mjs tools/rating-v32.test.mjs tools/rating-v4.test.mjs tools/power-tier.test.mjs",
+    "test": "node --test tools/rating-engine.test.mjs tools/rating-v3.test.mjs tools/rating-v31.test.mjs tools/rating-v32.test.mjs tools/rating-v4.test.mjs tools/power-tier.test.mjs tools/player-style.test.mjs",
     "build:assets": "node tools/generate-static-assets.mjs ."
   },
   "dependencies": {

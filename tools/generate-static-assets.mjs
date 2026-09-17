@@ -5,7 +5,7 @@ const target = process.argv[2];
 if (!target) throw new Error("대상 디렉터리가 필요합니다.");
 
 const names = [
-  "index.html", "riot.txt", "client.js", "rating-engine.js", "rating-observation.js", "rating-policy.js", "rating-reference.js", "rating-evidence.css", "hall-of-fame.js", "styles.css", "champions.css", "bulk.css",
+  "index.html", "riot.txt", "client.js", "player-radar.js", "player-style.js", "player-radar.css", "rating-engine.js", "rating-observation.js", "rating-policy.js", "rating-reference.js", "rating-evidence.css", "hall-of-fame.js", "styles.css", "champions.css", "bulk.css",
   "matches.css", "match-form.css", "aliases.css", "role-lock.css", "series.css",
   "series-result.css", "series-broadcast.css", "series-button.css", "pog.css", "refresh.css", "ladder.css", "player-stats.css", "champion-table.css",
   "custom-team.css", "rebrand.css", "leaderboard.css", "roster-cards.css", "internal-most.css", "selected-summary.css", "nickname-tags.css", "team-nicknames.css", "match-odds.css", "roster-import.css", "retro-ladder.css", "ladder-visibility.css", "readability.css", "power-tier.css",
