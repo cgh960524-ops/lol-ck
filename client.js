@@ -67,7 +67,7 @@ const internalWeight=games=>games<=0?0:games===1?.25:games===2?.42:games===3?.55
 const PEAK_POWER_FLOOR={MASTER:1950,GRANDMASTER:2100,CHALLENGER:2300};
 const basePower=p=>CKRating.basePower(p);
 const overallScore=p=>CKRating.overallScore(p);
-const POWER_TIERS=[{min:2200,name:"챌린저",short:"챌",className:"challenger"},{min:1900,name:"다이아",short:"다",className:"diamond"},{min:1700,name:"플래티넘",short:"플",className:"platinum"},{min:1500,name:"골드",short:"금",className:"gold"},{min:1300,name:"실버",short:"은",className:"silver"},{min:1100,name:"브론즈",short:"동",className:"bronze"},{min:-Infinity,name:"아이언",short:"철",className:"iron"}];
+const POWER_TIERS=[{min:1800,name:"챌린저",short:"챌",className:"challenger"},{min:1600,name:"다이아",short:"다",className:"diamond"},{min:1400,name:"플래티넘",short:"플",className:"platinum"},{min:1300,name:"골드",short:"금",className:"gold"},{min:1200,name:"실버",short:"은",className:"silver"},{min:1100,name:"브론즈",short:"동",className:"bronze"},{min:-Infinity,name:"아이언",short:"철",className:"iron"}];
 function powerTier(value){const score=Number(value)||0,index=POWER_TIERS.findIndex(tier=>score>=tier.min),tier=POWER_TIERS[index],next=index>0?POWER_TIERS[index-1]:null;return {...tier,next,nextGap:next?Math.max(0,next.min-score):0}}
 function powerTierBadge(p,large=false){const score=overallScore(p),tier=powerTier(score),title=`응CK ${tier.name} · 롤력 ${score.toLocaleString()}${tier.next?` · ${tier.next.name}까지 ${tier.nextGap.toLocaleString()}`:" · 최고 등급"}`;return `<span class="power-tier-badge ${large?"large":""} tier-${tier.className}" title="${title}" aria-label="${title}"><i>${tier.short}</i><small>${tier.name}</small></span>`}
 function positionScore(p,role){return CKRating.positionScore(p,role)}
