@@ -1,3 +1,4 @@
+import {parseRiotId,accountOwner,linkAccount,unlinkAccount} from "./account-links.js";
 // Explicit unversioned dependency keeps this file in serverless bundles;
 // the browser-facing engine uses a cache-busting query when importing it.
 import "./rating-observation.js";
@@ -335,6 +336,20 @@ export async function handleRequest(req,res){
     if(pathname==="/api/discord/team-alternative"&&req.method==="POST"){return json(res,200,await postDiscordTeamAlternative(await readBody(req)))}
     if(pathname==="/api/discord/reschedule-recruitment"&&req.method==="POST"){requireUploaderAuth(req);const body=await readBody(req),startAt=Math.floor(Number(body.startAt)||0),state=await loadAppState(),recruitment=state.discordRecruitment;if(!recruitment||recruitment.cancelled)throw Object.assign(new Error("현재 활성 내전 모집이 없습니다."),{status:404});if(startAt<=Math.floor(Date.now()/1000))throw Object.assign(new Error("시작 시각은 현재보다 이후여야 합니다."),{status:400});recruitment.startAt=startAt;recruitment.startTime=String(body.startTime||new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",hour:"numeric",minute:"2-digit",hour12:true}).format(new Date(startAt*1000)));delete recruitment.reminderSentAt;delete recruitment.reminderMessageId;recruitment.updatedAt=Date.now();state.updatedAt=Date.now();await saveAppState(state);return json(res,200,{ok:true,id:recruitment.id,startAt:recruitment.startAt,startTime:recruitment.startTime,participants:(recruitment.participants||[]).length})}
     if(pathname==="/api/discord/cancel-recruitment"&&req.method==="POST"){requireUploaderAuth(req);const body=await readBody(req),rawId=String(body.recruitmentId||"").trim(),targetId=(rawId.match(/ck-recruitment:([^:]+)/)?.[1]||rawId).trim();if(!targetId)throw Object.assign(new Error("모집 ID가 필요합니다."),{status:400});const state=await loadAppState(),active=state.discordRecruitment;if(active&&String(active.id)===targetId){for(const member of active.participants||[]){const player=(state.players||[]).find(item=>String(item.id)===String(member.playerId));if(player)player.selected=false}state.discordRecruitment=null}state.discordCancelledRecruitmentIds=[...new Set([...(state.discordCancelledRecruitmentIds||[]),targetId])].slice(-50);state.updatedAt=Date.now();await saveAppState(state);return json(res,200,{ok:true,recruitmentId:targetId,removedActive:Boolean(active&&String(active.id)===targetId)})}
+    if(pathname==="/api/player-accounts"&&["POST","DELETE"].includes(req.method)){
+      const body=await readBody(req);
+      // Validate target before calling Riot, then reload after the network request.
+      accountOwner((await loadAppState()).players,body.playerId);
+      let account;
+      if(req.method==="POST"){
+        const parsed=parseRiotId(body.riotId),key=process.env.RIOT_API_KEY||(await loadRuntimeConfig()).riotApiKey;
+        if(!key)throw Object.assign(new Error("계정 확인용 Riot API 키가 설정되지 않았습니다. 관리자에게 문의해주세요."),{status:503});
+        account=await riotFetch(`https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(parsed.gameName)}/${encodeURIComponent(parsed.tagLine)}`,key);
+      }
+      const state=await loadAppState(),main=req.method==="POST"?linkAccount(state.players,body.playerId,account):unlinkAccount(state.players,body.playerId,body.puuid);
+      state.updatedAt=Date.now();await saveAppState(state);
+      return json(res,200,{ok:true,playerId:main.id,playAliases:main.playAliases});
+    }
     if(pathname==="/api/player")return json(res,200,await getPlayerData(url.searchParams.get("riotId")||"",url.searchParams.get("matches")));
     if(pathname==="/api/internal-matches"&&req.method==="GET")return json(res,200,await loadMatches());
     if(pathname==="/api/ratings/recalculate"&&req.method==="POST"){requireUploaderAuth(req);const state=await loadAppState();await saveAppState(state);return json(res,200,{ok:true,...state.ratingAlgorithm,players:state.players.length})}
@@ -342,7 +357,7 @@ export async function handleRequest(req,res){
     if(pathname==="/api/app-state"&&(req.method==="POST"||req.method==="PUT")){
       const body=await readBody(req),players=Array.isArray(body.players)?body.players.slice(0,200):[],seriesState=body.seriesState&&typeof body.seriesState==="object"?body.seriesState:{active:null,history:[]};
       const previous=await loadAppState(),previousPlayers=new Map((previous.players||[]).map(player=>[String(player.id),player])),protectedPowerFields=["peakTier","peakLp","soloPowerOverride","soloPowerSource","manualPowerFloor","manualPowerSource"];
-      for(const player of players){const saved=previousPlayers.get(String(player.id));if(!saved)continue;if(saved.ratingSeedV2)player.ratingSeedV2=structuredClone(saved.ratingSeedV2);if(saved.ratingSeedV21)player.ratingSeedV21=structuredClone(saved.ratingSeedV21);if(saved.ratingSeedV22)player.ratingSeedV22=structuredClone(saved.ratingSeedV22);if(saved.ratingSeedV4)player.ratingSeedV4=structuredClone(saved.ratingSeedV4);player.soloEvidenceHistory=mergeSoloEvidence(saved.soloEvidenceHistory,player.soloEvidence);if(!player.soloEvidence&&saved.soloEvidence)player.soloEvidence=structuredClone(saved.soloEvidence);if(!player.roleGames&&saved.roleGames)player.roleGames=structuredClone(saved.roleGames);for(const field of protectedPowerFields)if((player[field]===undefined||player[field]===null||player[field]==="")&&saved[field]!==undefined&&saved[field]!==null&&saved[field]!=="")player[field]=saved[field]}
+      for(const player of players){const saved=previousPlayers.get(String(player.id));if(!saved)continue;player.playAliases=player.archived?[]:(saved.playAliases||[]);if(saved.ratingSeedV2)player.ratingSeedV2=structuredClone(saved.ratingSeedV2);if(saved.ratingSeedV21)player.ratingSeedV21=structuredClone(saved.ratingSeedV21);if(saved.ratingSeedV22)player.ratingSeedV22=structuredClone(saved.ratingSeedV22);if(saved.ratingSeedV4)player.ratingSeedV4=structuredClone(saved.ratingSeedV4);player.soloEvidenceHistory=mergeSoloEvidence(saved.soloEvidenceHistory,player.soloEvidence);if(!player.soloEvidence&&saved.soloEvidence)player.soloEvidence=structuredClone(saved.soloEvidence);if(!player.roleGames&&saved.roleGames)player.roleGames=structuredClone(saved.roleGames);for(const field of protectedPowerFields)if((player[field]===undefined||player[field]===null||player[field]==="")&&saved[field]!==undefined&&saved[field]!==null&&saved[field]!=="")player[field]=saved[field]}
       const seriesJustFinished=Boolean(seriesState.active?.finished&&!previous.seriesState?.active?.finished),finishedRecruitment=seriesJustFinished?previous.discordRecruitment:null;
       if(seriesJustFinished)for(const player of players)player.selected=false;
       const cancelledRecruitmentIds=[...new Set([...(previous.discordCancelledRecruitmentIds||[]),...(finishedRecruitment?[String(finishedRecruitment.id)]:[])])].slice(-50);
