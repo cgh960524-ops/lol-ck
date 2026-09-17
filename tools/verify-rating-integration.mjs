@@ -5,6 +5,7 @@ import {pathToFileURL} from 'node:url';
 import {createServer} from 'node:http';
 import assert from 'node:assert/strict';
 import {buildStyleProfiles} from '../player-style.js';
+import {buildTeamAlternatives} from '../team-assignment.js';
 const source=resolve(process.argv[2]||'../backup/2026-09-16T20-51-42-666Z-before-role-power-v2'),dir=await mkdtemp(join(tmpdir(),'ck-rating-v2-test-'));
 Object.assign(process.env,{VERCEL:'1',BLOB_READ_WRITE_TOKEN:'',DISCORD_WEBHOOK_URL:'',DISCORD_BOT_TOKEN:'',UPLOADER_TOKEN:'local-rating-test-only',APP_STATE_FILE:join(dir,'app-state.json'),DATA_FILE:join(dir,'internal-matches.json'),RUNTIME_CONFIG_FILE:join(dir,'runtime.json')});
 await copyFile(join(source,'app-state.json'),process.env.APP_STATE_FILE);await copyFile(join(source,'internal-matches.json'),process.env.DATA_FILE);
@@ -23,7 +24,7 @@ try{
  const stale=structuredClone(state);for(const p of stale.players){delete p.ratingSeedV2;delete p.ratingSeedV21;p.ratingSeedV22={policy:'skill-baseline-v1',solo:9999};p.ratingSeedV4={policy:'matchup-v4',solo:9999};p.manualPowerFloor=9999;p.internalRating=9999;p.ratingV2={overall:9999};}
  const put=await fetch(origin+'/api/app-state',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(stale)});assert.equal(put.status,200);
  const after=await(await fetch(origin+'/api/app-state')).json();assert.deepEqual(after.players.find(p=>p.id===p9.id).ratingV2,expected);assert.equal(JSON.stringify(after.seriesState),series);assert.deepEqual(JSON.parse(await readFile(process.env.DATA_FILE,'utf8')),matches);
- for(const asset of ['/','/rating-engine.js','/rating-observation.js','/rating-policy.js','/rating-reference.js','/rating-evidence.css','/player-radar.js','/player-style.js','/player-radar.css','/client.js'])assert.equal((await fetch(origin+asset)).status,200,asset);
+ for(const asset of ['/','/rating-engine.js','/rating-observation.js','/rating-policy.js','/rating-reference.js','/rating-evidence.css','/player-radar.js','/player-style.js','/team-assignment.js','/player-radar.css','/client.js'])assert.equal((await fetch(origin+asset)).status,200,asset);
  if(process.env.PLAYWRIGHT_PACKAGE){
   const {chromium}=await import(pathToFileURL(process.env.PLAYWRIGHT_PACKAGE));browser=await chromium.launch({headless:true,channel:'msedge'});const page=await browser.newPage({viewport:{width:1440,height:1100}}),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.url().startsWith(origin+'/api/')&&r.status()>=400)errors.push(r.url()+': '+r.status())});
   await page.route('**/*',route=>route.request().url().startsWith(origin)?route.continue():route.abort());
@@ -52,6 +53,20 @@ try{
   await page.locator('.rating-events summary').click();await page.screenshot({path:join(dir,'rating-desktop.png')});
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:join(dir,'rating-mobile.png')});
   assert.equal(await page.locator('.rating-roles').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);assert.deepEqual(errors,[]);
+  await page.locator('#playerStatsDialog').evaluate(el=>el.close());
+  await page.setViewportSize({width:1440,height:1100});await page.locator('#clearBtn').click();
+  const latest=[...state.seriesState.history].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0],ids=new Set([...latest.blue,...latest.red].map(p=>String(p.id))),roster=state.players.filter(p=>ids.has(String(p.id))).map(p=>({...p,lockedRole:''}));
+  const expectedTeams=buildTeamAlternatives(roster,CKRating);assert.ok(expectedTeams.length>1);
+  for(const p of roster)await page.locator('.player[data-id="'+p.id+'"] .player-name').click();
+  await page.locator('#balanceBtn').click();assert.ok((await page.locator('#analysisText').innerText()).includes('정글·서폿 주·부포 '+expectedTeams[0].preferenceSummary.criticalPreferred+'/4명'));
+  assert.deepEqual(await page.locator('#blueTeam .team-player-name .name').allTextContents(),expectedTeams[0].blue.members.map(p=>p.name));
+  assert.deepEqual(await page.locator('#redTeam .team-player-name .name').allTextContents(),expectedTeams[0].red.members.map(p=>p.name));
+  assert.ok(!(await page.locator('#teamResult').innerText()).includes('남은 인원 서폿 배치'));
+  await page.screenshot({path:join(dir,'preferred-teams-desktop.png')});
+  await page.locator('#balanceBtn').click();assert.ok((await page.locator('#analysisTitle').innerText()).includes('대안 2/'));
+  assert.deepEqual(await page.locator('#blueTeam .team-player-name .name').allTextContents(),expectedTeams[1].blue.members.map(p=>p.name));
+  await page.setViewportSize({width:390,height:1000});await page.locator('#analysisText').scrollIntoViewIfNeeded();assert.ok(await page.locator('#analysisText').evaluate(el=>el.scrollWidth<=el.clientWidth+1));await page.screenshot({path:join(dir,'preferred-teams-mobile.png')});
+  assert.deepEqual(errors,[]);
   console.log(JSON.stringify({ui:'pass',screenshots:[join(dir,'rating-desktop.png'),join(dir,'rating-mobile.png')]}));
  }
  console.log(JSON.stringify({api:'pass',version,players:after.players.length,gameIdsUnchanged:true,seriesUnchanged:true,immutableSeeds:true,staleClientCannotOverride:true,player9:expected,artifacts:dir}));
