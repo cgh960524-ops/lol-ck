@@ -329,6 +329,11 @@ export async function handleRequest(req,res){
       if(deferredCommand||deferredComponent||deferredModal){json(res,200,{type:deferredComponent?6:5});waitUntil(finishDeferredDiscordInteraction(interaction));return}
       return json(res,200,await handleDiscordInteraction(interaction));
     }
+    if(pathname==="/api/uploader/download"&&["GET","HEAD"].includes(req.method)){
+      const data=await readFile(join(root,"downloads","eungck-uploader-20260916.zip"));
+      res.writeHead(200,{"Content-Type":"application/zip","Content-Disposition":'attachment; filename="eungck-uploader-20260916.zip"',"Content-Length":data.length,"X-Content-Type-Options":"nosniff","Cache-Control":"no-store"});
+      return res.end(req.method==="HEAD"?undefined:data);
+    }
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
     if(pathname==="/api/discord/recruitment-reminder"&&req.method==="GET"){const agent=String(req.headers["user-agent"]||""),authorized=agent.includes("vercel-cron/1.0")||(uploadToken&&String(req.headers.authorization||"")===`Bearer ${uploadToken}`);if(!authorized)return json(res,401,{error:"unauthorized"});return json(res,200,await sendDiscordRecruitmentReminder())}
     if(pathname==="/api/discord/register-hall-of-fame"&&req.method==="POST"){requireUploaderAuth(req);return json(res,200,await registerDiscordHallOfFameCommand())}
