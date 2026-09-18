@@ -71,27 +71,48 @@ export function buildTeamAlternatives(input,engine){
     if(criticalOff<minimumCritical){minimumCritical=criticalOff;partitions.length=0;}
     if(criticalOff===minimumCritical)partitions.push({blues,reds});
   }
-  const candidates=[];
+  const candidates=[],diverseCandidates=[];
   for(const {blues,reds} of partitions){
-    const best=[];
-    for(const blue of blues)for(const red of reds){
-      const c=candidate(blue,red,engine);best.push(c);best.sort((a,b)=>a.cost-b.cost||a.key.localeCompare(b.key));if(best.length>3)best.pop();
-    }
-    candidates.push(...best);
+    const ranked=[];
+    for(const blue of blues)for(const red of reds)ranked.push(candidate(blue,red,engine));
+    ranked.sort((a,b)=>a.cost-b.cost||a.key.localeCompare(b.key));
+    // The first two alternatives keep the legacy top-three candidate pool.
+    candidates.push(...ranked.slice(0,3));
+    // Later alternatives may inspect more role arrangements from the same teams.
+    diverseCandidates.push(...ranked.slice(0,12));
   }
   candidates.sort((a,b)=>a.cost-b.cost||a.key.localeCompare(b.key));
   if(!candidates.length)return [];
-  const selected=[candidates[0]],ceiling=candidates[0].cost*1.5+400;
+  diverseCandidates.sort((a,b)=>a.cost-b.cost||a.key.localeCompare(b.key));
+  const standard=[candidates[0]],ceiling=candidates[0].cost*1.5+400;
   const teamDistance=(a,b)=>{const ids=new Set(b.blue.members.map(id));const moved=a.blue.members.filter(p=>!ids.has(id(p))).length;return Math.min(moved,5-moved);};
-  // Prefer different team compositions, then different role assignments if needed.
+  const roleMap=c=>new Map([...c.blue.members,...c.red.members].map(p=>[id(p),p.assigned]));
+  const roleDistance=(a,b)=>{const roles=roleMap(b);return [...a.blue.members,...a.red.members].filter(p=>roles.get(id(p))!==p.assigned).length;};
+  // Alternatives 1-2 use the existing balance and team-composition policy.
+  for(const minimum of [2,1,0])for(const c of candidates){
+    if(standard.length>=2)break;
+    if(c.cost>ceiling||standard.some(x=>x.key===c.key))continue;
+    if(standard.every(x=>teamDistance(c,x)>=minimum))standard.push(c);
+  }
+  const selected=standard.map(c=>({...c,selectionMode:'standard'})),best=candidates[0];
+  const winGapLimit=Math.max(.08,Math.abs(best.blueWinRate-.5)),diverseBalanceCeiling=best.balanceCost+700,diversePreferenceCeiling=best.preferenceCost+1600;
+  const nonPreferred=c=>[...c.blue.members,...c.red.members].filter(p=>!isPreferred(p.player,p.assigned)).length;
+  // Alternatives 3-5 favor different player-to-role assignments while keeping
+  // locks, jungle/support safeguards and a bounded balance/preference cost.
+  for(const minimumRoleDistance of [4,2])while(selected.length<5){
+    const ranked=diverseCandidates.filter(c=>!selected.some(x=>x.key===c.key)&&Math.abs(c.blueWinRate-.5)<=winGapLimit&&c.balanceCost<=diverseBalanceCeiling&&c.preferenceCost<=diversePreferenceCeiling).map(c=>({c,fromSelected:Math.min(...selected.map(x=>roleDistance(c,x))),off:nonPreferred(c),teamNovelty:Math.min(...selected.map(x=>teamDistance(c,x)))})).filter(x=>x.fromSelected>=minimumRoleDistance).sort((a,b)=>a.off-b.off||b.fromSelected-a.fromSelected||b.teamNovelty-a.teamNovelty||a.c.cost-b.c.cost||a.c.key.localeCompare(b.c.key));
+    if(!ranked.length)break;
+    selected.push({...ranked[0].c,selectionMode:'role-diverse'});
+  }
+  // Extremely constrained locked rosters may have no safe role variation.
   for(const minimum of [2,1,0])for(const c of candidates){
     if(selected.length>=5)break;
     if(c.cost>ceiling||selected.some(x=>x.key===c.key))continue;
-    if(selected.every(x=>teamDistance(c,x)>=minimum))selected.push(c);
+    if(selected.every(x=>teamDistance(c,x)>=minimum))selected.push({...c,selectionMode:'standard-fallback'});
   }
   return selected.map(c=>{
     const expand=team=>({...team,members:team.members.map(({player,assigned,power})=>({...player,assigned,power})),quality:team.total-team.penalty});
     const blue=expand(c.blue),red=expand(c.red);
-    return {...c,blue,red,preferenceSummary:teamPreferenceSummary([...blue.members,...red.members]),selectionPolicy:'preferred-roles-low-power-first-v1'};
+    return {...c,blue,red,preferenceSummary:teamPreferenceSummary([...blue.members,...red.members]),selectionPolicy:'preferred-roles-low-power-first-v2'};
   });
 }
