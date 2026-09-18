@@ -1,4 +1,4 @@
-export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-18.3";
+export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-18.4";
 
 export const SERIES_COMMENTARY_SCHEMA={
   type:"object",
@@ -119,6 +119,8 @@ const timelineMinute=timestamp=>Number((n(timestamp)/60000).toFixed(2));
 const timelineParticipantId=(participant,index)=>{const explicit=maybeNumber(participant?.participantId);return explicit!==null&&explicit>0?Math.round(explicit):index+1};
 const oppositeSide=side=>side==="BLUE"?"RED":side==="RED"?"BLUE":"UNKNOWN";
 const meaningfulLead=(difference,threshold=250)=>difference>threshold?"BLUE":difference<-threshold?"RED":"EVEN";
+const explicitGoldLead=difference=>({leader:meaningfulLead(difference,0),leadGold:Math.abs(n(difference))});
+const eventCountsBySide=events=>Object.fromEntries(["BLUE","RED","UNKNOWN"].map(side=>[side,events.filter(event=>event.side===side).length]));
 const compactTimelinePlayer=entry=>entry?{participantId:entry.participantId,playerId:entry.playerId,name:entry.name,side:entry.side,champion:entry.champion}:null;
 
 function unavailableTimelineEvidence(match,reason="timeline.frames가 없습니다."){
@@ -206,7 +208,7 @@ export function buildMatchTimelineEvidence({match,mapped=[],teamIdToSide=new Map
     available:true,
     coverage:{frameCount:uniqueFrames.length,goldFrameCount:uniqueFrames.filter(frame=>frame.hasBoth).length,completeGoldFrameCount:teamGoldFrames.length,eventCount:rawEvents.length,killEventCount:kills.length,objectiveEventCount:objectives.length,buildingEventCount:buildings.length,firstMinute,lastMinute,matchDurationMinutes:Number(matchDurationMinutes.toFixed(1)),coveredDurationRatio,mappedParticipants,expectedParticipants:(match.participants||[]).length,participantIdFallbacks,filteredCrossTeamAssists,droppedUnknownAssists},
     confidence:{overall,gold:goldConfidence,events:eventConfidence},
-    summary:{goldDifferenceDefinition:"BLUE minus RED",leadChangeThresholdGold:250,finalGold:finalGold?{minute:finalGold.minute,BLUE:finalGold.BLUE,RED:finalGold.RED,difference:finalGold.difference,leader:meaningfulLead(finalGold.difference,0)}:null,maxLeads,leadChangeCount:leadChanges.length,killClusterCount:clusters.length,retainedKillClusterCount:killClusters.length,objectiveCount:objectives.length,buildingCount:buildings.length},
+    summary:{goldDifferenceDefinition:"BLUE minus RED",leadChangeThresholdGold:250,finalGold:finalGold?{minute:finalGold.minute,BLUE:finalGold.BLUE,RED:finalGold.RED,difference:finalGold.difference,leader:meaningfulLead(finalGold.difference,0)}:null,maxLeads,leadChangeCount:leadChanges.length,killClusterCount:clusters.length,retainedKillClusterCount:killClusters.length,objectiveCount:objectives.length,objectiveCountBySide:eventCountsBySide(objectives),buildingCount:buildings.length,buildingCountBySide:eventCountsBySide(buildings)},
     teamGold:teamGoldFrames.map(({minute,BLUE,RED,difference})=>({minute,BLUE,RED,difference})),maxLeads,biggestSwings,leadChanges,killClusters,turningPoints,
     objectives:objectives.slice(0,30).map(({timestamp,...event})=>event),buildings:buildings.slice(0,30).map(({timestamp,...event})=>event),limitations,
   };
@@ -220,10 +222,13 @@ function compactTimelineForCommentary(timeline){
     if(index===0||index===timeline.teamGold.length-1||(rounded%5===0&&Math.abs(frame.minute-rounded)<=.08))checkpointIndexes.add(index);
   }
   const compactPlayer=player=>player?{name:player.name,side:player.side,champion:player.champion}:null;
+  const summary=timeline.summary?{...timeline.summary,finalGold:timeline.summary.finalGold?{...timeline.summary.finalGold,...explicitGoldLead(timeline.summary.finalGold.difference)}:null}:null;
+  const explicitSwing=swing=>({...swing,fromLeader:explicitGoldLead(swing.fromDifference).leader,fromLeadGold:explicitGoldLead(swing.fromDifference).leadGold,toLeader:explicitGoldLead(swing.toDifference).leader,toLeadGold:explicitGoldLead(swing.toDifference).leadGold});
+  const explicitPoint=point=>({...point,gold:point.gold?{...point.gold,beforeLeader:explicitGoldLead(point.gold.beforeDifference).leader,beforeLeadGold:explicitGoldLead(point.gold.beforeDifference).leadGold,afterLeader:explicitGoldLead(point.gold.afterDifference).leader,afterLeadGold:explicitGoldLead(point.gold.afterDifference).leadGold}:null,firstDeath:compactPlayer(point.firstDeath),keyPlayers:point.keyPlayers.map(player=>({name:player.name,side:player.side,kills:player.kills,deaths:player.deaths,assists:player.assists}))});
   return {
-    available:true,coverage:timeline.coverage,confidence:timeline.confidence,summary:timeline.summary,
-    teamGoldCheckpoints:timeline.teamGold.filter((_,index)=>checkpointIndexes.has(index)),maxLeads:timeline.maxLeads,biggestSwings:timeline.biggestSwings,leadChanges:timeline.leadChanges,
-    turningPoints:timeline.turningPoints.map(point=>({...point,firstDeath:compactPlayer(point.firstDeath),keyPlayers:point.keyPlayers.map(player=>({name:player.name,side:player.side,kills:player.kills,deaths:player.deaths,assists:player.assists}))})),
+    available:true,coverage:timeline.coverage,confidence:timeline.confidence,summary,
+    teamGoldCheckpoints:timeline.teamGold.filter((_,index)=>checkpointIndexes.has(index)).map(frame=>({...frame,...explicitGoldLead(frame.difference)})),maxLeads:timeline.maxLeads,biggestSwings:timeline.biggestSwings.map(explicitSwing),leadChanges:timeline.leadChanges,
+    turningPoints:timeline.turningPoints.map(explicitPoint),
     objectives:timeline.objectives.map(event=>({minute:event.minute,side:event.side,type:event.type,subType:event.subType,killer:event.killer?.name||""})),
     buildings:timeline.buildings.map(event=>({minute:event.minute,side:event.side,destroyedSide:event.destroyedSide,type:event.type,lane:event.lane,tower:event.tower,killer:event.killer?.name||""})),
     limitations:timeline.limitations,
@@ -236,10 +241,11 @@ export function compactSeriesCommentaryEvidence(evidence){
 }
 
 function publicRatingEvent(event,playerById){
+  const roleBefore=maybeNumber(event.roleBefore),opponentPower=maybeNumber(event.opponentPower),opponentPowerGap=roleBefore===null||opponentPower===null?null:opponentPower-roleBefore;
   return {
     gameId:String(event.gameId||""),role:roleKo[event.role]||event.role||"미확인",win:Boolean(event.win),
-    before:maybeNumber(event.before),after:maybeNumber(event.after),change:maybeNumber(event.change),roleBefore:maybeNumber(event.roleBefore),roleAfter:maybeNumber(event.roleAfter),roleChange:maybeNumber(event.roleChange),
-    opponent:cleanText(playerById.get(String(event.opponentId))?.name||"확인 불가",40),opponentPower:maybeNumber(event.opponentPower),
+    before:maybeNumber(event.before),after:maybeNumber(event.after),change:maybeNumber(event.change),roleBefore,roleAfter:maybeNumber(event.roleAfter),roleChange:maybeNumber(event.roleChange),
+    opponent:cleanText(playerById.get(String(event.opponentId))?.name||"확인 불가",40),opponentPower,opponentPowerGap,opponentComparison:opponentPowerGap===null?"UNKNOWN":opponentPowerGap>0?"HIGHER":opponentPowerGap<0?"LOWER":"EQUAL",
     expected:maybeNumber(event.expected),actualMatchup:maybeNumber(event.actualMatchup),residual:maybeNumber(event.residual),quality:maybeNumber(event.quality),reason:cleanText(event.reason,30),
     duoContextApplied:Boolean(event.duoContextApplied),duoChange:maybeNumber(event.duoChange),partnerAdjustment:maybeNumber(event.partnerAdjustment),defensive:Boolean(event.defensive),
   };
@@ -267,8 +273,8 @@ export function buildSeriesCommentaryEvidence({series,players=[],matches=[],seri
     const teamIdToSide=new Map();for(const [teamId,votes] of teamSideVotes)if(Boolean(votes.BLUE)!==Boolean(votes.RED))teamIdToSide.set(teamId,votes.BLUE?"BLUE":"RED");
     const matchTeamIds=[...new Set((match.participants||[]).map(participant=>n(participant.teamId)).filter(Boolean))];if(matchTeamIds.length===2&&teamIdToSide.size===1){const knownTeam=matchTeamIds.find(teamId=>teamIdToSide.has(teamId)),otherTeam=matchTeamIds.find(teamId=>teamId!==knownTeam);if(knownTeam!==undefined&&otherTeam!==undefined)teamIdToSide.set(otherTeam,oppositeSide(teamIdToSide.get(knownTeam)))}
     const objectives=(match.epicObjectives||[]).map(event=>({minute:Number((n(event.timestamp)/60000).toFixed(1)),type:cleanText(event.monsterType,30),subType:cleanText(event.monsterSubType,40),side:teamIdToSide.get(n(event.teamId))||"UNKNOWN"}));
-    const timeline=buildMatchTimelineEvidence({match,mapped,teamIdToSide});
-    return {setNumber:n(set.number)||index+1,gameId:String(set.gameId),winner:set.winner,durationMinutes:Number((n(match.duration)/60).toFixed(1)),dataAvailable:true,mappingComplete:mapped.length===memberById.size,mappedPlayers:mapped.length,expectedPlayers:memberById.size,teams:{BLUE:teamTotals("BLUE"),RED:teamTotals("RED")},players:publicPlayers,matchups,bottomDuo:{BLUE:duo("BLUE"),RED:duo("RED")},objectives,timeline};
+    const timeline=buildMatchTimelineEvidence({match,mapped,teamIdToSide}),blueDuo=duo("BLUE"),redDuo=duo("RED"),higherLeader=key=>blueDuo[key]>redDuo[key]?"BLUE":redDuo[key]>blueDuo[key]?"RED":"EVEN",metricLeaders=Object.fromEntries(["kills","assists","damage","gold","cs","vision"].map(key=>[key,higherLeader(key)])),fewerDeaths=blueDuo.deaths<redDuo.deaths?"BLUE":redDuo.deaths<blueDuo.deaths?"RED":"EVEN",dimensionLeaders=[...new Set(Object.values(metricLeaders).filter(side=>side!=="EVEN"))],bottomDuoComparison={metricLeaders,fewerDeaths,mixed:dimensionLeaders.length>1};
+    return {setNumber:n(set.number)||index+1,gameId:String(set.gameId),winner:set.winner,durationMinutes:Number((n(match.duration)/60).toFixed(1)),dataAvailable:true,mappingComplete:mapped.length===memberById.size,mappedPlayers:mapped.length,expectedPlayers:memberById.size,teams:{BLUE:teamTotals("BLUE"),RED:teamTotals("RED")},players:publicPlayers,matchups,bottomDuo:{BLUE:blueDuo,RED:redDuo,comparison:bottomDuoComparison},objectives,timeline};
   });
 
   const roster=[...(series.blue||[]).map(member=>({...member,side:"BLUE"})),...(series.red||[]).map(member=>({...member,side:"RED"}))];

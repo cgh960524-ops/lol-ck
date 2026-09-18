@@ -36,8 +36,11 @@ test("series evidence preserves matchup, bottom duo and fixed rating changes",()
   assert.deepEqual(evidence.series.score,{BLUE:1,RED:0});
   assert.equal(evidence.sets[0].matchups.find(row=>row.role==="ADC").blue.name,"Blue ADC");
   assert.equal(evidence.sets[0].bottomDuo.BLUE.combinedStartPower,3287);
+  assert.deepEqual(evidence.sets[0].bottomDuo.comparison,{metricLeaders:{kills:"BLUE",assists:"BLUE",damage:"BLUE",gold:"BLUE",cs:"BLUE",vision:"BLUE"},fewerDeaths:"BLUE",mixed:false});
   assert.equal(evidence.ratingChanges.find(row=>row.id==="1").overallChange,4);
   assert.equal(evidence.ratingChanges.find(row=>row.id==="1").events[0].opponent,"Red ADC");
+  assert.equal(evidence.ratingChanges.find(row=>row.id==="1").events[0].opponentPowerGap,140);
+  assert.equal(evidence.ratingChanges.find(row=>row.id==="1").events[0].opponentComparison,"HIGHER");
   assert.equal(evidence.sets[0].players.find(row=>row.id==="2").startPower,1777);
   assert.equal(evidence.policy.explanationOnly,true);
   assert.equal(evidence.sets[0].timeline.available,false);
@@ -51,6 +54,8 @@ test("timeline evidence finds deterministic gold swings, fights and conversions"
   assert.equal(timeline.available,true);
   assert.deepEqual(timeline.coverage,{frameCount:8,goldFrameCount:8,completeGoldFrameCount:8,eventCount:14,killEventCount:10,objectiveEventCount:2,buildingEventCount:2,firstMinute:0,lastMinute:22,matchDurationMinutes:23,coveredDurationRatio:.957,mappedParticipants:10,expectedParticipants:10,participantIdFallbacks:0,filteredCrossTeamAssists:2,droppedUnknownAssists:0});
   assert.deepEqual(timeline.maxLeads,{BLUE:{gold:4559,minute:16},RED:{gold:1160,minute:22}});
+  assert.deepEqual(timeline.summary.objectiveCountBySide,{BLUE:0,RED:2,UNKNOWN:0});
+  assert.deepEqual(timeline.summary.buildingCountBySide,{BLUE:0,RED:2,UNKNOWN:0});
   assert.deepEqual(timeline.biggestSwings.find(row=>row.windowMinutes===1),{windowMinutes:1,fromMinute:16,toMinute:17,fromDifference:4559,toDifference:1354,change:-3205,amount:3205,towardSide:"RED"});
   assert.deepEqual(timeline.biggestSwings.find(row=>row.windowMinutes===2),{windowMinutes:2,fromMinute:20,toMinute:22,fromDifference:2599,toDifference:-1160,change:-3759,amount:3759,towardSide:"RED"});
   assert.ok(timeline.leadChanges.some(row=>row.fromSide==="BLUE"&&row.toSide==="RED"&&row.toMinute===22));
@@ -75,6 +80,16 @@ test("timeline evidence finds deterministic gold swings, fights and conversions"
   assert.equal(promptTimeline.killClusters,undefined,"the model receives turning points instead of every fight sequence");
   assert.equal(promptTimeline.turningPoints.length,timeline.turningPoints.length);
   assert.ok(promptTimeline.teamGoldCheckpoints.length<timeline.teamGold.length);
+  assert.deepEqual(promptTimeline.teamGoldCheckpoints.at(-1),{minute:22,BLUE:45208,RED:46368,difference:-1160,leader:"RED",leadGold:1160});
+  assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).fromLeader,"BLUE");
+  assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).fromLeadGold,2599);
+  assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).toLeader,"RED");
+  assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).toLeadGold,1160);
+  const promptDecisive=promptTimeline.turningPoints.find(point=>point.fightId===decisive.fightId);
+  assert.equal(promptDecisive.gold.beforeLeader,"BLUE");
+  assert.equal(promptDecisive.gold.beforeLeadGold,2599);
+  assert.equal(promptDecisive.gold.afterLeader,"RED");
+  assert.equal(promptDecisive.gold.afterLeadGold,1160);
 });
 
 test("timeline participant mapping falls back to participant array order only for legacy matches",()=>{
