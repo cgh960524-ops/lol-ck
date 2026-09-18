@@ -329,17 +329,17 @@ function decorateSeriesCommentary(series){
  button.type="button";button.dataset.seriesId=String(series.seriesNumber||series.id);button.setAttribute("aria-expanded","false");button.innerHTML='<span class="series-commentary-symbol">✦</span><span><b>AI 시리즈 총평</b><small>경기 지표와 롤력 변화를 한 번에 해설합니다</small></span><em>열어보기</em>';
  panel.hidden=true;panel.setAttribute("aria-live","polite");section.append(button,panel);result.insertAdjacentElement("afterend",section);
 }
-function commentaryListSection(parent,title,items,renderItem){
- if(!items?.length)return;const section=commentaryElement("section","series-commentary-block"),heading=commentaryElement("h4","",title),list=commentaryElement("div","series-commentary-list");items.forEach((item,index)=>list.appendChild(renderItem(item,index)));section.append(heading,list);parent.appendChild(section);
+function commentaryListSection(parent,title,items,variant,renderItem){
+ if(!items?.length)return;const section=commentaryElement("section","series-commentary-block"),heading=commentaryElement("h4","",title),list=commentaryElement("div",`series-commentary-list series-commentary-list--${variant}`);items.forEach((item,index)=>list.appendChild(renderItem(item,index)));section.append(heading,list);parent.appendChild(section);
 }
 function renderSeriesCommentaryReady(panel,data){
  const review=data.review||{};panel.replaceChildren();panel.dataset.loaded="ready";
  const header=commentaryElement("header","series-commentary-head"),label=commentaryElement("span","","AI SERIES REVIEW"),time=commentaryElement("small","",data.generatedAt?new Date(data.generatedAt).toLocaleString("ko-KR"):"저장된 총평");header.append(label,time);
  panel.append(header,commentaryElement("h3","series-commentary-headline",review.headline||"시리즈 총평"),commentaryElement("p","series-commentary-overview",review.overview||""));
- commentaryListSection(panel,"승부를 가른 지표",review.decisiveFactors,(text,index)=>{const row=commentaryElement("p","series-commentary-point");row.append(commentaryElement("b","",String(index+1).padStart(2,"0")),commentaryElement("span","",text));return row});
- commentaryListSection(panel,"세트별 해설",review.setReviews,item=>{const card=commentaryElement("article","series-commentary-card"),tag=commentaryElement("span","",`${item.setNumber} SET`);card.append(tag,commentaryElement("h5","",item.title),commentaryElement("p","",item.summary));return card});
- commentaryListSection(panel,"맞포지션 구도",review.matchupReviews,item=>{const card=commentaryElement("article","series-commentary-card matchup"),tag=commentaryElement("span","",item.role);card.append(tag,commentaryElement("h5","",item.title),commentaryElement("p","",item.summary));return card});
- commentaryListSection(panel,"눈에 띈 플레이어",review.notablePlayers,item=>{const card=commentaryElement("article",`series-commentary-card player ${String(item.side||"").toLowerCase()}`),tag=commentaryElement("span","",item.side==="BLUE"?"BLUE TEAM":"RED TEAM");card.append(tag,commentaryElement("h5","",item.name),commentaryElement("p","",item.summary));return card});
+ commentaryListSection(panel,"승부를 가른 지표",review.decisiveFactors,"factors",(text,index)=>{const row=commentaryElement("p","series-commentary-point");row.append(commentaryElement("b","",String(index+1).padStart(2,"0")),commentaryElement("span","",text));return row});
+ commentaryListSection(panel,"세트별 해설",review.setReviews,"sets",item=>{const card=commentaryElement("article","series-commentary-card"),tag=commentaryElement("span","",`${item.setNumber} SET`);card.append(tag,commentaryElement("h5","",item.title),commentaryElement("p","",item.summary));return card});
+ commentaryListSection(panel,"맞포지션 구도",review.matchupReviews,"matchups",item=>{const card=commentaryElement("article","series-commentary-card series-commentary-matchup"),tag=commentaryElement("span","",item.role);card.append(tag,commentaryElement("h5","",item.title),commentaryElement("p","",item.summary));return card});
+ commentaryListSection(panel,"눈에 띈 플레이어",review.notablePlayers,"notables",item=>{const side=String(item.side||"").toLowerCase(),card=commentaryElement("article",`series-commentary-card series-commentary-player series-commentary-player--${side}`),tag=commentaryElement("span","",item.side==="BLUE"?"BLUE TEAM":"RED TEAM");card.append(tag,commentaryElement("h5","",item.name),commentaryElement("p","",item.summary));return card});
  if(review.ratingSummary){const section=commentaryElement("section","series-commentary-rating");section.append(commentaryElement("span","","PLAYER POWER"),commentaryElement("p","",review.ratingSummary));panel.appendChild(section)}
  if(review.dataNotice)panel.appendChild(commentaryElement("p","series-commentary-notice",`※ ${review.dataNotice}`));
 }
