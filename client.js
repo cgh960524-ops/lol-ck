@@ -321,6 +321,53 @@ $("#seriesDialogContent")?.addEventListener("click",event=>{if(!event.target.clo
 $("#seriesDialogContent")?.addEventListener("click",event=>{if(!event.target.closest(".finish-series"))return;setTimeout(()=>{if(!seriesState.active?.finished)return;players.forEach(player=>{player.selected=false});teamAlternatives=[];current=null;savePlayers();renderPlayers()},0)},{capture:true});
 function applySetRoleOverridesToDialog(series){if(!series?.finished)return;const sets=(series.sets||[]).filter(set=>set.imported),details=[...document.querySelectorAll("#seriesDialogContent .broadcast-set")];details.forEach((detail,index)=>{const set=sets[index];if(!set)return;const roster=[...(series.blue||[]),...(series.red||[])];detail.querySelectorAll(".broadcast-rosters>div").forEach(container=>{const rows=[...container.querySelectorAll(".broadcast-player-row")];for(const row of rows){const name=row.querySelector("strong")?.textContent,member=roster.find(player=>player.name===name),role=set.roleOverrides?.[String(member?.id)]||member?.role;if(role&&row.querySelector(".role"))row.querySelector(".role").textContent=ROLE_KO[role]||role;row.dataset.roleOrder=String(Math.max(0,ROLES.indexOf(role)))}rows.sort((a,b)=>Number(a.dataset.roleOrder)-Number(b.dataset.roleOrder)).forEach(row=>container.appendChild(row))})})}
 const renderSeriesDialogBase=renderSeriesDialog;renderSeriesDialog=function(series=seriesState.active){renderSeriesDialogBase(series);applySetRoleOverridesToDialog(series)};
+function commentaryElement(tag,className,text){const element=document.createElement(tag);if(className)element.className=className;if(text!==undefined)element.textContent=text;return element}
+function decorateSeriesCommentary(series){
+ if(!series?.finished||$("#seriesDialogContent .series-commentary"))return;
+ const result=$("#seriesDialogContent .series-result");if(!result)return;
+ const section=commentaryElement("section","series-commentary"),button=commentaryElement("button","series-commentary-toggle"),panel=commentaryElement("div","series-commentary-panel");
+ button.type="button";button.dataset.seriesId=String(series.seriesNumber||series.id);button.setAttribute("aria-expanded","false");button.innerHTML='<span class="series-commentary-symbol">✦</span><span><b>AI 시리즈 총평</b><small>경기 지표와 롤력 변화를 한 번에 해설합니다</small></span><em>열어보기</em>';
+ panel.hidden=true;panel.setAttribute("aria-live","polite");section.append(button,panel);result.insertAdjacentElement("afterend",section);
+}
+function commentaryListSection(parent,title,items,renderItem){
+ if(!items?.length)return;const section=commentaryElement("section","series-commentary-block"),heading=commentaryElement("h4","",title),list=commentaryElement("div","series-commentary-list");items.forEach((item,index)=>list.appendChild(renderItem(item,index)));section.append(heading,list);parent.appendChild(section);
+}
+function renderSeriesCommentaryReady(panel,data){
+ const review=data.review||{};panel.replaceChildren();panel.dataset.loaded="ready";
+ const header=commentaryElement("header","series-commentary-head"),label=commentaryElement("span","","AI SERIES REVIEW"),time=commentaryElement("small","",data.generatedAt?new Date(data.generatedAt).toLocaleString("ko-KR"):"저장된 총평");header.append(label,time);
+ panel.append(header,commentaryElement("h3","series-commentary-headline",review.headline||"시리즈 총평"),commentaryElement("p","series-commentary-overview",review.overview||""));
+ commentaryListSection(panel,"승부를 가른 지표",review.decisiveFactors,(text,index)=>{const row=commentaryElement("p","series-commentary-point");row.append(commentaryElement("b","",String(index+1).padStart(2,"0")),commentaryElement("span","",text));return row});
+ commentaryListSection(panel,"세트별 해설",review.setReviews,item=>{const card=commentaryElement("article","series-commentary-card"),tag=commentaryElement("span","",`${item.setNumber} SET`);card.append(tag,commentaryElement("h5","",item.title),commentaryElement("p","",item.summary));return card});
+ commentaryListSection(panel,"맞포지션 구도",review.matchupReviews,item=>{const card=commentaryElement("article","series-commentary-card matchup"),tag=commentaryElement("span","",item.role);card.append(tag,commentaryElement("h5","",item.title),commentaryElement("p","",item.summary));return card});
+ commentaryListSection(panel,"눈에 띈 플레이어",review.notablePlayers,item=>{const card=commentaryElement("article",`series-commentary-card player ${String(item.side||"").toLowerCase()}`),tag=commentaryElement("span","",item.side==="BLUE"?"BLUE TEAM":"RED TEAM");card.append(tag,commentaryElement("h5","",item.name),commentaryElement("p","",item.summary));return card});
+ if(review.ratingSummary){const section=commentaryElement("section","series-commentary-rating");section.append(commentaryElement("span","","PLAYER POWER"),commentaryElement("p","",review.ratingSummary));panel.appendChild(section)}
+ if(review.dataNotice)panel.appendChild(commentaryElement("p","series-commentary-notice",`※ ${review.dataNotice}`));
+}
+function renderSeriesCommentaryStatus(panel,status){
+ panel.replaceChildren();panel.dataset.loaded=status.type||"";
+ const box=commentaryElement("div",`series-commentary-status ${status.type||""}`),spinner=commentaryElement("i",""),copy=commentaryElement("span","",status.message);box.append(spinner,copy);panel.appendChild(box);
+}
+async function loadSeriesCommentary(section,attempt=0){
+ const button=section.querySelector(".series-commentary-toggle"),panel=section.querySelector(".series-commentary-panel"),reference=button?.dataset.seriesId;if(!button||!panel||!reference||panel.hidden)return;
+ if(section.dataset.loading==="1"&&attempt===0)return;section.dataset.loading="1";button.classList.add("loading");
+ try{
+  const response=await fetch(`/api/series-commentary?seriesId=${encodeURIComponent(reference)}`),data=await response.json();if(!response.ok)throw new Error(data.error||"총평을 불러오지 못했습니다.");
+  if(data.status==="ready"){renderSeriesCommentaryReady(panel,data);button.querySelector("em").textContent="접기";return}
+  if(data.status==="unavailable"){renderSeriesCommentaryStatus(panel,{type:"unavailable",message:"OpenAI API 연결이 아직 설정되지 않았습니다. 관리자 설정이 완료되면 시리즈 종료 시 자동으로 작성됩니다."});return}
+  if(data.status==="missing"){renderSeriesCommentaryStatus(panel,{type:"unavailable",message:"이 시리즈에는 저장된 AI 총평이 없습니다."});return}
+  if(data.status==="failed"){const messages={daily_limit:"오늘 자동 총평 생성 한도에 도달했습니다. 관리자 재생성이 필요합니다.",duplicate_series_evidence:"이미 다른 시리즈 총평에 사용된 경기입니다.",missing_match_data:"저장된 경기 데이터가 부족해 총평을 만들지 못했습니다.",incomplete_player_mapping:"연결되지 않은 선수가 있어 총평 생성을 보류했습니다."};renderSeriesCommentaryStatus(panel,{type:"failed",message:messages[data.errorCode]||"AI 총평 생성에 실패했습니다. 관리자 재생성이 필요합니다."});return}
+  renderSeriesCommentaryStatus(panel,{type:"pending",message:"경기 지표와 롤력 변화를 읽고 총평을 작성하고 있어요…"});
+  if(attempt<24)setTimeout(()=>{if(section.isConnected&&!panel.hidden)loadSeriesCommentary(section,attempt+1)},2500);
+ }catch(error){renderSeriesCommentaryStatus(panel,{type:"failed",message:error.message})}
+ finally{section.dataset.loading="";button.classList.remove("loading")}
+}
+$("#seriesDialogContent")?.addEventListener("click",event=>{
+ const button=event.target.closest(".series-commentary-toggle");if(!button)return;
+ const section=button.closest(".series-commentary"),panel=section?.querySelector(".series-commentary-panel");if(!panel)return;
+ if(!panel.hidden){panel.hidden=true;button.setAttribute("aria-expanded","false");button.querySelector("em").textContent="열어보기";return}
+ panel.hidden=false;button.setAttribute("aria-expanded","true");button.querySelector("em").textContent="접기";
+ if(panel.dataset.loaded==="ready")return;renderSeriesCommentaryStatus(panel,{type:"pending",message:"저장된 AI 총평을 불러오는 중이에요…"});loadSeriesCommentary(section);
+});
 function decorateSeriesNumbers(){
  document.querySelectorAll("#matchHistory .series-history-open").forEach(button=>{const s=(seriesState.history||[]).find(item=>String(item.id)===String(button.dataset.seriesId)),card=button.closest(".series-history-card, .monthly-series-card"),meta=card?.querySelector(".match-meta b, summary>span"),sets=(s?.sets||[]).filter(x=>x.imported);if(!s||!meta)return;if(!meta.querySelector(".series-number")){const badge=document.createElement("span");badge.className="series-number";badge.textContent=s.seriesNumber;meta.appendChild(badge)}card.querySelectorAll(".monthly-set-line").forEach((row,index)=>{const set=sets[index],number=row.querySelector("b"),winner=row.querySelector("span");if(!set?.gameId)return;if(number)number.textContent=(Number(set.number)||index+1)+"SET";if(winner)winner.textContent=seriesTeamName(s,set.winner)+" · 경기번호 "+set.gameId});card.querySelectorAll(".history-set-lines span").forEach((line,index)=>{const set=sets[index];if(set?.gameId&&!line.textContent.includes("경기번호"))line.textContent=line.textContent.replace("SET ·","SET · "+seriesTeamName(s,set.winner)+" · 경기번호 "+set.gameId+" ·")})});
  const active=seriesState.active,head=document.querySelector("#seriesSummary .series-head>div");if(active&&head&&!head.querySelector(".series-number")){const badge=document.createElement("span");badge.className="series-number";badge.textContent=active.seriesNumber;head.prepend(badge)}
@@ -328,7 +375,7 @@ function decorateSeriesNumbers(){
 function decorateSeriesDialogNumber(s){const content=$("#seriesDialogContent"),heading=content?.querySelector("h2");if(!s||!heading||content.querySelector(".series-dialog-number"))return;const badge=document.createElement("em");badge.className="series-number series-dialog-number";badge.textContent="시리즈 "+s.seriesNumber;heading.insertAdjacentElement("afterend",badge);content.querySelectorAll(".set-row").forEach((row,index)=>{const set=s.sets[index],result=row.querySelector(".set-result");if(set?.imported&&set.gameId&&result&&!result.textContent.includes("게임 ID"))result.textContent="게임 ID "+set.gameId+" · "+result.textContent});content.querySelectorAll(".series-set-detail summary span").forEach((label,index)=>{const set=s.sets.filter(x=>x.imported)[index];if(set?.gameId&&!label.textContent.includes("게임 ID"))label.textContent=label.textContent.replace("SET ·","SET · 게임 ID "+set.gameId+" ·")})}
 const baseRenderMatchHistory=renderMatchHistory;renderMatchHistory=function(){baseRenderMatchHistory();decorateSeriesNumbers()};
 const baseRenderSeries=renderSeries;renderSeries=function(){baseRenderSeries();decorateSeriesNumbers()};
-const baseRenderSeriesDialog=renderSeriesDialog;renderSeriesDialog=function(s=seriesState.active){baseRenderSeriesDialog(s);decorateSeriesDialogNumber(s)};
+const baseRenderSeriesDialog=renderSeriesDialog;renderSeriesDialog=function(s=seriesState.active){baseRenderSeriesDialog(s);decorateSeriesCommentary(s);decorateSeriesDialogNumber(s)};
 updateAliasCount();
 renderSeries();
 syncAppState().then(syncServerMatches);
