@@ -38,8 +38,9 @@ async function upsertMatches(matches){return matchStore.upsert(matches)}
 async function getMatch(gameId,options){return matchStore.get(gameId,options)}
 async function loadRawAppState(){const raw=await loadJson("app-state",appStateFile,{version:1,players:[],seriesState:{active:null,history:[]}});return raw&&typeof raw==="object"?raw:{players:[],seriesState:{active:null,history:[]}}}
 async function loadAppState(){return deriveRatings(await loadRawAppState())}
-async function deriveRatings(state){const result=CKRating.recalculate(Array.isArray(state.players)?state.players:[],await loadMatches(),state.seriesState||{});state.players=result.players;state.ratingAlgorithm={version:CKRating.VERSION,diagnostics:result.diagnostics};return state}
+async function deriveRatings(state,matches=null){const result=CKRating.recalculate(Array.isArray(state.players)?state.players:[],matches||await loadMatches(),state.seriesState||{});state.players=result.players;state.ratingAlgorithm={version:CKRating.VERSION,diagnostics:result.diagnostics};return state}
 async function saveAppState(value){await deriveRatings(value);await saveJson("app-state",appStateFile,value)}
+const rankingRevision=(state,matches)=>createHash("sha256").update(JSON.stringify([Number(state.updatedAt)||0,CKRating.VERSION,(matches||[]).length,...(matches||[]).map(match=>[String(match.gameId),Number(match.uploadedAt)||0,Number(match.enrichedAt)||0,Boolean(match.timelineCollected),(match.epicObjectives||[]).length])])).digest("hex").slice(0,20);
 async function loadRuntimeConfig(){return loadJson("runtime-config",runtimeConfigFile,{})}
 async function saveRuntimeConfig(config){await saveJson("runtime-config",runtimeConfigFile,config)}
 const seriesCommentaryJobs=new Map();
@@ -534,6 +535,12 @@ export async function handleRequest(req,res){
     }
     if(pathname==="/api/player")return json(res,200,await getPlayerData(url.searchParams.get("riotId")||"",url.searchParams.get("matches")));
     if(pathname==="/api/internal-matches"&&req.method==="GET")return json(res,200,await loadMatches({includeTimeline:url.searchParams.get("timeline")==="1"}));
+    if(pathname==="/api/ranking-data"&&req.method==="GET"){
+      const state=await loadRawAppState(),matches=await loadMatches(),revision=rankingRevision(state,matches);
+      if(String(url.searchParams.get("revision")||"")===revision)return json(res,200,{revision,unchanged:true});
+      if(reconcileDiscordRecruitment(state)){state.updatedAt=Date.now();await saveAppState(state);return json(res,200,{revision:rankingRevision(state,matches),unchanged:false,state:projectPublicAppState(state),matches})}
+      await deriveRatings(state,matches);return json(res,200,{revision,unchanged:false,state:projectPublicAppState(state),matches});
+    }
     if(pathname==="/api/ratings/recalculate"&&req.method==="POST"){requireUploaderAuth(req);const state=await loadAppState();await saveAppState(state);return json(res,200,{ok:true,...state.ratingAlgorithm,players:state.players.length})}
     if(pathname==="/api/app-state"&&req.method==="GET"){const state=await loadAppState();if(reconcileDiscordRecruitment(state))await saveAppState(state);return json(res,200,projectPublicAppState(state))}
     if(pathname==="/api/app-state"&&(req.method==="POST"||req.method==="PUT")){

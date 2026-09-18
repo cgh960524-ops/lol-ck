@@ -42,6 +42,9 @@ function normalizeSeriesIdentifiers(){const all=[...(seriesState.history||[]),..
 function nextSeriesNumber(createdAt=Date.now()){normalizeSeriesIdentifiers();const day=seriesDateKey(createdAt),numbers=[...(seriesState.history||[]),...(seriesState.active?[seriesState.active]:[])].map(s=>String(s.seriesNumber||"").match(/^CKS-(\d{8})-(\d{3,})$/)).filter(Boolean).filter(match=>match[1]===day).map(match=>Number(match[2])||0);return "CKS-"+day+"-"+String(Math.max(0,...numbers)+1).padStart(3,"0")}
 normalizeSeriesIdentifiers();
 let serverStateReady=false,serverStateTimer=null;
+const RANKING_DATA_CACHE_KEY="eungck-ranking-data-v1";let rankingDataPromise=null;
+function loadRankingData(){if(rankingDataPromise)return rankingDataPromise;rankingDataPromise=(async()=>{let cached=null;try{cached=JSON.parse(sessionStorage.getItem(RANKING_DATA_CACHE_KEY)||"null")}catch{try{sessionStorage.removeItem(RANKING_DATA_CACHE_KEY)}catch{}}const query=cached?.revision?`?revision=${encodeURIComponent(cached.revision)}`:"",response=await fetch(`/api/ranking-data${query}`,{cache:"no-store"}),payload=await response.json();if(!response.ok)throw new Error(payload.error||"순위 데이터를 불러오지 못했습니다.");if(payload.unchanged&&cached?.state&&Array.isArray(cached.matches))return cached;const next={revision:payload.revision,state:payload.state,matches:Array.isArray(payload.matches)?payload.matches:[]};try{sessionStorage.setItem(RANKING_DATA_CACHE_KEY,JSON.stringify(next))}catch{}return next})();return rankingDataPromise}
+window.loadEungckRankingData=loadRankingData;
 let serverSaveInFlight=false,serverSavePending=false;
 function queueServerStateSave(){
  if(!serverStateReady)return;
@@ -55,13 +58,14 @@ async function flushServerStateSave(){
   const roster=players.map(({ratingHistory,ratingV2,internalChampions,...player})=>player);
   const response=await fetch("/api/app-state",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({players:roster,seriesState,ladderChoice:JSON.parse(localStorage.getItem("naejeon-lab-ladder-choice")||"null")})});
   if(!response.ok)throw new Error((await response.json()).error||"서버 저장 실패");
+  sessionStorage.removeItem(RANKING_DATA_CACHE_KEY);rankingDataPromise=null;window.dispatchEvent(new Event("ranking-data-changed"));
  }catch(error){console.warn("서버 저장 실패:",error.message)}
  finally{serverSaveInFlight=false;if(serverSavePending){clearTimeout(serverStateTimer);serverStateTimer=setTimeout(flushServerStateSave,250)}}
 }
 const savePlayers = () => queueServerStateSave();
 const saveMatches = () => undefined;
 const saveSeries = () => {queueServerStateSave();if(document.querySelector("#matchHistory"))queueMicrotask(()=>renderMatchHistory())};
-async function syncAppState(){try{const response=await fetch("/api/app-state"),state=await response.json();if(!response.ok)throw new Error(state.error||"서버 기억 데이터를 불러오지 못했습니다.");if(Array.isArray(state.players)&&state.players.length)players=state.players;if(state.seriesState&&typeof state.seriesState==="object")seriesState=state.seriesState;discordRecruitment=state.discordRecruitment||null;if(state.ladderChoice)localStorage.setItem("naejeon-lab-ladder-choice",JSON.stringify(state.ladderChoice));const seriesNumberMigrated=normalizeSeriesIdentifiers();clearServerBackedLocalCache(STORAGE_KEY,SERIES_STORAGE_KEY);serverStateReady=true;if(!state.players?.length||seriesNumberMigrated)queueServerStateSave();recalculateRatings();renderPlayers();renderMatchHistory();renderSeries();updateAliasCount()}catch(error){console.warn("서버 기억 데이터 동기화 실패:",error.message)}}
+async function syncAppState(){try{const {state}=await loadRankingData();if(Array.isArray(state.players)&&state.players.length)players=state.players;if(state.seriesState&&typeof state.seriesState==="object")seriesState=state.seriesState;discordRecruitment=state.discordRecruitment||null;if(state.ladderChoice)localStorage.setItem("naejeon-lab-ladder-choice",JSON.stringify(state.ladderChoice));const seriesNumberMigrated=normalizeSeriesIdentifiers();clearServerBackedLocalCache(STORAGE_KEY,SERIES_STORAGE_KEY);serverStateReady=true;if(!state.players?.length||seriesNumberMigrated)queueServerStateSave();renderPlayers();renderMatchHistory();renderSeries();updateAliasCount()}catch(error){console.warn("서버 기억 데이터 동기화 실패:",error.message)}}
 
 const $ = s => document.querySelector(s);
 const effectiveRoleData=(p,role)=>p.internalRoles?.[role];
@@ -238,9 +242,9 @@ async function importInitialMatches(){for(const id of ["8340511168"]){if(interna
 function updateAliasCount(){$("#aliasCount").textContent=players.reduce((s,p)=>s+(p.playAliases?.length||0),0)}
 async function syncServerMatches(){
  try{
-  const response=await fetch("/api/internal-matches"),serverMatches=await response.json();
-  if(!response.ok||!Array.isArray(serverMatches))throw new Error(serverMatches.error||"서버 기록을 불러오지 못했습니다.");
-  internalMatches=serverMatches;clearServerBackedLocalCache(MATCH_STORAGE_KEY);recalculateRatings();savePlayers();renderPlayers();renderMatchHistory();updateAliasCount();renderLeaderboard();
+  const {matches:serverMatches}=await loadRankingData();
+  if(!Array.isArray(serverMatches))throw new Error("서버 기록을 불러오지 못했습니다.");
+  internalMatches=serverMatches;clearServerBackedLocalCache(MATCH_STORAGE_KEY);renderPlayers();renderMatchHistory();updateAliasCount();renderLeaderboard();
  }catch(error){console.warn("내전 서버 동기화 실패:",error.message)}
 }
 let ladderRungs=[],ladderStart=0,ladderTimer=null,ladderBgmOn=false,ladderBgmLoop=null,ladderClockTimer=null;

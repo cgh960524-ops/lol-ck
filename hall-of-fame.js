@@ -31,8 +31,7 @@ function hofRenderRiceKing(state,players){
 
 async function renderServerHallOfFame(){
   try{
-    const [stateResponse,matchesResponse]=await Promise.all([fetch("/api/app-state",{cache:"no-store"}),fetch("/api/internal-matches",{cache:"no-store"})]);
-    const state=await stateResponse.json(),matches=await matchesResponse.json(),players=(state.players||[]).filter(player=>!player.archived);
+    const {state,matches}=await window.loadEungckRankingData(),players=(state.players||[]).filter(player=>!player.archived);
     const findPlayer=mp=>players.find(player=>(player.playAliases||[]).some(alias=>alias.puuid===mp.puuid||hofNorm(alias.gameName,alias.tagLine)===hofNorm(mp.gameName,mp.tagLine)))||players.find(player=>player.puuid===mp.puuid)||players.find(player=>hofNorm(player.name,String(player.tag||"").replace(/^#/,""))===hofNorm(mp.gameName,mp.tagLine));
     for(const series of [...(state.seriesState?.history||[]),...(state.seriesState?.active?[state.seriesState.active]:[])]){const roster=[...(series.blue||[]),...(series.red||[])];for(const set of series.sets||[]){const match=matches.find(item=>String(item.gameId)===String(set.gameId));if(!match)continue;for(const mp of match.participants||[]){const player=findPlayer(mp),slot=player&&roster.find(member=>String(member.id)===String(player.id)),role=slot&&(set.roleOverrides?.[String(slot.id)]||slot.role);if(role)mp.role=role}}}
     const grouped=new Map(players.map(player=>[String(player.id),{player,games:[]}]))
@@ -59,15 +58,11 @@ const hofCardIds=["objectiveLeaderboard","stealLeaderboard","wallLeaderboard","v
 const hofCardsComplete=()=>hofCardIds.every(id=>document.querySelector(`#${id} .leaderboard-row, #${id} .leaderboard-empty`));
 const ensureServerHallOfFame=()=>{if(!hofCardsComplete())renderServerHallOfFame()};
 window.addEventListener("DOMContentLoaded",()=>setTimeout(renderServerHallOfFame,350));
-window.addEventListener("pageshow",()=>setTimeout(renderServerHallOfFame,100));
-window.addEventListener("focus",()=>setTimeout(renderServerHallOfFame,100));
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(renderServerHallOfFame,100)});
 let hofRepairTimer;new MutationObserver(()=>{if(hofCardsComplete())return;clearTimeout(hofRepairTimer);hofRepairTimer=setTimeout(ensureServerHallOfFame,120)}).observe(document.querySelector(".award-grid"),{childList:true,subtree:true});
 
 async function renderTimelineObjectiveBoards(){
   try{
-    const [stateResponse,matchesResponse]=await Promise.all([fetch("/api/app-state",{cache:"no-store"}),fetch("/api/internal-matches",{cache:"no-store"})]);
-    const state=await stateResponse.json(),rawMatches=await matchesResponse.json(),matches=Array.isArray(rawMatches)?rawMatches:(rawMatches.matches||rawMatches.data||[]),players=(state.players||[]).filter(player=>!player.archived);
+    const {state,matches}=await window.loadEungckRankingData(),players=(state.players||[]).filter(player=>!player.archived);
     const findPlayer=mp=>players.find(player=>(player.playAliases||[]).some(alias=>alias.puuid===mp.puuid||hofNorm(alias.gameName,alias.tagLine)===hofNorm(mp.gameName,mp.tagLine)))||players.find(player=>player.puuid===mp.puuid)||players.find(player=>hofNorm(player.name,String(player.tag||"").replace(/^#/,""))===hofNorm(mp.gameName,mp.tagLine));
     const stats=new Map(players.map(player=>[String(player.id),{player,total:0,dragon:0,horde:0,herald:0,baron:0,elder:0,timelineGames:0}]));
     for(const match of matches){
@@ -83,6 +78,4 @@ async function renderTimelineObjectiveBoards(){
 }
 const scheduleTimelineObjectiveBoards=()=>setTimeout(renderTimelineObjectiveBoards,750);
 window.addEventListener("DOMContentLoaded",scheduleTimelineObjectiveBoards);
-window.addEventListener("pageshow",scheduleTimelineObjectiveBoards);
-window.addEventListener("focus",scheduleTimelineObjectiveBoards);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)scheduleTimelineObjectiveBoards()});
+window.addEventListener("ranking-data-changed",()=>{renderServerHallOfFame();renderTimelineObjectiveBoards()});
