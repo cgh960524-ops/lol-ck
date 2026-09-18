@@ -2,12 +2,8 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-$script:Root = if ($env:EUNGCK_UPLOADER_ROOT) { $env:EUNGCK_UPLOADER_ROOT.TrimEnd('\') } elseif ($MyInvocation.MyCommand.Path) { Split-Path -Parent $MyInvocation.MyCommand.Path } else { (Get-Location).Path }
-$script:ConfigPath = Join-Path $script:Root "config.json"
-$script:Config = @{ serverUrl = "https://lol-ck.vercel.app"; uploadToken = ""; riotApiKey = "" }
-if (Test-Path -LiteralPath $script:ConfigPath) {
-    try { $loaded = Get-Content -LiteralPath $script:ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json; $script:Config.serverUrl = $loaded.serverUrl; $script:Config.uploadToken = $loaded.uploadToken; $script:Config.riotApiKey = $loaded.riotApiKey } catch {}
-}
+$script:ServerUrl = "https://lol-ck.vercel.app"
+$script:MatchUploadToken = "__MATCH_UPLOAD_TOKEN__"
 
 function Get-LcuAuth {
     $commandLine = Get-CimInstance Win32_Process -Filter "Name='LeagueClientUx.exe'" | Select-Object -First 1 -ExpandProperty CommandLine
@@ -155,38 +151,22 @@ function Get-InternalMatch([string]$gameId) {
 }
 
 function Send-Match($match) {
-    $base = $serverBox.Text.Trim().TrimEnd('/'); $token = $tokenBox.Text.Trim()
-    if (-not $base -or -not $token) { throw "웹 서버 주소와 업로드 인증키를 입력해주세요." }
-    $script:Config = @{ serverUrl=$base; uploadToken=$token; riotApiKey=$riotKeyBox.Text.Trim() }; $script:Config | ConvertTo-Json | Set-Content -LiteralPath $script:ConfigPath -Encoding UTF8
+    $base = $script:ServerUrl.Trim().TrimEnd('/'); $token = $script:MatchUploadToken.Trim()
+    if (-not $base -or $token -notmatch '^[a-f0-9]{64}$') { throw "배포용 업로더의 서버 인증 설정을 읽지 못했습니다." }
     $headers = @{ Authorization = "Bearer $token" }
     $jsonBody = $match | ConvertTo-Json -Depth 8 -Compress
     $bodyBytes = [Text.Encoding]::UTF8.GetBytes($jsonBody)
     return Invoke-RestMethod -Method Post -Uri "$base/api/internal-matches/upload" -Headers $headers -ContentType "application/json; charset=utf-8" -Body $bodyBytes
 }
 
-function Send-RiotKey {
-    $base=$serverBox.Text.Trim().TrimEnd('/');$token=$tokenBox.Text.Trim();$riotKey=$riotKeyBox.Text.Trim()
-    if(-not $base -or -not $token){throw "웹 서버 주소와 업로드 인증키를 입력해주세요."}
-    if($riotKey -notmatch '^RGAPI-[A-Za-z0-9-]{20,}$'){throw "올바른 Riot API 키를 입력해주세요."}
-    $headers=@{Authorization="Bearer $token"};$body=@{riotApiKey=$riotKey}|ConvertTo-Json -Compress
-    $result=Invoke-RestMethod -Method Post -Uri "$base/api/uploader/riot-key" -Headers $headers -ContentType "application/json; charset=utf-8" -Body $body
-    $script:Config=@{serverUrl=$base;uploadToken=$token;riotApiKey=$riotKey};$script:Config|ConvertTo-Json|Set-Content -LiteralPath $script:ConfigPath -Encoding UTF8
-    return $result
-}
-
 $form = New-Object Windows.Forms.Form
-$form.Text = "응CK 내전 업로더"; $form.Size = [Drawing.Size]::new(560,500); $form.StartPosition="CenterScreen"; $form.FormBorderStyle="FixedDialog"; $form.MaximizeBox=$false; $form.BackColor=[Drawing.Color]::FromArgb(247,248,246)
+$form.Text = "응CK 내전 업로더"; $form.Size = [Drawing.Size]::new(560,330); $form.StartPosition="CenterScreen"; $form.FormBorderStyle="FixedDialog"; $form.MaximizeBox=$false; $form.BackColor=[Drawing.Color]::FromArgb(247,248,246)
 $title = New-Object Windows.Forms.Label; $title.Text="응CK 내전 업로더"; $title.Font=[Drawing.Font]::new("맑은 고딕",18,[Drawing.FontStyle]::Bold); $title.Location=[Drawing.Point]::new(24,20); $title.AutoSize=$true; $form.Controls.Add($title)
-$guide = New-Object Windows.Forms.Label; $guide.Text="롤 클라이언트에서 경기 상세·타임라인을 읽어 웹 서버로 전송합니다."; $guide.Location=[Drawing.Point]::new(27,61); $guide.Size=[Drawing.Size]::new(500,25); $form.Controls.Add($guide)
+$guide = New-Object Windows.Forms.Label; $guide.Text="롤 클라이언트를 켠 상태에서 게임 ID만 입력하세요."; $guide.Location=[Drawing.Point]::new(27,61); $guide.Size=[Drawing.Size]::new(500,25); $form.Controls.Add($guide)
 function Add-Field($label,$y,$value,$password=$false){$l=New-Object Windows.Forms.Label;$l.Text=$label;$l.Location=[Drawing.Point]::new(28,$y);$l.Size=[Drawing.Size]::new(130,23);$form.Controls.Add($l);$b=New-Object Windows.Forms.TextBox;$b.Location=[Drawing.Point]::new(155,$y-3);$b.Size=[Drawing.Size]::new(360,27);$b.Text=$value;$b.UseSystemPasswordChar=$password;$form.Controls.Add($b);return $b}
-$serverBox=Add-Field "웹 서버 주소" 108 $script:Config.serverUrl
-$tokenBox=Add-Field "업로드 인증키" 151 $script:Config.uploadToken $true
-$riotKeyBox=Add-Field "Riot API 키" 194 $script:Config.riotApiKey $true
-$keyButton=New-Object Windows.Forms.Button;$keyButton.Text="API 키 서버에 저장";$keyButton.Location=[Drawing.Point]::new(155,226);$keyButton.Size=[Drawing.Size]::new(360,34);$form.Controls.Add($keyButton)
-$gameBox=Add-Field "게임 ID" 285 ""
-$sendButton=New-Object Windows.Forms.Button;$sendButton.Text="경기 데이터 전송";$sendButton.Location=[Drawing.Point]::new(28,322);$sendButton.Size=[Drawing.Size]::new(487,48);$sendButton.BackColor=[Drawing.Color]::FromArgb(23,68,57);$sendButton.ForeColor=[Drawing.Color]::White;$sendButton.FlatStyle="Flat";$sendButton.Font=[Drawing.Font]::new("맑은 고딕",11,[Drawing.FontStyle]::Bold);$form.Controls.Add($sendButton)
-$status=New-Object Windows.Forms.TextBox;$status.Location=[Drawing.Point]::new(28,386);$status.Size=[Drawing.Size]::new(487,48);$status.Multiline=$true;$status.ReadOnly=$true;$status.BackColor=[Drawing.Color]::White;$status.Text="준비됨 · API 키 저장 또는 경기 데이터 전송을 선택하세요.";$form.Controls.Add($status)
-$keyButton.Add_Click({$keyButton.Enabled=$false;$status.Text="Riot API 키를 서버에 저장하는 중입니다...";[Windows.Forms.Application]::DoEvents();try{$null=Send-RiotKey;$status.Text="완료 · 서버의 Riot API 키가 갱신되었습니다."}catch{$status.Text="실패 · $($_.Exception.Message)"}finally{$keyButton.Enabled=$true}})
+$gameBox=Add-Field "게임 ID" 112 ""
+$sendButton=New-Object Windows.Forms.Button;$sendButton.Text="경기 데이터 전송";$sendButton.Location=[Drawing.Point]::new(28,150);$sendButton.Size=[Drawing.Size]::new(487,48);$sendButton.BackColor=[Drawing.Color]::FromArgb(23,68,57);$sendButton.ForeColor=[Drawing.Color]::White;$sendButton.FlatStyle="Flat";$sendButton.Font=[Drawing.Font]::new("맑은 고딕",11,[Drawing.FontStyle]::Bold);$form.Controls.Add($sendButton)
+$status=New-Object Windows.Forms.TextBox;$status.Location=[Drawing.Point]::new(28,214);$status.Size=[Drawing.Size]::new(487,48);$status.Multiline=$true;$status.ReadOnly=$true;$status.BackColor=[Drawing.Color]::White;$status.Text="준비됨 · 게임 ID를 입력한 뒤 전송 버튼을 누르세요.";$form.Controls.Add($status)
 $sendButton.Add_Click({
     $sendButton.Enabled=$false; $status.Text="게임 기록을 가져오는 중입니다..."; [Windows.Forms.Application]::DoEvents()
     try { $match=Get-InternalMatch $gameBox.Text.Trim(); $status.Text="웹 서버로 전송하는 중입니다..."; [Windows.Forms.Application]::DoEvents(); $result=Send-Match $match; $status.Text="전송 완료 · 게임 $($result.gameId) · 서버 누적 $($result.total)경기"; $gameBox.Clear() }

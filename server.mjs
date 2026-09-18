@@ -5,7 +5,7 @@ import "./rating-observation.js";
 import {makeSoloEvidence,mergeSoloEvidence,roleEvidence} from "./rating-policy.js";
 import "./rating-engine.js";
 import { createServer } from "node:http";
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { verifyKey } from "discord-interactions";
 import { waitUntil } from "@vercel/functions";
 import { readFile } from "node:fs/promises";
@@ -20,6 +20,7 @@ const port = Number(process.env.PORT || 4173);
 const host = process.env.HOST || "0.0.0.0";
 const { matches: dataFile, appState: appStateFile, runtime: runtimeConfigFile } = stateFiles(root);
 const uploadToken = process.env.UPLOADER_TOKEN || "";
+const matchUploadToken = uploadToken ? createHmac("sha256",uploadToken).update("match-upload-v1").digest("hex") : "";
 const types = { ".html":"text/html; charset=utf-8", ".css":"text/css; charset=utf-8", ".js":"text/javascript; charset=utf-8", ".svg":"image/svg+xml", ".txt":"text/plain; charset=utf-8" };
 
 const json = (res,status,body) => { res.writeHead(status,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store"}); res.end(JSON.stringify(body)); };
@@ -426,7 +427,10 @@ async function finishDeferredDiscordInteraction(interaction){
     try{const base=`https://discord.com/api/v10/webhooks/${process.env.DISCORD_APPLICATION_ID||interaction.application_id}/${interaction.token}`,response=await fetch(`${base}/messages/@original`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({content:`처리에 실패했습니다 · ${String(error?.message||"서버 오류가 발생했습니다.").slice(0,300)}`,embeds:[],components:[]})});if(!response.ok)console.error("Discord deferred error response failed",response.status)}catch(responseError){console.error("Discord deferred error response exception",responseError)}
   }
 }
-const requireUploaderAuth=req=>{if(!uploadToken)throw Object.assign(new Error("서버에 UPLOADER_TOKEN이 설정되지 않았습니다."),{status:503});if(String(req.headers.authorization||"")!==`Bearer ${uploadToken}`)throw Object.assign(new Error("업로더 인증키가 올바르지 않습니다."),{status:401})};
+const bearerToken=req=>String(req.headers.authorization||"").match(/^Bearer\s+(.+)$/i)?.[1]||"";
+const tokenMatches=(candidate,expected)=>{const left=Buffer.from(String(candidate||""),"utf8"),right=Buffer.from(String(expected||""),"utf8");return left.length===right.length&&left.length>0&&timingSafeEqual(left,right)};
+const requireUploaderAuth=req=>{if(!uploadToken)throw Object.assign(new Error("서버에 UPLOADER_TOKEN이 설정되지 않았습니다."),{status:503});if(!tokenMatches(bearerToken(req),uploadToken))throw Object.assign(new Error("업로더 인증키가 올바르지 않습니다."),{status:401})};
+const requireMatchUploadAuth=req=>{if(!uploadToken)throw Object.assign(new Error("서버에 UPLOADER_TOKEN이 설정되지 않았습니다."),{status:503});const candidate=bearerToken(req);if(!tokenMatches(candidate,uploadToken)&&!tokenMatches(candidate,matchUploadToken))throw Object.assign(new Error("업로더 인증키가 올바르지 않습니다."),{status:401})};
 function normalizeEpicObjectives(events,participants){
   const teamByPuuid=new Map(participants.map(p=>[p.puuid,p.teamId]));
   return (Array.isArray(events)?events:[]).slice(0,120).map(event=>{const killerPuuid=String(event?.killerPuuid||"").slice(0,100),teamId=[100,200].includes(Number(event?.teamId))?Number(event.teamId):(teamByPuuid.get(killerPuuid)||0);return {timestamp:Math.max(0,Number(event?.timestamp)||0),monsterType:String(event?.monsterType||"").toUpperCase().replace(/[^A-Z_]/g,"").slice(0,30),monsterSubType:String(event?.monsterSubType||"").toUpperCase().replace(/[^A-Z_]/g,"").slice(0,40),teamId,killerPuuid,assistingPuuids:[...new Set((Array.isArray(event?.assistingPuuids)?event.assistingPuuids:[]).map(value=>String(value||"").slice(0,100)).filter(Boolean))].slice(0,9)}}).filter(event=>event.monsterType);
@@ -486,8 +490,8 @@ export async function handleRequest(req,res){
       return json(res,200,await handleDiscordInteraction(interaction));
     }
     if(pathname==="/api/uploader/download"&&["GET","HEAD"].includes(req.method)){
-      const data=await readFile(join(root,"downloads","eungck-uploader-20260918.zip"));
-      res.writeHead(200,{"Content-Type":"application/zip","Content-Disposition":'attachment; filename="eungck-uploader-20260918.zip"',"Content-Length":data.length,"X-Content-Type-Options":"nosniff","Cache-Control":"no-store"});
+      const data=await readFile(join(root,"downloads","eungck-uploader-20260919.zip"));
+      res.writeHead(200,{"Content-Type":"application/zip","Content-Disposition":'attachment; filename="eungck-uploader-20260919.zip"',"Content-Length":data.length,"X-Content-Type-Options":"nosniff","Cache-Control":"no-store"});
       return res.end(req.method==="HEAD"?undefined:data);
     }
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),openAIConfigured:Boolean(openAIKey()),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
@@ -549,7 +553,7 @@ export async function handleRequest(req,res){
       requireUploaderAuth(req);const body=await readBody(req),riotApiKey=String(body.riotApiKey||"").trim();if(!/^RGAPI-[A-Za-z0-9-]{20,}$/.test(riotApiKey))throw Object.assign(new Error("올바른 Riot API 키 형식이 아닙니다."),{status:400});const config=await loadRuntimeConfig();config.riotApiKey=riotApiKey;config.updatedAt=Date.now();await saveRuntimeConfig(config);return json(res,200,{ok:true,configured:true});
     }
     if(pathname==="/api/internal-matches/upload"&&req.method==="POST"){
-      requireUploaderAuth(req);const body=await readBody(req);
+      requireMatchUploadAuth(req);const body=await readBody(req);
       if(Array.isArray(body.matches)){const incoming=body.matches.slice(0,200).map(validateMatch);if(!incoming.length)throw Object.assign(new Error("업로드할 경기 데이터가 없습니다."),{status:400});const matches=await loadMatches(),byId=new Map(matches.map(match=>[String(match.gameId),match]));for(const match of incoming)byId.set(String(match.gameId),mergeUploadedMatch(byId.get(String(match.gameId)),match));const merged=[...byId.values()];await saveMatches(merged);return json(res,200,{ok:true,received:incoming.length,total:merged.length})}
       const match=validateMatch(body),matches=await loadMatches(),index=matches.findIndex(m=>m.gameId===match.gameId);if(index>=0)matches[index]=mergeUploadedMatch(matches[index],match);else matches.push(match);await saveMatches(matches);return json(res,index>=0?200:201,{ok:true,replaced:index>=0,gameId:match.gameId,total:matches.length});
     }
