@@ -1,4 +1,4 @@
-export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-18.6";
+export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-19.1";
 
 export const SERIES_COMMENTARY_SCHEMA={
   type:"object",
@@ -7,7 +7,7 @@ export const SERIES_COMMENTARY_SCHEMA={
     headline:{type:"string"},
     overview:{type:"string"},
     decisiveFactors:{type:"array",maxItems:5,items:{type:"string"}},
-    setReviews:{type:"array",maxItems:5,items:{type:"object",additionalProperties:false,properties:{setNumber:{type:"integer"},title:{type:"string"},summary:{type:"string"}},required:["setNumber","title","summary"]}},
+    setReviews:{type:"array",maxItems:5,items:{type:"object",additionalProperties:false,properties:{setNumber:{type:"integer"},title:{type:"string"},summary:{type:"string"},team1Good:{type:"string"},team2Good:{type:"string"},bestReason:{type:"string"},worstReason:{type:"string"}},required:["setNumber","title","summary","team1Good","team2Good","bestReason","worstReason"]}},
     matchupReviews:{type:"array",maxItems:5,items:{type:"object",additionalProperties:false,properties:{role:{type:"string",enum:["탑","정글","미드","원딜","서폿"]},title:{type:"string"},summary:{type:"string"}},required:["role","title","summary"]}},
     notablePlayers:{type:"array",maxItems:6,items:{type:"object",additionalProperties:false,properties:{name:{type:"string"},side:{type:"string",enum:["BLUE","RED"]},summary:{type:"string"}},required:["name","side","summary"]}},
     ratingSummary:{type:"string"},
@@ -242,6 +242,35 @@ export function compactSeriesCommentaryEvidence(evidence){
   return {...evidence,sets:(evidence.sets||[]).map(set=>({...set,timeline:compactTimelineForCommentary(set.timeline)}))};
 }
 
+const publicTeamKey=side=>side==="BLUE"?"TEAM1":side==="RED"?"TEAM2":"UNKNOWN";
+const publicMapSide=teamId=>n(teamId)===100?"BLUE":n(teamId)===200?"RED":"UNKNOWN";
+const publicTimelineEvent=event=>({minute:maybeNumber(event.minute),team:publicTeamKey(event.side),kind:event.kind||"event",label:cleanText(event.label||[event.type,event.subType,event.lane,event.tower].filter(Boolean).join("/"),60)});
+
+function serverPlayerImpact(player,teamTotals,winner){
+  const visionShare=n(player.vision)/Math.max(1,n(teamTotals.vision)),objective=Math.min(8,n(player.objectiveDamage)/1800),turret=Math.min(5,n(player.turretDamage)/1800);
+  return Number((n(player.kills)*2.4+n(player.assists)*1.05-n(player.deaths)*2.15+n(player.killParticipation)*9+n(player.damageShare)*16+n(player.goldShare)*5+visionShare*5+objective+turret+(winner?5:0)).toFixed(2));
+}
+
+function serverPhaseRows(set){
+  const timeline=set.timeline||{},duration=Math.max(1,n(set.durationMinutes)),ranges=[[0,10,"초반"],[10,20,"중반"],[20,duration,"후반"]];
+  const frames=timeline.teamGold||[],events=[...(timeline.objectives||[]).map(event=>({...event,kind:"objective"})),...(timeline.buildings||[]).map(event=>({...event,kind:"building"}))];
+  const frameAtOrBefore=minute=>{let result=null;for(const frame of frames){if(n(frame.minute)>minute)break;result=frame}return result};
+  return ranges.filter(([from])=>from<duration).map(([from,to,label])=>{
+    const end=Math.min(to,duration),startFrame=frameAtOrBefore(from),endFrame=frameAtOrBefore(end)||frames.at(-1)||null,startDifference=startFrame?n(startFrame.difference):0,endDifference=endFrame?n(endFrame.difference):0;
+    return {label,fromMinute:from,toMinute:Number(end.toFixed(1)),startLeader:publicTeamKey(meaningfulLead(startDifference)),endLeader:publicTeamKey(meaningfulLead(endDifference)),endLeadGold:Math.abs(endDifference),swingToward:publicTeamKey(meaningfulLead(endDifference-startDifference,0)),swingGold:Math.abs(endDifference-startDifference),eventCount:events.filter(event=>n(event.minute)>=from&&n(event.minute)<end).length};
+  });
+}
+
+export function buildSeriesCommentaryPresentation(evidence){
+  if(!evidence?.series)return null;
+  const teamNames={TEAM1:evidence.series.blueTeam||"1팀",TEAM2:evidence.series.redTeam||"2팀"},sets=(evidence.sets||[]).map(set=>{
+    const teamTotals=set.teams||{},players=(set.players||[]).map(player=>({...player,team:publicTeamKey(player.side),impactScore:serverPlayerImpact(player,teamTotals[player.side]||{},player.side===set.winner)})).sort((a,b)=>b.impactScore-a.impactScore||a.name.localeCompare(b.name,"ko")),best=players[0]||null,worst=players.at(-1)||null,timeline=set.timeline||{},gold=(timeline.teamGold||[]).map(frame=>({minute:frame.minute,team1Gold:n(frame.BLUE),team2Gold:n(frame.RED),leader:publicTeamKey(meaningfulLead(n(frame.difference),0)),leadGold:Math.abs(n(frame.difference))})),events=[...(timeline.turningPoints||[]).map(point=>({minute:point.startMinute,team:publicTeamKey(point.result),kind:"fight",label:`교전 ${n(point.kills?.BLUE)}:${n(point.kills?.RED)}`})),...(timeline.objectives||[]).map(event=>publicTimelineEvent({...event,kind:"objective"})),...(timeline.buildings||[]).map(event=>publicTimelineEvent({...event,kind:"building"}))].filter(event=>event.minute!==null).sort((a,b)=>a.minute-b.minute);
+    return {setNumber:set.setNumber,gameId:set.gameId,winner:publicTeamKey(set.winner),durationMinutes:set.durationMinutes,dataAvailable:set.dataAvailable,mappingComplete:set.mappingComplete,sideMapping:{TEAM1:set.sideMapping?.BLUE||"UNKNOWN",TEAM2:set.sideMapping?.RED||"UNKNOWN"},teams:{TEAM1:{name:teamNames.TEAM1,...(teamTotals.BLUE||{})},TEAM2:{name:teamNames.TEAM2,...(teamTotals.RED||{})}},timeline:{available:Boolean(timeline.available),confidence:timeline.confidence?.overall||"unavailable",gold,events,phases:serverPhaseRows(set)},best:best?{id:best.id,name:best.name,team:best.team,role:best.roleLabel,champion:best.champion,impactScore:best.impactScore,kills:best.kills,deaths:best.deaths,assists:best.assists,killParticipation:best.killParticipation,damage:best.damage,gold:best.gold,cs:best.cs,vision:best.vision}:null,worst:worst?{id:worst.id,name:worst.name,team:worst.team,role:worst.roleLabel,champion:worst.champion,impactScore:worst.impactScore,kills:worst.kills,deaths:worst.deaths,assists:worst.assists,killParticipation:worst.killParticipation,damage:worst.damage,gold:worst.gold,cs:worst.cs,vision:worst.vision}:null};
+  });
+  const known=sets.filter(set=>set.sideMapping.TEAM1!=="UNKNOWN"),alternating=known.length<2||known.every((set,index)=>index===0||set.sideMapping.TEAM1!==known[index-1].sideMapping.TEAM1);
+  return {version:1,series:{seriesNumber:evidence.series.seriesNumber,teams:{TEAM1:{name:teamNames.TEAM1,score:n(evidence.series.score?.BLUE)},TEAM2:{name:teamNames.TEAM2,score:n(evidence.series.score?.RED)}},winner:publicTeamKey(evidence.series.winner),pog:evidence.series.pog},sideRotation:{verifiedSets:known.length,alternating},sets};
+}
+
 function publicRatingEvent(event,playerById){
   const roleBefore=maybeNumber(event.roleBefore),opponentPower=maybeNumber(event.opponentPower),opponentPowerGap=roleBefore===null||opponentPower===null?null:opponentPower-roleBefore;
   return {
@@ -274,9 +303,10 @@ export function buildSeriesCommentaryEvidence({series,players=[],matches=[],seri
     const teamSideVotes=new Map();for(const entry of mapped){const teamId=n(entry.participant.teamId),votes=teamSideVotes.get(teamId)||{BLUE:0,RED:0};votes[entry.side]++;teamSideVotes.set(teamId,votes)}
     const teamIdToSide=new Map();for(const [teamId,votes] of teamSideVotes)if(Boolean(votes.BLUE)!==Boolean(votes.RED))teamIdToSide.set(teamId,votes.BLUE?"BLUE":"RED");
     const matchTeamIds=[...new Set((match.participants||[]).map(participant=>n(participant.teamId)).filter(Boolean))];if(matchTeamIds.length===2&&teamIdToSide.size===1){const knownTeam=matchTeamIds.find(teamId=>teamIdToSide.has(teamId)),otherTeam=matchTeamIds.find(teamId=>teamId!==knownTeam);if(knownTeam!==undefined&&otherTeam!==undefined)teamIdToSide.set(otherTeam,oppositeSide(teamIdToSide.get(knownTeam)))}
+    const sideMapping={BLUE:"UNKNOWN",RED:"UNKNOWN"};for(const [teamId,side] of teamIdToSide)if(["BLUE","RED"].includes(side))sideMapping[side]=publicMapSide(teamId);
     const objectives=(match.epicObjectives||[]).map(event=>({minute:Number((n(event.timestamp)/60000).toFixed(1)),type:cleanText(event.monsterType,30),subType:cleanText(event.monsterSubType,40),side:teamIdToSide.get(n(event.teamId))||"UNKNOWN"}));
     const timeline=buildMatchTimelineEvidence({match,mapped,teamIdToSide}),blueDuo=duo("BLUE"),redDuo=duo("RED"),higherLeader=key=>blueDuo[key]>redDuo[key]?"BLUE":redDuo[key]>blueDuo[key]?"RED":"EVEN",metricLeaders=Object.fromEntries(["kills","assists","damage","gold","cs","vision"].map(key=>[key,higherLeader(key)])),fewerDeaths=blueDuo.deaths<redDuo.deaths?"BLUE":redDuo.deaths<blueDuo.deaths?"RED":"EVEN",dimensionLeaders=[...new Set(Object.values(metricLeaders).filter(side=>side!=="EVEN"))],bottomDuoComparison={metricLeaders,fewerDeaths,mixed:dimensionLeaders.length>1};
-    return {setNumber:n(set.number)||index+1,gameId:String(set.gameId),winner:set.winner,durationMinutes:Number((n(match.duration)/60).toFixed(1)),dataAvailable:true,mappingComplete:mapped.length===memberById.size,mappedPlayers:mapped.length,expectedPlayers:memberById.size,teams:{BLUE:teamTotals("BLUE"),RED:teamTotals("RED")},players:publicPlayers,matchups,bottomDuo:{BLUE:blueDuo,RED:redDuo,comparison:bottomDuoComparison},objectives,timeline};
+    return {setNumber:n(set.number)||index+1,gameId:String(set.gameId),winner:set.winner,durationMinutes:Number((n(match.duration)/60).toFixed(1)),dataAvailable:true,mappingComplete:mapped.length===memberById.size,mappedPlayers:mapped.length,expectedPlayers:memberById.size,sideMapping,teams:{BLUE:teamTotals("BLUE"),RED:teamTotals("RED")},players:publicPlayers,matchups,bottomDuo:{BLUE:blueDuo,RED:redDuo,comparison:bottomDuoComparison},objectives,timeline};
   });
 
   const roster=[...(series.blue||[]).map(member=>({...member,side:"BLUE"})),...(series.red||[]).map(member=>({...member,side:"RED"}))];
@@ -289,11 +319,13 @@ export function buildSeriesCommentaryEvidence({series,players=[],matches=[],seri
     return {id:String(member.id),name:cleanText(player?.name||member.name,40),side:member.side,assignedRole:member.role,assignedRoleLabel:roleKo[member.role]||member.role,overallBefore,overallAfter,overallChange:overallBefore!==null&&overallAfter!==null?overallAfter-overallBefore:overallChange,roleBefore,roleAfter,roleChange:roleBefore!==null&&roleAfter!==null?roleAfter-roleBefore:roleChange,events:publicEvents};
   });
   const score={BLUE:importedSets.filter(set=>set.winner==="BLUE").length,RED:importedSets.filter(set=>set.winner==="RED").length},pog=roster.find(member=>String(member.id)===String(series.pogId)),timelineCoverage={setsTotal:setReviews.length,setsAvailable:setReviews.filter(set=>set.timeline?.available).length,setsWithCompleteGold:setReviews.filter(set=>n(set.timeline?.coverage?.completeGoldFrameCount)>0).length,totalFrames:setReviews.reduce((total,set)=>total+n(set.timeline?.coverage?.frameCount),0),totalCompleteGoldFrames:setReviews.reduce((total,set)=>total+n(set.timeline?.coverage?.completeGoldFrameCount),0),totalEvents:setReviews.reduce((total,set)=>total+n(set.timeline?.coverage?.eventCount),0),confidenceBySet:setReviews.map(set=>({setNumber:set.setNumber,overall:set.timeline?.confidence?.overall||"unavailable",gold:set.timeline?.confidence?.gold||"unavailable",events:set.timeline?.confidence?.events||"unavailable"}))};
-  return {
+  const evidence={
     policy:{ratingVersion:ratingVersion||series.ratingSnapshot?.version||"unknown",explanationOnly:true,primaryComparison:"same-role opponent",bottomLaneContext:"ADC and SUPPORT use both direct matchup and 2v2 context",limits:"Scoreboard, periodic timeline frames, and recorded events cannot prove unrecorded shotcalls, vision, momentary health, combat damage, or causal game flow."},
     series:{id:String(series.id||""),seriesNumber:String(series.seriesNumber||series.id||""),finishedAt:n(series.finishedAt),blueTeam:teamName(series,"BLUE"),redTeam:teamName(series,"RED"),score,winner:series.finalWinner,pog:pog?{name:cleanText(pog.name,40),score:n(series.pogScore)}:null},
     timelineCoverage,sets:setReviews,ratingChanges,
   };
+  evidence.analysis=buildSeriesCommentaryPresentation(evidence);
+  return evidence;
 }
 
 export function sanitizeSeriesCommentary(value){
@@ -302,7 +334,7 @@ export function sanitizeSeriesCommentary(value){
   const review={
     headline:cleanText(value.headline,120),overview:cleanText(value.overview,1000),
     decisiveFactors:(Array.isArray(value.decisiveFactors)?value.decisiveFactors:[]).slice(0,5).map(text=>cleanText(text,400)).filter(Boolean),
-    setReviews:(Array.isArray(value.setReviews)?value.setReviews:[]).slice(0,5).map(entry=>({setNumber:Math.max(1,Math.round(n(entry?.setNumber))),...item(entry,[["title",100],["summary",600]])})).filter(entry=>entry.title||entry.summary),
+    setReviews:(Array.isArray(value.setReviews)?value.setReviews:[]).slice(0,5).map(entry=>({setNumber:Math.max(1,Math.round(n(entry?.setNumber))),...item(entry,[["title",100],["summary",600],["team1Good",500],["team2Good",500],["bestReason",500],["worstReason",500]])})).filter(entry=>entry.title||entry.summary),
     matchupReviews:(Array.isArray(value.matchupReviews)?value.matchupReviews:[]).slice(0,5).map(entry=>({role:roles.map(role=>roleKo[role]).includes(entry?.role)?entry.role:"",...item(entry,[["title",100],["summary",600]])})).filter(entry=>entry.role&&(entry.title||entry.summary)),
     notablePlayers:(Array.isArray(value.notablePlayers)?value.notablePlayers:[]).slice(0,6).map(entry=>({name:cleanText(entry?.name,40),side:["BLUE","RED"].includes(entry?.side)?entry.side:"BLUE",summary:cleanText(entry?.summary,500)})).filter(entry=>entry.name&&entry.summary),
     ratingSummary:cleanText(value.ratingSummary,800),dataNotice:cleanText(value.dataNotice,500),

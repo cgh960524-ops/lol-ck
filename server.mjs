@@ -44,6 +44,7 @@ const rankingRevision=(state,matches)=>createHash("sha256").update(JSON.stringif
 async function loadRuntimeConfig(){return loadJson("runtime-config",runtimeConfigFile,{})}
 async function saveRuntimeConfig(config){await saveJson("runtime-config",runtimeConfigFile,config)}
 const seriesCommentaryJobs=new Map();
+const seriesCommentaryUpgradeTargets=new Set(["CKS-20260919-002","CKS-20260919-001","CKS-20260918-002"]);
 const openAIModel=()=>String(process.env.OPENAI_MODEL||"gpt-5.6-luna").trim();
 const openAIKey=()=>String(process.env.OPENAI_API_KEY||"").trim();
 const seriesCommentaryRoot=process.env.SERIES_COMMENTARY_DIR||join(root,"data","series-commentaries");
@@ -86,6 +87,9 @@ const seriesCommentaryInstructions=`당신은 응CK연구소의 리그 오브 �
 롤력 변화는 V4.1 산식이 이미 확정한 결과입니다. 점수를 다시 계산하거나 다른 점수를 제안하지 말고, 같은 포지션 상대의 사전 롤력과 실제 상대 수행, 표본 신뢰도, 바텀 2대2 문맥을 이용해 변화 이유만 설명하세요.
 아랫밸 상대에게 큰 지표가 나온 것은 기대되는 부분임을 감안하고, 윗밸 상대에게 버티거나 우세한 지표를 낸 경우를 더 의미 있게 해석하세요.
 KDA 하나만으로 단정하지 말고 골드, CS, 피해량, 킬 관여, 시야, 오브젝트와 역할을 함께 보세요.
+analysis는 서버가 경기 지표와 타임라인으로 확정한 화면용 데이터입니다. 타임라인 좌표, 팀 매핑, BEST/WORST 후보를 다시 계산하거나 바꾸지 말고 해설만 작성하세요.
+series.blueTeam은 고정 1팀, series.redTeam은 고정 2팀입니다. 세트의 실제 진영은 analysis.sets[].sideMapping에서만 확인하세요. 1팀과 2팀은 세트마다 BLUE/RED가 바뀔 수 있으므로 색상이나 이전 세트 진영으로 추정하지 마세요.
+setReviews의 team1Good과 team2Good은 해당 세트에서 각 팀이 잘한 점을 지표 근거로 설명하세요. bestReason과 worstReason은 analysis.sets[]의 서버 선정 선수에 대한 해설만 쓰고 다른 선수를 재선정하지 마세요.
 mappingComplete가 false인 세트는 팀 합계나 빠진 선수에 대해 단정하지 마세요.
 timeline.available이 true이면 최종 스코어보다 timeline.turningPoints, biggestSwings, leadChanges와 교전 뒤 90초 이내의 오브젝트·건물 전환을 우선해 경기 흐름을 설명하세요. timeline.confidence가 partial이면 그 한계를 함께 밝히세요.
 모델용 timeline 골드는 leader와 leadGold로 이미 정규화되어 있습니다. 문장에는 필드명 'leader'를 그대로 출력하지 말고 그 값인 BLUE 또는 RED를 넣어 'BLUE가 5,331골드 앞섰다'처럼 쓰세요. 선두 팀에 음수 부호를 붙이지 마세요. swingGold는 격차 자체가 아니라 해당 구간의 변화량이므로 현재 골드 격차처럼 쓰지 마세요. 시각, 선수 이름과 수치는 JSON 값을 그대로 확인하고, 앞서던 팀이 바뀐 경기에서 한 팀이 계속 우세했다고 쓰지 마세요.
@@ -125,6 +129,13 @@ async function requestSeriesCommentary(evidence){
   const review=sanitizeSeriesCommentary(parsed);if(!review)throw Object.assign(new Error("OpenAI 총평 형식이 올바르지 않습니다."),{code:"invalid_output"});
   return {review,model:String(payload.model||openAIModel()),usage:{inputTokens:Number(payload.usage?.input_tokens)||0,outputTokens:Number(payload.usage?.output_tokens)||0,totalTokens:Number(payload.usage?.total_tokens)||0}};
 }
+
+async function buildPublicSeriesCommentaryAnalysis(state,series){
+  try{
+    const matches=await loadMatches({includeTimeline:true});
+    return buildSeriesCommentaryEvidence({series,players:state.players||[],matches,seriesState:state.seriesState,ratingVersion:state.ratingAlgorithm?.version,prepareMatches:CKRating.prepareMatches,playerResolver:CKRating.playerResolver,positionScore:CKRating.positionScore}).analysis||null;
+  }catch(error){console.error("Series commentary analysis build failed",{series:seriesCommentaryKey(series),message:error.message});return null}
+}
 function seriesCommentaryErrorCode(error){if(error?.code==="missing_api_key")return "missing_api_key";if(error?.name==="TimeoutError"||error?.name==="AbortError")return "timeout";return ["openai_auth","rate_limit","openai_request","invalid_output","output_incomplete","missing_match_data","incomplete_player_mapping","daily_limit"].includes(error?.code)?error.code:"generation_failed"}
 const recoverableSeriesCommentaryErrors=new Set(["timeout","rate_limit","openai_request","output_incomplete","generation_failed"]);
 function canRecoverSeriesCommentary(record){
@@ -133,6 +144,7 @@ function canRecoverSeriesCommentary(record){
   if(record.status==="failed")return recoverableSeriesCommentaryErrors.has(record.errorCode);
   return record.status==="unavailable"&&record.errorCode==="missing_api_key"&&Boolean(openAIKey());
 }
+const shouldUpgradeSeriesCommentary=(record,series)=>seriesCommentaryUpgradeTargets.has(String(series?.seriesNumber||series?.id||""))&&(!record||record.status==="ready"&&record.promptVersion!==SERIES_COMMENTARY_PROMPT_VERSION);
 async function generateSeriesCommentary(reference,{force=false,recover=false,transitionFingerprint=""}={}){
   const state=await loadAppState(),series=findFinishedSeries(state,reference);if(!series)throw Object.assign(new Error("완료된 시리즈를 찾지 못했습니다."),{status:404});
   let snapshot=await loadSeriesCommentaryVersioned(series),existing=snapshot.value;
@@ -175,10 +187,10 @@ function startSeriesCommentary(reference,options={}){
   if(process.env.VERCEL){try{waitUntil(job)}catch(error){console.error("Series commentary waitUntil failed",error.message)}}else void job;
   return job;
 }
-function publicSeriesCommentary(record,series){
-  if(record?.status==="ready")return {status:"ready",seriesId:String(series.id),seriesNumber:String(series.seriesNumber||series.id),model:record.model,generatedAt:record.generatedAt,review:record.review};
+function publicSeriesCommentary(record,series,analysis=null){
+  if(record?.status==="ready")return {status:"ready",seriesId:String(series.id),seriesNumber:String(series.seriesNumber||series.id),model:record.model,generatedAt:record.generatedAt,analysis,review:record.review};
   const status=record?.status||(!openAIKey()?"unavailable":"missing");
-  return {status,seriesId:String(series.id),seriesNumber:String(series.seriesNumber||series.id),updatedAt:record?.updatedAt||null,errorCode:record?.errorCode||(!openAIKey()?"missing_api_key":null)};
+  return {status,seriesId:String(series.id),seriesNumber:String(series.seriesNumber||series.id),updatedAt:record?.updatedAt||null,errorCode:record?.errorCode||(!openAIKey()?"missing_api_key":null),analysis};
 }
 async function saveReviewedSeriesCommentary(reference,input){
   const state=await loadRawAppState(),series=findFinishedSeries(state,String(reference||""));if(!series)throw Object.assign(new Error("완료된 시리즈를 찾지 못했습니다."),{status:404});
@@ -504,14 +516,15 @@ export async function handleRequest(req,res){
     if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),openAIConfigured:Boolean(openAIKey()),serverStorage:matchStore.mode==="postgres"?"postgres":matchStore.mode==="shadow"?"vercel-blob+postgres-shadow":process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
     if(pathname==="/api/series-commentary"&&req.method==="GET"){
       const reference=String(url.searchParams.get("seriesId")||"").trim();if(!reference)throw Object.assign(new Error("시리즈 ID가 필요합니다."),{status:400});
-      const state=await loadRawAppState(),series=findFinishedSeries(state,reference);if(!series)throw Object.assign(new Error("완료된 시리즈를 찾지 못했습니다."),{status:404});
+      const state=await loadAppState(),series=findFinishedSeries(state,reference);if(!series)throw Object.assign(new Error("완료된 시리즈를 찾지 못했습니다."),{status:404});
       let record=await loadSeriesCommentary(series);
-      if(canRecoverSeriesCommentary(record)){startSeriesCommentary(series.seriesNumber||series.id,{recover:true});record={...record,status:"pending",errorCode:null,updatedAt:Date.now()}}
-      return json(res,200,publicSeriesCommentary(record,series));
+      if(shouldUpgradeSeriesCommentary(record,series)){startSeriesCommentary(series.seriesNumber||series.id,{force:true});record={...record,status:"pending",errorCode:null,updatedAt:Date.now()}}
+      else if(canRecoverSeriesCommentary(record)){startSeriesCommentary(series.seriesNumber||series.id,{recover:true});record={...record,status:"pending",errorCode:null,updatedAt:Date.now()}}
+      return json(res,200,publicSeriesCommentary(record,series,await buildPublicSeriesCommentaryAnalysis(state,series)));
     }
     if(pathname==="/api/series-commentary/regenerate"&&req.method==="POST"){
-      requireUploaderAuth(req);const body=await readBody(req);if(body.review){const {record,series}=await saveReviewedSeriesCommentary(body.seriesId,body.review);return json(res,200,publicSeriesCommentary(record,series))}const record=await generateSeriesCommentary(String(body.seriesId||""),{force:true});
-      const state=await loadRawAppState(),series=findFinishedSeries(state,body.seriesId);return json(res,200,publicSeriesCommentary(record,series));
+      requireUploaderAuth(req);const body=await readBody(req);if(body.review){const {record,series}=await saveReviewedSeriesCommentary(body.seriesId,body.review),state=await loadAppState();return json(res,200,publicSeriesCommentary(record,series,await buildPublicSeriesCommentaryAnalysis(state,series)))}const record=await generateSeriesCommentary(String(body.seriesId||""),{force:true});
+      const state=await loadAppState(),series=findFinishedSeries(state,body.seriesId);return json(res,200,publicSeriesCommentary(record,series,await buildPublicSeriesCommentaryAnalysis(state,series)));
     }
     if(pathname==="/api/discord/recruitment-reminder"&&req.method==="GET"){const agent=String(req.headers["user-agent"]||""),authorized=agent.includes("vercel-cron/1.0")||(uploadToken&&String(req.headers.authorization||"")===`Bearer ${uploadToken}`);if(!authorized)return json(res,401,{error:"unauthorized"});return json(res,200,await sendDiscordRecruitmentReminder())}
     if(pathname==="/api/discord/register-hall-of-fame"&&req.method==="POST"){requireUploaderAuth(req);return json(res,200,await registerDiscordHallOfFameCommand())}

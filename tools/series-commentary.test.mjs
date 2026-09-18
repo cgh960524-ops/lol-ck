@@ -44,6 +44,17 @@ test("series evidence preserves matchup, bottom duo and fixed rating changes",()
   assert.equal(evidence.sets[0].players.find(row=>row.id==="2").startPower,1777);
   assert.equal(evidence.policy.explanationOnly,true);
   assert.equal(evidence.sets[0].timeline.available,false);
+  assert.deepEqual(evidence.sets[0].sideMapping,{BLUE:"BLUE",RED:"RED"});
+  assert.equal(evidence.analysis.sets[0].sideMapping.TEAM1,"BLUE");
+  assert.equal(evidence.analysis.sets[0].best.name,"Blue ADC");
+});
+
+test("series analysis maps 1팀 and 2팀 from each set's actual BLUE/RED side",()=>{
+  const fixture=timelineEvidenceFixture(),secondMatch=structuredClone(fixture.matches[0]);secondMatch.gameId="8384824998";for(const participant of secondMatch.participants)participant.teamId=participant.teamId===100?200:100;
+  const series=structuredClone(fixture.series);series.sets.push({number:2,gameId:secondMatch.gameId,winner:"RED",imported:true});
+  const evidence=buildSeriesCommentaryEvidence({series,players:fixture.players,matches:[fixture.matches[0],secondMatch],prepareMatches:(_players,value)=>value,playerResolver:value=>mp=>value.find(player=>player.id===mp.playerId)});
+  assert.deepEqual(evidence.analysis.sets.map(set=>set.sideMapping),[{TEAM1:"BLUE",TEAM2:"RED"},{TEAM1:"RED",TEAM2:"BLUE"}]);
+  assert.equal(evidence.analysis.sideRotation.alternating,true);
 });
 
 test("timeline evidence finds deterministic gold swings, fights and conversions",()=>{
@@ -117,10 +128,11 @@ test("timeline gold analysis excludes incomplete team frames without losing even
 
 test("series commentary output is bounded and rejects an empty response",()=>{
   assert.equal(sanitizeSeriesCommentary({}),null);
-  const review=sanitizeSeriesCommentary({headline:" A ",overview:" B ",decisiveFactors:[" C "],setReviews:[{setNumber:1,title:"S",summary:"sum"}],matchupReviews:[{role:"정글",title:"M",summary:"match"}],notablePlayers:[{name:"P",side:"RED",summary:"good"}],ratingSummary:"R",dataNotice:"N"});
+  const review=sanitizeSeriesCommentary({headline:" A ",overview:" B ",decisiveFactors:[" C "],setReviews:[{setNumber:1,title:"S",summary:"sum",team1Good:"T1",team2Good:"T2",bestReason:"best",worstReason:"worst"}],matchupReviews:[{role:"정글",title:"M",summary:"match"}],notablePlayers:[{name:"P",side:"RED",summary:"good"}],ratingSummary:"R",dataNotice:"N"});
   assert.equal(review.headline,"A");
   assert.equal(review.matchupReviews[0].role,"정글");
   assert.equal(review.notablePlayers[0].side,"RED");
+  assert.equal(review.setReviews[0].bestReason,"best");
 });
 
 test("automatic commentary accepts only a verified finish transition",()=>{
