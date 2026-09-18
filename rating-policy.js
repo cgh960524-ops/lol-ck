@@ -89,6 +89,18 @@ export function matchupUpdate({before,opponent,opponentConfidence=0,signal,paire
  const change=clamp(matchupChange+referenceChange,-60*learning,60*learning);
  return {change,matchupChange,referenceChange,capAdjustment:change-matchupChange-referenceChange,expected,actual,residual,reliability,repeatFactor,opponentFactor,learning,defensive,defensiveFactor};
 }
+// Bottom lane keeps the same-role comparison as its anchor, then adds a small
+// 2v2 context and partner-difficulty correction. It never replaces the ADC vs
+// ADC or support vs support evidence with a shared lane result.
+export function bottomDuoChange({individualChange,teammateChange,ownPartner,opponentPartner}){
+ const individual=n(individualChange),duo=(individual+n(teammateChange))/2;
+ const partnerAdjustment=clamp(.06*(n(opponentPartner)-n(ownPartner)),-12,12);
+ const contextual=individual+partnerAdjustment;
+ // Keep fractional state internally so repeated small evidence can still
+ // converge; role/history scores are rounded only when displayed.
+ const change=.70*individual+.20*duo+.10*contextual;
+ return {change,individualChange:individual,duoChange:duo,partnerAdjustment,contextualChange:contextual,weights:{individual:.70,duo:.20,partnerContext:.10}};
+}
 export const ROLE_IMPACT={TOP:.15,JUNGLE:.28,MID:.20,ADC:.15,SUPPORT:.22};
 export function predictTeams(blue,red){
  const value=x=>n(x.power??x.rating),role=x=>x.assigned||x.role;

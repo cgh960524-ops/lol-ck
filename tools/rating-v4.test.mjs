@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {roleEvidence,makeSoloEvidence,mergeSoloEvidence,peakTrust,initialV4Profile,learningFactor,matchupUpdate,predictTeams} from '../rating-policy.js';
+import {roleEvidence,makeSoloEvidence,mergeSoloEvidence,peakTrust,initialV4Profile,learningFactor,matchupUpdate,bottomDuoChange,predictTeams} from '../rating-policy.js';
 import {observe} from '../rating-observation.js';
 import '../rating-engine.js';
 const E=CKRating;
@@ -29,5 +29,17 @@ test('team model is symmetric; jungle/support gaps matter independently of indiv
 test('new solo evidence cannot rewrite earlier match history',()=>{const ps=players(),ms=[game(1),game(2)];E.recalculate(ps,ms);const old=structuredClone(ps[0].ratingHistory);ps[0].soloEvidence=evidence('MASTER','SUPPORT',100,Date.UTC(2026,9,1));ps[0].soloEvidenceHistory=[ps[0].soloEvidence];E.recalculate(ps,ms);assert.deepEqual(ps[0].ratingHistory,old);});
 test('single update is bounded and pure positive statistics never get a win bonus',()=>{for(const before of [600,1500,3000])for(const pairedSignal of [-10,0,10])assert.ok(Math.abs(update({before,pairedSignal}).change)<=60);const a=players(),b=players(),m=game();E.recalculate(a,[m]);for(const p of m.participants)p.win=!p.win;E.recalculate(b,[m]);for(let i=0;i<a.length;i++)assert.equal(a[i].ratingV2.overall,b[i].ratingV2.overall);});
 test('capped updates expose an exact component audit',()=>{for(const sign of [-1,1]){const u=update({pairedSignal:sign*10,opponentConfidence:1,signal:sign*10});assert.ok(Math.abs(u.capAdjustment)>0);assert.ok(Math.abs(u.change-u.matchupChange-u.referenceChange-u.capAdjustment)<1e-10);}});
+test('bottom duo keeps individual comparison dominant and caps partner difficulty',()=>{
+ const adc=bottomDuoChange({individualChange:9,teammateChange:16,ownPartner:1558,opponentPartner:1781});
+ const support=bottomDuoChange({individualChange:16,teammateChange:9,ownPartner:1603,opponentPartner:1566});
+ assert.equal(Math.round(adc.change),11);assert.equal(adc.partnerAdjustment,12);assert.equal(Math.round(support.change),15);
+ assert.equal(bottomDuoChange({individualChange:10,teammateChange:-10,ownPartner:1000,opponentPartner:3000}).partnerAdjustment,12);
+});
+test('bottom duo rollout is limited to the frozen two-series games and future games',()=>{
+ const old=game(200),retro=game(201),future=game(202);old.gameCreation=1789653563989;retro.gameId='8384626565';future.gameCreation=1789668737915;
+ assert.equal(E.recalculate(players(),[old]).diagnostics.bottomDuoGames,0);
+ const retroResult=E.recalculate(players(),[retro]);assert.equal(retroResult.diagnostics.bottomDuoGames,1);assert.equal(retroResult.diagnostics.bottomDuoAdjusted,4);
+ const futureResult=E.recalculate(players(),[future]);assert.equal(futureResult.diagnostics.bottomDuoGames,1);assert.equal(futureResult.diagnostics.bottomDuoAdjusted,4);
+});
 test('legacy high tier does not invent a historical role from a later snapshot',()=>{const p={...players()[0],tier:'MASTER'},profile=initialV4Profile(p,E.initialProfile(p)),current=evidence('PLATINUM','TOP',50,2);assert.equal(profile.roleVerified,false);assert.ok(learningFactor(profile,'TOP',current,[current])<.5);});
 test('historical peak stays in its recorded lane when the current main changes',()=>{for(const [origin,currentRole] of [['TOP','SUPPORT'],['SUPPORT','TOP']]){const peak=evidence('MASTER',origin,100,1),current=evidence('PLATINUM',currentRole,50,2),p={...players()[0],soloEvidence:current,soloEvidenceHistory:[peak,current]},profile=initialV4Profile(p,E.initialProfile(p));assert.ok(profile.roles[origin].rating>profile.roles[currentRole].rating);assert.equal(profile.highOrigin,origin);}});

@@ -1,10 +1,17 @@
 import REFERENCE from './rating-reference.js';
-import {observe} from './rating-observation.js?v=20260917-v4';
-import {initialV4Profile,learningFactor,matchupUpdate,predictTeams} from './rating-policy.js?v=20260917-v4';
+import {observe} from './rating-observation.js?v=20260918-v41';
+import {bottomDuoChange,initialV4Profile,learningFactor,matchupUpdate,predictTeams} from './rating-policy.js?v=20260918-v41';
 /* Shared, deterministic browser/server role-skill estimator. No I/O or POG bonuses. */
 (function (root) {
   'use strict';
-  const VERSION = 'matchup-skill-v4.20260917';
+  const VERSION = 'matchup-skill-v4.1.20260918';
+  const LEGACY_HISTORY_VERSION = 'matchup-skill-v4.20260917';
+  // One-time retrospective boundary requested on 2026-09-18. These are the
+  // six games in the latest two unique completed series at rollout time.
+  // Future games use the same rule; every earlier game remains on V4.
+  const BOTTOM_DUO_RETRO_GAMES = new Set(['8384626565','8384710566','8384776330','8384824997','8384857598','8384886434']);
+  const BOTTOM_DUO_FORWARD_AFTER = 1789668737914;
+  const usesBottomDuo=m=>BOTTOM_DUO_RETRO_GAMES.has(String(m.gameId))||num(m.gameCreation)>BOTTOM_DUO_FORWARD_AFTER;
   const ROLES = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
   const TIERS = { UNRANKED:1000, IRON:800, BRONZE:950, SILVER:1100, GOLD:1250, PLATINUM:1420, EMERALD:1580, DIAMOND:1780, MASTER:2050, GRANDMASTER:2200, CHALLENGER:2380 };
   const SOURCES = new Set(['manual','team-confirmed','series-confirmed']);
@@ -96,7 +103,7 @@ import {initialV4Profile,learningFactor,matchupUpdate,predictTeams} from './rati
   const performance=(mp,opp,m,role)=>observe(mp,opp,m,role,REFERENCE);
   function recalculate(players,matches,seriesState={}) {
     const find=playerResolver(players),prepared=prepareMatches(players,matches,seriesState),models=new Map();
-    const diagnostics={version:VERSION,matches:0,unmatched:0,unconfirmed:0,duplicateLinks:0,lowQuality:0,inferredSessions:new Set()};
+    const diagnostics={version:VERSION,matches:0,unmatched:0,unconfirmed:0,duplicateLinks:0,lowQuality:0,inferredSessions:new Set(),bottomDuoAdjusted:0,bottomDuoGames:new Set()};
     for(const p of players){
       if(p.ratingSeedV22?.policy!=='skill-baseline-v1')p.ratingSeedV22=initialProfile(p);
       if(p.ratingSeedV4?.policy!=='matchup-v4')p.ratingSeedV4=initialV4Profile(p,p.ratingSeedV22);
@@ -148,9 +155,23 @@ import {initialV4Profile,learningFactor,matchupUpdate,predictTeams} from './rati
         const update=valid?matchupUpdate({before,opponent:pre.get(opponent.id).rating,opponentConfidence:pre.get(opponent.id).confidence,signal:obs.signal,pairedSignal:obs.pairedSignal,quality:obs.quality,comparisons:r.comparisons,repeat,opponentSeries,learning,metrics:obs.metrics,opponentMetrics:performance(opponent.mp,mp,m,role).metrics}):null;
         pending.push({e,obs,before,opponent,comparisonStatus,valid,update,learning,repeat,expected:mp.teamId===100?prediction.blueWinRate:1-prediction.blueWinRate});
       }
+      const duoContexts=new Map();
+      if(usesBottomDuo(m))for(const step of pending){
+        const role=step.e.role;if(!step.valid||!['ADC','SUPPORT'].includes(role))continue;
+        const partnerRole=role==='ADC'?'SUPPORT':'ADC';
+        const teammate=pending.find(x=>x.e.mp.teamId===step.e.mp.teamId&&x.e.role===partnerRole);
+        const opposingPartner=pending.find(x=>x.e.mp.teamId!==step.e.mp.teamId&&x.e.role===partnerRole);
+        if(!teammate?.valid||!opposingPartner?.valid)continue;
+        const individualChange=clamp(step.before+step.update.change,400,3200)-step.before;
+        const teammateChange=clamp(teammate.before+teammate.update.change,400,3200)-teammate.before;
+        duoContexts.set(step.e.id,bottomDuoChange({individualChange,teammateChange,ownPartner:pre.get(teammate.e.id).rating,opponentPartner:pre.get(opposingPartner.e.id).rating}));
+      }
+      if(duoContexts.size)diagnostics.bottomDuoGames.add(String(m.gameId));
       for(const step of pending){
         const {e,obs,before,opponent,comparisonStatus,valid,update,learning,repeat,expected}=step,{mp,p,role,r,model}=e;
-        const change=valid?clamp(before+update.change,400,3200)-before:0,oldOverall=model.overall,internalGamesBefore=model.games;
+        const baseChange=valid?clamp(before+update.change,400,3200)-before:0,duoContext=duoContexts.get(e.id);
+        const change=duoContext?clamp(before+duoContext.change,400,3200)-before:baseChange,oldOverall=model.overall,internalGamesBefore=model.games;
+        if(duoContext)diagnostics.bottomDuoAdjusted++;
         if(r){
           r.games++;r.wins+=Number(!!mp.win);r.expectedTotal+=expected;r.performanceTotal+=obs.signal;r.lastLearning=learning;
           if(valid){
@@ -169,16 +190,16 @@ import {initialV4Profile,learningFactor,matchupUpdate,predictTeams} from './rati
         const c=p.internalChampions[ckey]||={name:mp.championName||'Unknown',championKey:mp.championKey||mp.championName,championId:num(mp.championId),role:role||'UNKNOWN',games:0,wins:0,kills:0,deaths:0,assists:0,damageTotal:0,goldTotal:0};
         c.games++;c.wins+=Number(!!mp.win);for(const key of ['kills','deaths','assists'])c[key]+=num(mp[key]);c.damageTotal+=num(mp.damage);c.goldTotal+=num(mp.gold);
         model.overall=overall(model);
-        model.history.push({gameId:String(m.gameId),seriesId:m.seriesId,seriesSource:m.seriesSource,time:num(m.gameCreation),version:VERSION,role,comparisonStatus,internalGamesBefore,soloRetention:soloRetention(internalGamesBefore,(r?.games||1)-1),win:!!mp.win,
+        model.history.push({gameId:String(m.gameId),seriesId:m.seriesId,seriesSource:m.seriesSource,time:num(m.gameCreation),version:duoContext?VERSION:LEGACY_HISTORY_VERSION,role,comparisonStatus,internalGamesBefore,soloRetention:soloRetention(internalGamesBefore,(r?.games||1)-1),win:!!mp.win,
           before:Math.round(oldOverall),after:Math.round(model.overall),change:Math.round(model.overall)-Math.round(oldOverall),
           roleBefore:Math.round(before),roleAfter:r?Math.round(r.rating):null,roleChange:r?Math.round(r.rating)-Math.round(before):0,
           evidenceRoleBefore:Math.round(before),evidenceRoleAfter:r?Math.round(r.rating):null,calibrationChange:0,calibrationDiscount:0,roleEvidenceShare:r?.confidence||0,
           expected:Number(expected.toFixed(3)),performance:Number(obs.signal.toFixed(3)),expectedPerformance:update?.expected??null,actualMatchup:update?.actual??null,residual:update?.residual??0,
           opponentId:opponent?.p.id||null,opponentPower:opponent?Math.round(pre.get(opponent.id).rating):null,opponentEvidencePower:opponent?Math.round(pre.get(opponent.id).rating):null,
-          personalChange:Number(change.toFixed(2)),matchupChange:update?.matchupChange??0,referenceChange:update?.referenceChange??0,capAdjustment:(update?.capAdjustment||0)+change-(update?.change||0),outcomeChange:0,priorChange:0,acceleration:learning,
+          personalChange:Number(change.toFixed(2)),individualBaseChange:Number(baseChange.toFixed(2)),matchupChange:update?.matchupChange??0,referenceChange:update?.referenceChange??0,capAdjustment:(update?.capAdjustment||0)+baseChange-(update?.change||0),outcomeChange:0,priorChange:0,acceleration:learning,
           opponentReliability:update?.reliability??0,repeatFactor:update?.repeatFactor??0,opponentFactor:update?.opponentFactor??0,defensive:update?.defensive||false,defensiveFactor:update?.defensiveFactor??1,
           quality:Number(obs.quality.toFixed(2)),excludedMetrics:obs.excludedMetrics||[],supportEngagement:obs.supportEngagement??null,
-          observationTarget:valid?Math.round(r.estimatedTarget):null,contextAdjustment:0,estimatedTarget:r?.estimatedTarget==null?null:Math.round(r.estimatedTarget),evidenceSeries:r?.series.size||0,priorShare:0,
+          observationTarget:valid?Math.round(r.estimatedTarget):null,contextAdjustment:Number((change-baseChange).toFixed(2)),duoContextApplied:!!duoContext,duoChange:duoContext?Number(duoContext.duoChange.toFixed(2)):null,partnerAdjustment:duoContext?Number(duoContext.partnerAdjustment.toFixed(2)):null,estimatedTarget:r?.estimatedTarget==null?null:Math.round(r.estimatedTarget),evidenceSeries:r?.series.size||0,priorShare:0,
           reason:!role?'unconfirmed':!opponent?'no-opponent':!valid?'low-quality':change>1?'above':change<-1?'below':'expected',metrics:obs.metrics});
       }
       diagnostics.matches++;
@@ -195,8 +216,8 @@ import {initialV4Profile,learningFactor,matchupUpdate,predictTeams} from './rati
       p.internalRating=Math.round(model.overall);p.ratingUncertainty=Math.round(mean(Object.values(roles).map(r=>r.uncertainty))||330);
       p.internalKda=p.internalGames?Number(((p.internalKills+p.internalAssists)/Math.max(1,p.internalDeaths)).toFixed(2)):0;p.ratingHistory=model.history.slice(-120);
     }
-    diagnostics.inferredSessions=diagnostics.inferredSessions.size;
+    diagnostics.inferredSessions=diagnostics.inferredSessions.size;diagnostics.bottomDuoGames=diagnostics.bottomDuoGames.size;
     return {players,matches:prepared,diagnostics};
   }
-  root.CKRating={VERSION,ROLES,soloRetention,matchupExpectation,initialProfile,isProvisional,confidenceLabel,basePower,overallScore,positionScore,confidence,confirmedRole,playerResolver,prepareMatches,recalculate,offRoleEstimate,reference:REFERENCE,predictTeams};
+  root.CKRating={VERSION,ROLES,soloRetention,matchupExpectation,initialProfile,isProvisional,confidenceLabel,basePower,overallScore,positionScore,confidence,confirmedRole,playerResolver,prepareMatches,recalculate,offRoleEstimate,reference:REFERENCE,predictTeams,bottomDuoRollout:{retroGameIds:[...BOTTOM_DUO_RETRO_GAMES],forwardAfter:BOTTOM_DUO_FORWARD_AFTER}};
 })(globalThis);
