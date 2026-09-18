@@ -79,12 +79,13 @@ const seriesCommentaryInstructions=`당신은 응CK연구소의 리그 오브 �
 KDA 하나만으로 단정하지 말고 골드, CS, 피해량, 킬 관여, 시야, 오브젝트와 역할을 함께 보세요.
 mappingComplete가 false인 세트는 팀 합계나 빠진 선수에 대해 단정하지 마세요.
 timeline.available이 true이면 최종 스코어보다 timeline.turningPoints, biggestSwings, leadChanges와 교전 뒤 90초 이내의 오브젝트·건물 전환을 우선해 경기 흐름을 설명하세요. timeline.confidence가 partial이면 그 한계를 함께 밝히세요.
-timeline의 골드 difference는 항상 BLUE 골드에서 RED 골드를 뺀 값입니다. 문장에서는 leader와 leadGold를 우선 사용하고, RED가 앞설 때는 반드시 'RED +N' 또는 'BLUE -N'으로 쓰세요. 'RED -N'처럼 선두 팀과 부호가 충돌하는 표현은 금지합니다. 부호, 시각, 선수 이름과 수치는 JSON 값을 그대로 확인하고, 앞서던 팀이 바뀐 경기에서 한 팀이 계속 우세했다고 쓰지 마세요.
-교전 뒤 오브젝트·건물을 함께 설명할 때는 각 conversion의 실제 minute를 확인하세요. 21분 교전 뒤 22.48분 드래곤처럼 분이 달라지면 같은 21분대 사건으로 합치지 말고 시간 범위를 쓰세요.
-ratingChanges.events의 opponentComparison은 본인의 해당 세트 roleBefore와 상대 opponentPower의 직접 비교입니다. HIGHER일 때만 윗밸 상대라고 표현하고, LOWER를 윗밸이라고 쓰지 마세요.
-ratingChanges.events의 expected는 모델 기준치입니다. 이를 '기대치가 낮은 선수·조건'이라고 부르지 말고 actualMatchup이 expected를 웃돌았는지 또는 밑돌았는지만 설명하세요.
+모델용 timeline 골드는 leader와 leadGold로 이미 정규화되어 있습니다. 골드 격차는 반드시 'leader가 leadGold 앞섰다' 또는 'leader +leadGold'로만 쓰고, 선두 팀에 음수 부호를 붙이지 마세요. swingGold는 격차 자체가 아니라 해당 구간의 변화량이므로 현재 골드 격차처럼 쓰지 마세요. 시각, 선수 이름과 수치는 JSON 값을 그대로 확인하고, 앞서던 팀이 바뀐 경기에서 한 팀이 계속 우세했다고 쓰지 마세요.
+교전 뒤 오브젝트·건물을 함께 설명할 때는 각 conversion의 실제 minute를 확인하세요. turningPoint의 startMinute~endMinute는 킬 교전 구간이므로 뒤따른 건물 시각까지 교전 구간을 늘리지 마세요. 21분 교전 뒤 22.48분 드래곤처럼 분이 달라지면 같은 21분대 사건으로 합치지 말고 각각의 시각을 쓰세요.
+ratingChanges.events의 opponentComparison은 본인의 해당 세트 roleBefore와 상대 opponentPower의 직접 비교입니다. 혼동을 막기 위해 '윗밸', '밑밸', '높은 상대', '낮은 상대', '높은 조건', '낮은 조건' 같은 상대 강도 표현은 사용하지 마세요. 필요하면 본인 roleBefore와 상대 opponentPower의 숫자를 그대로 비교하세요.
+ratingChanges.events의 expected와 actualMatchup 숫자를 직접 대소 비교하지 마세요. reason이 유일한 수행 판정 기준이며 above는 기대 이상, expected는 기대 범위, below는 기대 이하입니다.
 오브젝트 개수를 쓸 때는 timeline.summary.objectiveCountBySide를 그대로 사용하고 이벤트 목록을 눈으로 다시 세지 마세요.
-bottomDuo.comparison은 항목별 비교입니다. mixed가 true이면 한쪽이 2대2 전체에서 우세했다고 단정하지 말고, 골드·CS·피해량 또는 킬·어시스트처럼 실제 우세 항목을 나눠 쓰세요.
+bottomDuo.comparison은 항목별 비교입니다. mixed가 true이면 한쪽이 2대2 전체 또는 전 라인에서 우세했다고 단정하지 말고, 골드·CS·피해량 또는 킬·어시스트처럼 실제 우세 항목을 나눠 쓰세요.
+turningPoints.keyPlayers는 해당 핵심 교전의 요약일 뿐 선수별 전체 교전 참여 횟수가 아닙니다. 명시적인 횟수 필드가 없으면 '교전 N회 기여' 같은 횟수를 만들지 마세요.
 교전별 피해량은 제공되지 않습니다. 최종 damage를 특정 교전의 피해량처럼 연결하거나, 타임라인에 없는 체력·스킬·시야·오더를 지어내지 마세요.
 throw·쓰로잉 같은 표현은 명백한 골드 역전과 연속 사망·오브젝트 전환이 함께 확인될 때에도 확정 판정 대신 위험한 선택 또는 역전의 단서로 설명하세요.
 각 세트 총평과 확인 가능한 맞포지션 구도를 다루고, 눈에 띈 선수만 최대 6명 선정하세요. 승부 요인은 최대 5개로 제한하고 각 요약은 2~3문장 이내로 쓰세요. 비난하거나 조롱하지 말고 짧고 자연스럽게 작성하세요.`;

@@ -1,4 +1,4 @@
-export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-18.4";
+export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-18.5";
 
 export const SERIES_COMMENTARY_SCHEMA={
   type:"object",
@@ -222,12 +222,14 @@ function compactTimelineForCommentary(timeline){
     if(index===0||index===timeline.teamGold.length-1||(rounded%5===0&&Math.abs(frame.minute-rounded)<=.08))checkpointIndexes.add(index);
   }
   const compactPlayer=player=>player?{name:player.name,side:player.side,champion:player.champion}:null;
-  const summary=timeline.summary?{...timeline.summary,finalGold:timeline.summary.finalGold?{...timeline.summary.finalGold,...explicitGoldLead(timeline.summary.finalGold.difference)}:null}:null;
-  const explicitSwing=swing=>({...swing,fromLeader:explicitGoldLead(swing.fromDifference).leader,fromLeadGold:explicitGoldLead(swing.fromDifference).leadGold,toLeader:explicitGoldLead(swing.toDifference).leader,toLeadGold:explicitGoldLead(swing.toDifference).leadGold});
-  const explicitPoint=point=>({...point,gold:point.gold?{...point.gold,beforeLeader:explicitGoldLead(point.gold.beforeDifference).leader,beforeLeadGold:explicitGoldLead(point.gold.beforeDifference).leadGold,afterLeader:explicitGoldLead(point.gold.afterDifference).leader,afterLeadGold:explicitGoldLead(point.gold.afterDifference).leadGold}:null,firstDeath:compactPlayer(point.firstDeath),keyPlayers:point.keyPlayers.map(player=>({name:player.name,side:player.side,kills:player.kills,deaths:player.deaths,assists:player.assists}))});
+  const compactFinalGold=finalGold=>{if(!finalGold)return null;const {difference,...totals}=finalGold;return {...totals,...explicitGoldLead(difference)}};
+  const summary=timeline.summary?{...timeline.summary,finalGold:compactFinalGold(timeline.summary.finalGold)}:null;
+  const explicitSwing=swing=>({windowMinutes:swing.windowMinutes,fromMinute:swing.fromMinute,toMinute:swing.toMinute,swingGold:swing.amount,towardSide:swing.towardSide,fromLeader:explicitGoldLead(swing.fromDifference).leader,fromLeadGold:explicitGoldLead(swing.fromDifference).leadGold,toLeader:explicitGoldLead(swing.toDifference).leader,toLeadGold:explicitGoldLead(swing.toDifference).leadGold});
+  const explicitLeadChange=change=>({fromSide:change.fromSide,toSide:change.toSide,fromMinute:change.fromMinute,toMinute:change.toMinute,fromLeadGold:Math.abs(n(change.fromDifference)),toLeadGold:Math.abs(n(change.toDifference))});
+  const explicitPoint=point=>({...point,gold:point.gold?{beforeMinute:point.gold.beforeMinute,afterMinute:point.gold.afterMinute,beforeLeader:explicitGoldLead(point.gold.beforeDifference).leader,beforeLeadGold:explicitGoldLead(point.gold.beforeDifference).leadGold,afterLeader:explicitGoldLead(point.gold.afterDifference).leader,afterLeadGold:explicitGoldLead(point.gold.afterDifference).leadGold,swingGold:Math.abs(n(point.gold.change)),towardSide:point.gold.towardSide,leadChanged:point.gold.leadChanged}:null,firstDeath:compactPlayer(point.firstDeath),keyPlayers:point.keyPlayers.map(player=>({name:player.name,side:player.side,kills:player.kills,deaths:player.deaths,assists:player.assists}))});
   return {
     available:true,coverage:timeline.coverage,confidence:timeline.confidence,summary,
-    teamGoldCheckpoints:timeline.teamGold.filter((_,index)=>checkpointIndexes.has(index)).map(frame=>({...frame,...explicitGoldLead(frame.difference)})),maxLeads:timeline.maxLeads,biggestSwings:timeline.biggestSwings.map(explicitSwing),leadChanges:timeline.leadChanges,
+    teamGoldCheckpoints:timeline.teamGold.filter((_,index)=>checkpointIndexes.has(index)).map(({difference,...frame})=>({...frame,...explicitGoldLead(difference)})),maxLeads:timeline.maxLeads,biggestSwings:timeline.biggestSwings.map(explicitSwing),leadChanges:timeline.leadChanges.map(explicitLeadChange),
     turningPoints:timeline.turningPoints.map(explicitPoint),
     objectives:timeline.objectives.map(event=>({minute:event.minute,side:event.side,type:event.type,subType:event.subType,killer:event.killer?.name||""})),
     buildings:timeline.buildings.map(event=>({minute:event.minute,side:event.side,destroyedSide:event.destroyedSide,type:event.type,lane:event.lane,tower:event.tower,killer:event.killer?.name||""})),

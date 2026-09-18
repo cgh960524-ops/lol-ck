@@ -80,16 +80,20 @@ test("timeline evidence finds deterministic gold swings, fights and conversions"
   assert.equal(promptTimeline.killClusters,undefined,"the model receives turning points instead of every fight sequence");
   assert.equal(promptTimeline.turningPoints.length,timeline.turningPoints.length);
   assert.ok(promptTimeline.teamGoldCheckpoints.length<timeline.teamGold.length);
-  assert.deepEqual(promptTimeline.teamGoldCheckpoints.at(-1),{minute:22,BLUE:45208,RED:46368,difference:-1160,leader:"RED",leadGold:1160});
+  assert.deepEqual(promptTimeline.teamGoldCheckpoints.at(-1),{minute:22,BLUE:45208,RED:46368,leader:"RED",leadGold:1160});
+  assert.equal(promptTimeline.summary.finalGold.difference,undefined);
   assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).fromLeader,"BLUE");
   assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).fromLeadGold,2599);
   assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).toLeader,"RED");
   assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).toLeadGold,1160);
+  assert.equal(promptTimeline.biggestSwings.find(row=>row.windowMinutes===2).change,undefined);
+  assert.deepEqual(promptTimeline.leadChanges.at(-1),{fromSide:"BLUE",toSide:"RED",fromMinute:21,toMinute:22,fromLeadGold:1418,toLeadGold:1160});
   const promptDecisive=promptTimeline.turningPoints.find(point=>point.fightId===decisive.fightId);
   assert.equal(promptDecisive.gold.beforeLeader,"BLUE");
   assert.equal(promptDecisive.gold.beforeLeadGold,2599);
   assert.equal(promptDecisive.gold.afterLeader,"RED");
   assert.equal(promptDecisive.gold.afterLeadGold,1160);
+  assert.equal(promptDecisive.gold.change,undefined);
 });
 
 test("timeline participant mapping falls back to participant array order only for legacy matches",()=>{
