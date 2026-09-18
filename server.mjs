@@ -43,12 +43,14 @@ const seriesCommentaryFingerprintRoot=process.env.SERIES_COMMENTARY_FINGERPRINT_
 const seriesCommentaryLocation=reference=>{const key=seriesCommentaryKey(reference);if(!key)throw Object.assign(new Error("시리즈 ID가 올바르지 않습니다."),{status:400});return {key,name:`series-commentaries/${key}`,file:join(seriesCommentaryRoot,`${key}.json`)}};
 async function loadSeriesCommentaryVersioned(reference){const location=seriesCommentaryLocation(reference),snapshot=await loadJsonVersioned(location.name,location.file,null);return {...snapshot,...location}}
 async function loadSeriesCommentary(reference){return (await loadSeriesCommentaryVersioned(reference)).value}
-async function claimSeriesCommentary(snapshot,value){
+async function claimSeriesCommentary(snapshot,value,{force=false}={}){
+  if(force){await saveJson(snapshot.name,snapshot.file,value);return {owned:true,version:null,value}}
   const result=snapshot.version?await compareAndSwapJson(snapshot.name,snapshot.file,snapshot.version,value):await createJsonIfAbsent(snapshot.name,snapshot.file,value);
   const owned=Boolean(result.updated??result.created);if(owned)return {owned:true,version:result.version,value};
   const current=await loadSeriesCommentaryVersioned(snapshot.key);return {owned:false,version:current.version,value:current.value};
 }
-async function finishSeriesCommentaryClaim(snapshot,value){
+async function finishSeriesCommentaryClaim(snapshot,value,{force=false}={}){
+  if(force){await saveJson(snapshot.name,snapshot.file,value);return value}
   const result=await compareAndSwapJson(snapshot.name,snapshot.file,snapshot.version,value);if(result.updated)return value;
   return (await loadSeriesCommentaryVersioned(snapshot.key)).value||value;
 }
@@ -120,7 +122,7 @@ async function generateSeriesCommentary(reference,{force=false,recover=false,tra
   if(existing&&!force&&!(recover&&canRecoverSeriesCommentary(existing)))return existing;
   const key=snapshot.key,base={version:2,revision:(Number(existing?.revision)||0)+1,seriesId:String(series.id||""),seriesNumber:String(series.seriesNumber||series.id||""),promptVersion:SERIES_COMMENTARY_PROMPT_VERSION,transitionFingerprint:String(transitionFingerprint||existing?.transitionFingerprint||"")};
   if(!openAIKey()){
-    const unavailable={...base,status:"unavailable",errorCode:"missing_api_key",updatedAt:Date.now(),attempts:Number(existing?.attempts)||0},claim=await claimSeriesCommentary(snapshot,unavailable);
+    const unavailable={...base,status:"unavailable",errorCode:"missing_api_key",updatedAt:Date.now(),attempts:Number(existing?.attempts)||0},claim=await claimSeriesCommentary(snapshot,unavailable,{force});
     return claim.value;
   }
   let evidence,sourceHash;
@@ -130,23 +132,23 @@ async function generateSeriesCommentary(reference,{force=false,recover=false,tra
     if(evidence.sets.some(set=>!set.mappingComplete))throw Object.assign(new Error("선수 연결이 끝나지 않은 경기 데이터가 있습니다."),{status:409,code:"incomplete_player_mapping"});
     sourceHash=createHash("sha256").update(JSON.stringify(evidence)).digest("hex").slice(0,24);
   }catch(error){
-    const failed={...base,status:"failed",errorCode:seriesCommentaryErrorCode(error),failedAt:Date.now(),updatedAt:Date.now(),attempts:(Number(existing?.attempts)||0)+1},claim=await claimSeriesCommentary(snapshot,failed);return claim.value;
+    const failed={...base,status:"failed",errorCode:seriesCommentaryErrorCode(error),failedAt:Date.now(),updatedAt:Date.now(),attempts:(Number(existing?.attempts)||0)+1},claim=await claimSeriesCommentary(snapshot,failed,{force});return claim.value;
   }
-  const requestedAt=Date.now(),generationId=randomUUID(),pending={...base,status:"pending",sourceHash,model:openAIModel(),generationId,requestedAt,leaseUntil:requestedAt+120_000,updatedAt:requestedAt,attempts:(Number(existing?.attempts)||0)+1},claim=await claimSeriesCommentary(snapshot,pending);
+  const requestedAt=Date.now(),generationId=randomUUID(),pending={...base,status:"pending",sourceHash,model:openAIModel(),generationId,requestedAt,leaseUntil:requestedAt+120_000,updatedAt:requestedAt,attempts:(Number(existing?.attempts)||0)+1},claim=await claimSeriesCommentary(snapshot,pending,{force});
   if(!claim.owned)return claim.value;
   snapshot={...snapshot,value:pending,version:claim.version};
   if(!force&&!await acquireSeriesCommentaryFingerprint(base.transitionFingerprint,key,generationId)){
-    const failed={...pending,status:"failed",errorCode:"duplicate_series_evidence",failedAt:Date.now(),leaseUntil:null,updatedAt:Date.now()};return finishSeriesCommentaryClaim(snapshot,failed);
+    const failed={...pending,status:"failed",errorCode:"duplicate_series_evidence",failedAt:Date.now(),leaseUntil:null,updatedAt:Date.now()};return finishSeriesCommentaryClaim(snapshot,failed,{force});
   }
   if(!force&&!await acquireSeriesCommentaryBudget(key,generationId)){
-    const failed={...pending,status:"failed",errorCode:"daily_limit",failedAt:Date.now(),leaseUntil:null,updatedAt:Date.now()};return finishSeriesCommentaryClaim(snapshot,failed);
+    const failed={...pending,status:"failed",errorCode:"daily_limit",failedAt:Date.now(),leaseUntil:null,updatedAt:Date.now()};return finishSeriesCommentaryClaim(snapshot,failed,{force});
   }
   try{
     const result=await requestSeriesCommentary(evidence),ready={...pending,status:"ready",model:result.model,review:result.review,usage:result.usage,generatedAt:Date.now(),leaseUntil:null,updatedAt:Date.now()};
-    return finishSeriesCommentaryClaim(snapshot,ready);
+    return finishSeriesCommentaryClaim(snapshot,ready,{force});
   }catch(error){
     const failed={...pending,status:error?.code==="missing_api_key"?"unavailable":"failed",errorCode:seriesCommentaryErrorCode(error),failedAt:Date.now(),leaseUntil:null,updatedAt:Date.now()};
-    const record=await finishSeriesCommentaryClaim(snapshot,failed);console.error("Series commentary generation failed",{series:key,code:failed.errorCode});return record;
+    const record=await finishSeriesCommentaryClaim(snapshot,failed,{force});console.error("Series commentary generation failed",{series:key,code:failed.errorCode});return record;
   }
 }
 function startSeriesCommentary(reference,options={}){
