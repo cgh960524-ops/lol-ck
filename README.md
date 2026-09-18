@@ -15,6 +15,17 @@ node server.mjs
 
 서버는 기본적으로 `0.0.0.0`에서 요청을 받습니다. 운영 환경에서는 HTTPS 리버스 프록시 뒤에서 실행하세요. 내전 기록은 `data/internal-matches.json`에 누적됩니다. 운영 서버에서는 `DATA_FILE`로 영구 볼륨 경로를 지정할 수 있습니다.
 
+## 경기 데이터베이스
+
+운영 환경은 Neon 등 PostgreSQL의 풀링 연결 문자열을 `DATABASE_URL`에 설정할 수 있습니다. 안전한 전환 순서는 다음과 같습니다.
+
+1. `MATCH_STORE_MODE=blob` 상태에서 새 코드를 먼저 배포합니다.
+2. `DATABASE_URL`을 설정하고 `npm run db:migrate-matches -- --source=https://lol-ck.vercel.app/api/internal-matches`를 실행합니다.
+3. 마이그레이션의 경기 수·타임라인·해시 검증이 통과하면 `MATCH_STORE_MODE=shadow`로 이중 기록을 확인합니다.
+4. 마지막으로 `MATCH_STORE_MODE=postgres`로 전환합니다.
+
+`blob`이 기본값이므로 DB가 준비되기 전에는 기존 저장 동작이 유지됩니다. 기존 Blob은 롤백용으로 보존하세요. 공개 경기 목록은 용량을 줄이기 위해 타임라인을 제외하며, 개별 경기 API는 전체 데이터를 반환합니다.
+
 ## 방장 PC 업로더
 
 1. `uploader` 폴더 전체를 방장 PC에 전달합니다.

@@ -9,6 +9,7 @@ const colors = ["#3f665c","#887355","#516b87","#7d5369","#6b7350","#655986","#96
 const STORAGE_KEY = "naejeon-lab-players-v1";
 const MATCH_STORAGE_KEY = "naejeon-lab-matches-v1";
 const SERIES_STORAGE_KEY = "naejeon-lab-series-v1";
+function clearServerBackedLocalCache(...keys){for(const key of keys){try{localStorage.removeItem(key)}catch{}}}
 let players = [];
 try {
  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
@@ -33,7 +34,7 @@ const historicalRoleCorrections={"2026-08-15":[
  {name:"아무것도",role:"TOP"},{name:"인생",role:"JUNGLE"},{name:"둥글",role:"MID"},{name:"자페",role:"ADC"},{name:"전수찬오른붕",role:"SUPPORT"}
 ]};
 function matchDateKst(match){const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(match.gameCreation));const get=t=>parts.find(p=>p.type===t)?.value;return `${get("year")}-${get("month")}-${get("day")}`}
-function applyHistoricalRoleCorrections(){let changed=false;for(const match of internalMatches){const corrections=historicalRoleCorrections[matchDateKst(match)];if(!corrections)continue;for(const participant of match.participants){const clean=String(participant.gameName||"").replace(/\s/g,"").toLowerCase(),correction=corrections.find(c=>clean.startsWith(c.name.replace(/\s/g,"").toLowerCase()));if(correction&&(participant.role!==correction.role||participant.roleSource!=="manual")){participant.role=correction.role;participant.roleSource="manual";changed=true}}}if(changed)localStorage.setItem(MATCH_STORAGE_KEY,JSON.stringify(internalMatches))}
+function applyHistoricalRoleCorrections(){let changed=false;for(const match of internalMatches){const corrections=historicalRoleCorrections[matchDateKst(match)];if(!corrections)continue;for(const participant of match.participants){const clean=String(participant.gameName||"").replace(/\s/g,"").toLowerCase(),correction=corrections.find(c=>clean.startsWith(c.name.replace(/\s/g,"").toLowerCase()));if(correction&&(participant.role!==correction.role||participant.roleSource!=="manual")){participant.role=correction.role;participant.roleSource="manual";changed=true}}}return changed}
 applyHistoricalRoleCorrections();
 let seriesState={active:null,history:[]},discordRecruitment=null;try{const saved=JSON.parse(localStorage.getItem(SERIES_STORAGE_KEY)||"null");if(saved)seriesState=saved}catch{localStorage.removeItem(SERIES_STORAGE_KEY)}
 function seriesDateKey(timestamp){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(Number(timestamp)||Date.now())).replaceAll("-","")}
@@ -57,10 +58,10 @@ async function flushServerStateSave(){
  }catch(error){console.warn("서버 저장 실패:",error.message)}
  finally{serverSaveInFlight=false;if(serverSavePending){clearTimeout(serverStateTimer);serverStateTimer=setTimeout(flushServerStateSave,250)}}
 }
-const savePlayers = () => {localStorage.setItem(STORAGE_KEY, JSON.stringify(players));queueServerStateSave()};
-const saveMatches = () => localStorage.setItem(MATCH_STORAGE_KEY, JSON.stringify(internalMatches));
-const saveSeries = () => {localStorage.setItem(SERIES_STORAGE_KEY, JSON.stringify(seriesState));queueServerStateSave();if(document.querySelector("#matchHistory"))queueMicrotask(()=>renderMatchHistory())};
-async function syncAppState(){try{const response=await fetch("/api/app-state"),state=await response.json();if(!response.ok)throw new Error(state.error||"서버 기억 데이터를 불러오지 못했습니다.");if(Array.isArray(state.players)&&state.players.length)players=state.players;if(state.seriesState&&typeof state.seriesState==="object")seriesState=state.seriesState;discordRecruitment=state.discordRecruitment||null;if(state.ladderChoice)localStorage.setItem("naejeon-lab-ladder-choice",JSON.stringify(state.ladderChoice));const seriesNumberMigrated=normalizeSeriesIdentifiers();localStorage.setItem(STORAGE_KEY,JSON.stringify(players));localStorage.setItem(SERIES_STORAGE_KEY,JSON.stringify(seriesState));serverStateReady=true;if(!state.players?.length||seriesNumberMigrated)queueServerStateSave();recalculateRatings();renderPlayers();renderMatchHistory();renderSeries();updateAliasCount()}catch(error){console.warn("서버 기억 데이터 동기화 실패:",error.message)}}
+const savePlayers = () => queueServerStateSave();
+const saveMatches = () => undefined;
+const saveSeries = () => {queueServerStateSave();if(document.querySelector("#matchHistory"))queueMicrotask(()=>renderMatchHistory())};
+async function syncAppState(){try{const response=await fetch("/api/app-state"),state=await response.json();if(!response.ok)throw new Error(state.error||"서버 기억 데이터를 불러오지 못했습니다.");if(Array.isArray(state.players)&&state.players.length)players=state.players;if(state.seriesState&&typeof state.seriesState==="object")seriesState=state.seriesState;discordRecruitment=state.discordRecruitment||null;if(state.ladderChoice)localStorage.setItem("naejeon-lab-ladder-choice",JSON.stringify(state.ladderChoice));const seriesNumberMigrated=normalizeSeriesIdentifiers();clearServerBackedLocalCache(STORAGE_KEY,SERIES_STORAGE_KEY);serverStateReady=true;if(!state.players?.length||seriesNumberMigrated)queueServerStateSave();recalculateRatings();renderPlayers();renderMatchHistory();renderSeries();updateAliasCount()}catch(error){console.warn("서버 기억 데이터 동기화 실패:",error.message)}}
 
 const $ = s => document.querySelector(s);
 const effectiveRoleData=(p,role)=>p.internalRoles?.[role];
@@ -239,7 +240,7 @@ async function syncServerMatches(){
  try{
   const response=await fetch("/api/internal-matches"),serverMatches=await response.json();
   if(!response.ok||!Array.isArray(serverMatches))throw new Error(serverMatches.error||"서버 기록을 불러오지 못했습니다.");
-  internalMatches=serverMatches;saveMatches();recalculateRatings();savePlayers();renderPlayers();renderMatchHistory();updateAliasCount();renderLeaderboard();
+  internalMatches=serverMatches;clearServerBackedLocalCache(MATCH_STORAGE_KEY);recalculateRatings();savePlayers();renderPlayers();renderMatchHistory();updateAliasCount();renderLeaderboard();
  }catch(error){console.warn("내전 서버 동기화 실패:",error.message)}
 }
 let ladderRungs=[],ladderStart=0,ladderTimer=null,ladderBgmOn=false,ladderBgmLoop=null,ladderClockTimer=null;

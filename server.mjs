@@ -12,6 +12,8 @@ import { readFile } from "node:fs/promises";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compareAndSwapJson, createJsonIfAbsent, loadJson, loadJsonVersioned, saveJson, stateFiles } from "./storage.mjs";
+import {createMatchStore} from "./match-store.mjs";
+import {projectPublicAppState} from "./public-state.mjs";
 import { staticAssets } from "./static-assets.mjs";
 import {SERIES_COMMENTARY_PROMPT_VERSION,SERIES_COMMENTARY_SCHEMA,buildSeriesCommentaryEvidence,compactSeriesCommentaryEvidence,findFinishedSeries,sanitizeSeriesCommentary,seriesCommentaryKey,validateSeriesCommentaryTransition} from "./series-commentary.js";
 
@@ -27,8 +29,13 @@ const json = (res,status,body) => { res.writeHead(status,{"Content-Type":"applic
 const wait = ms => new Promise(resolve=>setTimeout(resolve,ms));
 const readRawBody = async req => { const chunks=[]; let size=0; for await (const chunk of req) { size+=chunk.length; if(size>1_000_000) throw Object.assign(new Error("요청 데이터가 너무 큽니다."),{status:413}); chunks.push(chunk); } return Buffer.concat(chunks); };
 const readBody = async req => { const chunks=[]; let size=0; for await (const chunk of req) { size+=chunk.length; if(size>6_000_000) throw Object.assign(new Error("요청 데이터가 너무 큽니다."),{status:413}); chunks.push(chunk); } return JSON.parse(Buffer.concat(chunks).toString("utf8")||"{}"); };
-async function loadMatches(){ const value=await loadJson("internal-matches",dataFile,[]);return Array.isArray(value)?value:[] }
-async function saveMatches(matches){ await saveJson("internal-matches",dataFile,matches) }
+const matchStore=createMatchStore({
+  loadBlob:async()=>{const value=await loadJson("internal-matches",dataFile,[]);return Array.isArray(value)?value:[]},
+  saveBlob:matches=>saveJson("internal-matches",dataFile,matches),
+});
+async function loadMatches({includeTimeline=false}={}){return matchStore.list({includeTimeline})}
+async function upsertMatches(matches){return matchStore.upsert(matches)}
+async function getMatch(gameId,options){return matchStore.get(gameId,options)}
 async function loadRawAppState(){const raw=await loadJson("app-state",appStateFile,{version:1,players:[],seriesState:{active:null,history:[]}});return raw&&typeof raw==="object"?raw:{players:[],seriesState:{active:null,history:[]}}}
 async function loadAppState(){return deriveRatings(await loadRawAppState())}
 async function deriveRatings(state){const result=CKRating.recalculate(Array.isArray(state.players)?state.players:[],await loadMatches(),state.seriesState||{});state.players=result.players;state.ratingAlgorithm={version:CKRating.VERSION,diagnostics:result.diagnostics};return state}
@@ -136,7 +143,7 @@ async function generateSeriesCommentary(reference,{force=false,recover=false,tra
   }
   let evidence,sourceHash;
   try{
-    const matches=await loadMatches();evidence=compactSeriesCommentaryEvidence(buildSeriesCommentaryEvidence({series,players:state.players||[],matches,seriesState:state.seriesState,ratingVersion:state.ratingAlgorithm?.version,prepareMatches:CKRating.prepareMatches,playerResolver:CKRating.playerResolver,positionScore:CKRating.positionScore}));
+    const matches=await loadMatches({includeTimeline:true});evidence=compactSeriesCommentaryEvidence(buildSeriesCommentaryEvidence({series,players:state.players||[],matches,seriesState:state.seriesState,ratingVersion:state.ratingAlgorithm?.version,prepareMatches:CKRating.prepareMatches,playerResolver:CKRating.playerResolver,positionScore:CKRating.positionScore}));
     if(!evidence.sets.length||evidence.sets.some(set=>!set.dataAvailable))throw Object.assign(new Error("총평에 사용할 경기 데이터가 없습니다."),{status:409,code:"missing_match_data"});
     if(evidence.sets.some(set=>!set.mappingComplete))throw Object.assign(new Error("선수 연결이 끝나지 않은 경기 데이터가 있습니다."),{status:409,code:"incomplete_player_mapping"});
     sourceHash=createHash("sha256").update(JSON.stringify(evidence)).digest("hex").slice(0,24);
@@ -443,7 +450,6 @@ function normalizeTimeline(timeline){
   const events=timeline.events.slice(0,2_000).map(event=>{if(!event||typeof event!=="object")return null;const type=timelineLabel(event.type,30);if(!timelineEventTypes.has(type))return null;const teamId=[100,200].includes(Number(event.teamId))?Number(event.teamId):[100,200].includes(Number(event.killerTeamId))?Number(event.killerTeamId):0;return {timestamp:timelineNumber(event.timestamp,0,21_600_000),type,killerId:timelineParticipantId(event.killerId),victimId:timelineParticipantId(event.victimId),assistingParticipantIds:[...new Set((Array.isArray(event.assistingParticipantIds)?event.assistingParticipantIds:[]).map(timelineParticipantId).filter(Boolean))].slice(0,10),teamId,monsterType:timelineLabel(event.monsterType),monsterSubType:timelineLabel(event.monsterSubType),buildingType:timelineLabel(event.buildingType),towerType:timelineLabel(event.towerType),laneType:timelineLabel(event.laneType),position:timelinePosition(event.position)}}).filter(Boolean).sort((a,b)=>a.timestamp-b.timestamp),rawInterval=Number(timeline.frameInterval),deltas=frames.slice(1).map((frame,index)=>frame.timestamp-frames[index].timestamp).filter(delta=>delta>0&&delta<=300_000).sort((a,b)=>a-b),frameInterval=Number.isFinite(rawInterval)&&rawInterval>0?timelineNumber(rawInterval,1,300_000):(deltas[Math.floor(deltas.length/2)]||60_000);
   return {frameInterval,frames,events};
 }
-function mergeUploadedMatch(previous,next){if(!previous||Object.prototype.hasOwnProperty.call(next,"timeline"))return next;return previous.timeline&&typeof previous.timeline==="object"?{...next,timeline:previous.timeline,timelineSource:String(previous.timelineSource||next.timelineSource||""),timelineCollected:true}:next}
 const optionalMetric=value=>value===undefined||value===null||value===""||!Number.isFinite(Number(value))?null:Number(value);
 function validateMatch(match){
   if(!match || !/^\d{6,12}$/.test(String(match.gameId||""))) throw Object.assign(new Error("올바른 게임 ID가 아닙니다."),{status:400});
@@ -461,7 +467,7 @@ async function enrichRecentMatches(requestedCount){
   const riotApiKey=process.env.RIOT_API_KEY||(await loadRuntimeConfig()).riotApiKey;if(!riotApiKey)throw Object.assign(new Error("서버에 Riot API 키가 설정되지 않았습니다."),{status:503});
   const matches=await loadMatches(),sorted=[...matches].sort((a,b)=>(Number(b.gameCreation)||0)-(Number(a.gameCreation)||0)),limit=Math.max(1,Math.min(60,Number(requestedCount)||15)),missingMultiKill=sorted.filter(match=>match.participants?.some(p=>p.tripleKills===undefined||p.quadraKills===undefined||p.pentaKills===undefined)),missingTimeline=sorted.filter(match=>!match.timelineCollected),targets=(missingMultiKill.length?missingMultiKill:missingTimeline.length?missingTimeline:sorted).slice(0,limit);let enriched=0,timelines=0,failed=[];
   for(const match of targets){try{const matchId=`KR_${match.gameId}`,raw=await riotFetch(`https://asia.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(matchId)}`,riotApiKey);for(const participant of match.participants){const source=(raw.info?.participants||[]).find(p=>p.puuid&&p.puuid===participant.puuid)||(raw.info?.participants||[]).find(p=>normName(`${p.riotIdGameName||p.gameName||p.summonerName}#${p.riotIdTagline||p.tagLine||""}`)===normName(`${participant.gameName}#${participant.tagLine}`));if(source)Object.assign(participant,riotParticipantExtras(source))}try{const timeline=await riotFetch(`https://asia.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(matchId)}/timeline`,riotApiKey),puuidById=new Map((timeline.metadata?.participants||[]).map((puuid,index)=>[index+1,String(puuid)])),teamByPuuid=new Map(match.participants.map(p=>[p.puuid,p.teamId])),events=(timeline.info?.frames||[]).flatMap(frame=>frame.events||[]).filter(event=>event.type==="ELITE_MONSTER_KILL").map(event=>{const killerPuuid=puuidById.get(Number(event.killerId))||"";return {timestamp:event.timestamp,monsterType:event.monsterType,monsterSubType:event.monsterSubType,teamId:event.killerTeamId||event.teamId||teamByPuuid.get(killerPuuid)||0,killerPuuid,assistingPuuids:(event.assistingParticipantIds||[]).map(id=>puuidById.get(Number(id))).filter(Boolean)}});match.epicObjectives=normalizeEpicObjectives(events,match.participants);match.timelineCollected=true;timelines++}catch(timelineError){failed.push({gameId:match.gameId,stage:"timeline",error:timelineError.message})}match.enrichedAt=Date.now();enriched++}catch(error){failed.push({gameId:match.gameId,stage:"match",error:error.message})}await wait(80)}
-  if(enriched)await saveMatches(matches);return {ok:true,requested:targets.length,enriched,timelines,remainingTimeline:Math.max(0,missingTimeline.length-timelines),failed};
+  if(enriched)await upsertMatches(targets);return {ok:true,requested:targets.length,enriched,timelines,remainingTimeline:Math.max(0,missingTimeline.length-timelines),failed};
 }
 const roleMap={TOP:"TOP",JUNGLE:"JUNGLE",MIDDLE:"MID",BOTTOM:"ADC",UTILITY:"SUPPORT"};
 async function getPlayerData(riotId,requestedCount){
@@ -494,7 +500,7 @@ export async function handleRequest(req,res){
       res.writeHead(200,{"Content-Type":"application/zip","Content-Disposition":'attachment; filename="eungck-uploader-20260919.zip"',"Content-Length":data.length,"X-Content-Type-Options":"nosniff","Cache-Control":"no-store"});
       return res.end(req.method==="HEAD"?undefined:data);
     }
-    if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),openAIConfigured:Boolean(openAIKey()),serverStorage:process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
+    if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),openAIConfigured:Boolean(openAIKey()),serverStorage:matchStore.mode==="postgres"?"postgres":matchStore.mode==="shadow"?"vercel-blob+postgres-shadow":process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
     if(pathname==="/api/series-commentary"&&req.method==="GET"){
       const reference=String(url.searchParams.get("seriesId")||"").trim();if(!reference)throw Object.assign(new Error("시리즈 ID가 필요합니다."),{status:400});
       const state=await loadRawAppState(),series=findFinishedSeries(state,reference);if(!series)throw Object.assign(new Error("완료된 시리즈를 찾지 못했습니다."),{status:404});
@@ -527,9 +533,9 @@ export async function handleRequest(req,res){
       return json(res,200,{ok:true,playerId:main.id,playAliases:main.playAliases});
     }
     if(pathname==="/api/player")return json(res,200,await getPlayerData(url.searchParams.get("riotId")||"",url.searchParams.get("matches")));
-    if(pathname==="/api/internal-matches"&&req.method==="GET")return json(res,200,await loadMatches());
+    if(pathname==="/api/internal-matches"&&req.method==="GET")return json(res,200,await loadMatches({includeTimeline:url.searchParams.get("timeline")==="1"}));
     if(pathname==="/api/ratings/recalculate"&&req.method==="POST"){requireUploaderAuth(req);const state=await loadAppState();await saveAppState(state);return json(res,200,{ok:true,...state.ratingAlgorithm,players:state.players.length})}
-    if(pathname==="/api/app-state"&&req.method==="GET"){const state=await loadAppState();if(reconcileDiscordRecruitment(state))await saveAppState(state);return json(res,200,state)}
+    if(pathname==="/api/app-state"&&req.method==="GET"){const state=await loadAppState();if(reconcileDiscordRecruitment(state))await saveAppState(state);return json(res,200,projectPublicAppState(state))}
     if(pathname==="/api/app-state"&&(req.method==="POST"||req.method==="PUT")){
       const body=await readBody(req),players=Array.isArray(body.players)?body.players.slice(0,200):[],seriesState=body.seriesState&&typeof body.seriesState==="object"?body.seriesState:{active:null,history:[]};
       const previous=await loadAppState(),previousPlayers=new Map((previous.players||[]).map(player=>[String(player.id),player])),protectedPowerFields=["peakTier","peakLp","soloPowerOverride","soloPowerSource","manualPowerFloor","manualPowerSource"];
@@ -547,18 +553,18 @@ export async function handleRequest(req,res){
       else if(seriesJustFinished)console.warn("Series commentary automatic generation skipped",{series:seriesCommentaryKey(activeSeries),code:commentaryTransition.code});
       await notifySeriesChanges(previous,state);return json(res,200,{ok:true,updatedAt:state.updatedAt});
     }
-    if(pathname==="/api/internal-match"&&req.method==="GET"){const match=(await loadMatches()).find(m=>m.gameId===url.searchParams.get("id"));if(!match)throw Object.assign(new Error("서버에 없는 경기입니다. 방장 PC의 응CK 업로더로 먼저 전송해주세요."),{status:404});return json(res,200,match)}
+    if(pathname==="/api/internal-match"&&req.method==="GET"){const match=await getMatch(url.searchParams.get("id"));if(!match)throw Object.assign(new Error("서버에 없는 경기입니다. 방장 PC의 응CK 업로더로 먼저 전송해주세요."),{status:404});return json(res,200,match)}
     if(pathname==="/api/internal-matches/enrich"&&req.method==="POST"){requireUploaderAuth(req);const body=await readBody(req);return json(res,200,await enrichRecentMatches(body.count))}
     if(pathname==="/api/uploader/riot-key"&&req.method==="POST"){
       requireUploaderAuth(req);const body=await readBody(req),riotApiKey=String(body.riotApiKey||"").trim();if(!/^RGAPI-[A-Za-z0-9-]{20,}$/.test(riotApiKey))throw Object.assign(new Error("올바른 Riot API 키 형식이 아닙니다."),{status:400});const config=await loadRuntimeConfig();config.riotApiKey=riotApiKey;config.updatedAt=Date.now();await saveRuntimeConfig(config);return json(res,200,{ok:true,configured:true});
     }
     if(pathname==="/api/internal-matches/upload"&&req.method==="POST"){
       requireMatchUploadAuth(req);const body=await readBody(req);
-      if(Array.isArray(body.matches)){const incoming=body.matches.slice(0,200).map(validateMatch);if(!incoming.length)throw Object.assign(new Error("업로드할 경기 데이터가 없습니다."),{status:400});const matches=await loadMatches(),byId=new Map(matches.map(match=>[String(match.gameId),match]));for(const match of incoming)byId.set(String(match.gameId),mergeUploadedMatch(byId.get(String(match.gameId)),match));const merged=[...byId.values()];await saveMatches(merged);return json(res,200,{ok:true,received:incoming.length,total:merged.length})}
-      const match=validateMatch(body),matches=await loadMatches(),index=matches.findIndex(m=>m.gameId===match.gameId);if(index>=0)matches[index]=mergeUploadedMatch(matches[index],match);else matches.push(match);await saveMatches(matches);return json(res,index>=0?200:201,{ok:true,replaced:index>=0,gameId:match.gameId,total:matches.length});
+      if(Array.isArray(body.matches)){const incoming=body.matches.slice(0,200).map(validateMatch);if(!incoming.length)throw Object.assign(new Error("업로드할 경기 데이터가 없습니다."),{status:400});const result=await upsertMatches(incoming);return json(res,200,{ok:true,received:result.received,total:result.total,replaced:result.replacedCount})}
+      const match=validateMatch(body),result=await upsertMatches([match]),replaced=Boolean(result.replaced[0]);return json(res,replaced?200:201,{ok:true,replaced,gameId:match.gameId,total:result.total});
     }
     if(pathname==="/api/internal-matches/upload-bulk"&&req.method==="POST"){
-      requireUploaderAuth(req);const body=await readBody(req),incoming=(Array.isArray(body.matches)?body.matches:[]).slice(0,200).map(validateMatch);if(!incoming.length)throw Object.assign(new Error("업로드할 경기 데이터가 없습니다."),{status:400});const matches=await loadMatches(),byId=new Map(matches.map(match=>[String(match.gameId),match]));for(const match of incoming)byId.set(String(match.gameId),mergeUploadedMatch(byId.get(String(match.gameId)),match));const merged=[...byId.values()];await saveMatches(merged);return json(res,200,{ok:true,received:incoming.length,total:merged.length});
+      requireUploaderAuth(req);const body=await readBody(req),incoming=(Array.isArray(body.matches)?body.matches:[]).slice(0,200).map(validateMatch);if(!incoming.length)throw Object.assign(new Error("업로드할 경기 데이터가 없습니다."),{status:400});const result=await upsertMatches(incoming);return json(res,200,{ok:true,received:result.received,total:result.total,replaced:result.replacedCount});
     }
     const file=pathname==="/"?"index.html":pathname.slice(1),data=staticAssets[file];if(data===undefined){res.writeHead(404).end("Not Found");return}res.writeHead(200,{"Content-Type":types[extname(file)]||"application/octet-stream","Cache-Control":"no-store"});res.end(data);
   }catch(error){console.error(error.details||error);json(res,error.status||500,{error:error.message||"서버 오류가 발생했습니다."})}
