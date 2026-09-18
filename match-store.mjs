@@ -1,7 +1,9 @@
 import {getDatabase} from "./db.mjs";
 
 const own=(value,key)=>Object.prototype.hasOwnProperty.call(value||{},key);
-const jsonValue=value=>JSON.stringify(value===undefined?null:value);
+// Let postgres.js encode JS objects for jsonb columns. Passing an
+// already-stringified object stores a JSON string rather than the intended
+// JSON object.
 const optionalNumber=value=>value===undefined||value===null||value===""||!Number.isFinite(Number(value))?null:Number(value);
 
 export function mergeStoredMatch(previous,next){
@@ -46,12 +48,12 @@ const participantColumns=["game_id","slot","participant_id","puuid","game_name",
 
 function participantRow(gameId,participant,index){
   const number=(key)=>Number(participant?.[key])||0;
-  return {game_id:gameId,slot:index+1,participant_id:optionalNumber(participant?.participantId),puuid:String(participant?.puuid||""),game_name:String(participant?.gameName||""),tag_line:String(participant?.tagLine||""),team_id:number("teamId"),win:Boolean(participant?.win),role:String(participant?.role||"MID"),champion_id:optionalNumber(participant?.championId),champion_key:String(participant?.championKey||""),champion_name:String(participant?.championName||""),kills:number("kills"),deaths:number("deaths"),assists:number("assists"),damage:number("damage"),gold:number("gold"),vision:number("vision"),cs:number("cs"),damage_taken:optionalNumber(participant?.damageTaken),mitigated:optionalNumber(participant?.mitigated),turret_damage:optionalNumber(participant?.turretDamage),objective_damage:optionalNumber(participant?.objectiveDamage),healing:optionalNumber(participant?.healing),units_healed:optionalNumber(participant?.unitsHealed),heals_on_teammates:optionalNumber(participant?.healsOnTeammates),shields_on_teammates:optionalNumber(participant?.shieldsOnTeammates),cc_time:optionalNumber(participant?.ccTime),total_cc_time:optionalNumber(participant?.totalCcTime),wards_placed:optionalNumber(participant?.wardsPlaced),wards_killed:optionalNumber(participant?.wardsKilled),control_wards:optionalNumber(participant?.controlWards),turret_kills:number("turretKills"),inhibitor_kills:number("inhibitorKills"),objectives_stolen:number("objectivesStolen"),objectives_stolen_assists:number("objectivesStolenAssists"),solo_kills:number("soloKills"),solo_deaths:number("soloDeaths"),triple_kills:number("tripleKills"),quadra_kills:number("quadraKills"),penta_kills:number("pentaKills"),data:jsonValue(participant||{})};
+  return {game_id:gameId,slot:index+1,participant_id:optionalNumber(participant?.participantId),puuid:String(participant?.puuid||""),game_name:String(participant?.gameName||""),tag_line:String(participant?.tagLine||""),team_id:number("teamId"),win:Boolean(participant?.win),role:String(participant?.role||"MID"),champion_id:optionalNumber(participant?.championId),champion_key:String(participant?.championKey||""),champion_name:String(participant?.championName||""),kills:number("kills"),deaths:number("deaths"),assists:number("assists"),damage:number("damage"),gold:number("gold"),vision:number("vision"),cs:number("cs"),damage_taken:optionalNumber(participant?.damageTaken),mitigated:optionalNumber(participant?.mitigated),turret_damage:optionalNumber(participant?.turretDamage),objective_damage:optionalNumber(participant?.objectiveDamage),healing:optionalNumber(participant?.healing),units_healed:optionalNumber(participant?.unitsHealed),heals_on_teammates:optionalNumber(participant?.healsOnTeammates),shields_on_teammates:optionalNumber(participant?.shieldsOnTeammates),cc_time:optionalNumber(participant?.ccTime),total_cc_time:optionalNumber(participant?.totalCcTime),wards_placed:optionalNumber(participant?.wardsPlaced),wards_killed:optionalNumber(participant?.wardsKilled),control_wards:optionalNumber(participant?.controlWards),turret_kills:number("turretKills"),inhibitor_kills:number("inhibitorKills"),objectives_stolen:number("objectivesStolen"),objectives_stolen_assists:number("objectivesStolenAssists"),solo_kills:number("soloKills"),solo_deaths:number("soloDeaths"),triple_kills:number("tripleKills"),quadra_kills:number("quadraKills"),penta_kills:number("pentaKills"),data:participant||{}};
 }
 
 function baseMatchRow(match){
   const payload={...match};delete payload.participants;delete payload.timeline;
-  return {game_id:String(match.gameId),game_creation:Number(match.gameCreation)||Date.now(),duration:Number(match.duration)||0,game_mode:String(match.gameMode||"CUSTOM"),game_type:String(match.gameType||"CUSTOM_GAME"),queue_id:Number(match.queueId)||0,has_timeline:Boolean(match.timeline&&typeof match.timeline==="object"),timeline_collected:Boolean(match.timelineCollected||match.timeline),timeline_source:String(match.timelineSource||""),timeline_error:String(match.timelineError||""),epic_objectives:jsonValue(Array.isArray(match.epicObjectives)?match.epicObjectives:[]),uploaded_at:Number(match.uploadedAt)||Date.now(),payload:jsonValue(payload)};
+  return {game_id:String(match.gameId),game_creation:Number(match.gameCreation)||Date.now(),duration:Number(match.duration)||0,game_mode:String(match.gameMode||"CUSTOM"),game_type:String(match.gameType||"CUSTOM_GAME"),queue_id:Number(match.queueId)||0,has_timeline:Boolean(match.timeline&&typeof match.timeline==="object"),timeline_collected:Boolean(match.timelineCollected||match.timeline),timeline_source:String(match.timelineSource||""),timeline_error:String(match.timelineError||""),epic_objectives:Array.isArray(match.epicObjectives)?match.epicObjectives:[],uploaded_at:Number(match.uploadedAt)||Date.now(),payload};
 }
 
 export function createPostgresMatchRepository(sql=getDatabase()){
@@ -93,7 +95,7 @@ export function createPostgresMatchRepository(sql=getDatabase()){
           const timeline=match.timeline;
           await tx`
             INSERT INTO match_timelines (game_id,frame_interval,frames,events,timeline)
-            VALUES (${String(match.gameId)},${Number(timeline.frameInterval)||60000},${jsonValue(Array.isArray(timeline.frames)?timeline.frames:[])}::jsonb,${jsonValue(Array.isArray(timeline.events)?timeline.events:[])}::jsonb,${jsonValue(timeline)}::jsonb)
+            VALUES (${String(match.gameId)},${Number(timeline.frameInterval)||60000},${tx.json(Array.isArray(timeline.frames)?timeline.frames:[])}::jsonb,${tx.json(Array.isArray(timeline.events)?timeline.events:[])}::jsonb,${tx.json(timeline)}::jsonb)
             ON CONFLICT (game_id) DO UPDATE SET frame_interval=EXCLUDED.frame_interval,frames=EXCLUDED.frames,events=EXCLUDED.events,timeline=EXCLUDED.timeline,updated_at=now()
           `;
         }

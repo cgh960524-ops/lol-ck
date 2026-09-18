@@ -33,6 +33,22 @@ function semanticMatch(match){
 const hash=value=>createHash("sha256").update(JSON.stringify(value)).digest("hex");
 function digestMap(matches){return new Map(matches.map(match=>[String(match.gameId),hash(semanticMatch(match))]))}
 
+async function readStoredStructure(sql){
+  const [row]=await sql`
+    SELECT
+      (SELECT count(*)::integer FROM matches) AS match_count,
+      (SELECT count(*)::integer FROM match_participants) AS participant_count,
+      (SELECT count(*)::integer FROM match_timelines) AS timeline_count,
+      (SELECT count(*)::integer FROM matches WHERE jsonb_typeof(payload) IS DISTINCT FROM 'object') AS invalid_match_payload_count,
+      (SELECT count(*)::integer FROM matches WHERE jsonb_typeof(epic_objectives) IS DISTINCT FROM 'array') AS invalid_epic_objectives_count,
+      (SELECT count(*)::integer FROM match_participants WHERE jsonb_typeof(data) IS DISTINCT FROM 'object') AS invalid_participant_data_count,
+      (SELECT count(*)::integer FROM match_timelines WHERE jsonb_typeof(timeline) IS DISTINCT FROM 'object') AS invalid_timeline_count,
+      (SELECT count(*)::integer FROM match_timelines WHERE jsonb_typeof(frames) IS DISTINCT FROM 'array') AS invalid_timeline_frames_count,
+      (SELECT count(*)::integer FROM match_timelines WHERE jsonb_typeof(events) IS DISTINCT FROM 'array') AS invalid_timeline_events_count
+  `;
+  return Object.fromEntries(Object.entries(row||{}).map(([key,value])=>[key,Number(value)||0]));
+}
+
 async function loadSource(){
   if(sourceArg){
     const sourceUrl=new URL(sourceArg);sourceUrl.searchParams.set("timeline","1");const response=await fetch(sourceUrl,{headers:{accept:"application/json"},signal:AbortSignal.timeout(60_000)});
@@ -57,8 +73,18 @@ async function main(){
     console.log(`경기 업서트 ${end}/${source.length}`);
   }
 
-  const stored=await repository.list({includeTimeline:true}),storedById=new Map(stored.map(match=>[String(match.gameId),match])),sourceHashes=digestMap(source),storedHashes=digestMap(stored),errors=[];
-  if(stored.length!==source.length)errors.push(`경기 수 불일치: 원본 ${source.length}, DB ${stored.length}`);
+  const stored=await repository.list({includeTimeline:true}),structure=await readStoredStructure(sql),storedById=new Map(stored.map(match=>[String(match.gameId),match])),sourceHashes=digestMap(source),storedHashes=digestMap(stored),errors=[];
+  const expectedParticipantCount=source.reduce((total,match)=>total+(Array.isArray(match?.participants)?match.participants.length:0),0),expectedTimelineCount=source.filter(match=>Boolean(match?.timeline)).length;
+  if(stored.length!==source.length)errors.push(`경기 수 불일치: 원본 ${source.length}, DB 조회 ${stored.length}`);
+  if(structure.match_count!==source.length)errors.push(`matches 행 수 불일치: 원본 ${source.length}, DB ${structure.match_count}`);
+  if(structure.participant_count!==expectedParticipantCount)errors.push(`match_participants 행 수 불일치: 원본 ${expectedParticipantCount}, DB ${structure.participant_count}`);
+  if(structure.timeline_count!==expectedTimelineCount)errors.push(`match_timelines 행 수 불일치: 원본 ${expectedTimelineCount}, DB ${structure.timeline_count}`);
+  if(structure.invalid_match_payload_count)errors.push(`matches.payload JSONB 객체가 아닌 행 ${structure.invalid_match_payload_count}건`);
+  if(structure.invalid_epic_objectives_count)errors.push(`matches.epic_objectives JSONB 배열이 아닌 행 ${structure.invalid_epic_objectives_count}건`);
+  if(structure.invalid_participant_data_count)errors.push(`match_participants.data JSONB 객체가 아닌 행 ${structure.invalid_participant_data_count}건`);
+  if(structure.invalid_timeline_count)errors.push(`match_timelines.timeline JSONB 객체가 아닌 행 ${structure.invalid_timeline_count}건`);
+  if(structure.invalid_timeline_frames_count)errors.push(`match_timelines.frames JSONB 배열이 아닌 행 ${structure.invalid_timeline_frames_count}건`);
+  if(structure.invalid_timeline_events_count)errors.push(`match_timelines.events JSONB 배열이 아닌 행 ${structure.invalid_timeline_events_count}건`);
   for(const match of source){
     const id=String(match.gameId),dbMatch=storedById.get(id);
     if(!dbMatch){errors.push(`${id}: DB에 없음`);continue}
@@ -67,8 +93,8 @@ async function main(){
   }
   for(const match of stored)if(!sourceHashes.has(String(match.gameId)))errors.push(`${match.gameId}: DB에만 존재`);
   if(errors.length){for(const error of errors.slice(0,30))console.error(`검증 실패 · ${error}`);if(errors.length>30)console.error(`외 ${errors.length-30}건`);throw new Error(`마이그레이션 검증 실패 (${errors.length}건)`)}
-  const timelineCount=source.filter(match=>Boolean(match.timeline)).length,aggregateHash=hash([...sourceHashes].sort(([left],[right])=>left.localeCompare(right,"en")));
-  console.log(`검증 완료 · 경기 ${source.length}건 · 타임라인 ${timelineCount}건 · 해시 ${aggregateHash}`);
+  const aggregateHash=hash([...sourceHashes].sort(([left],[right])=>left.localeCompare(right,"en")));
+  console.log(`검증 완료 · 경기 ${structure.match_count}건 · 참가자 ${structure.participant_count}건 · 타임라인 ${structure.timeline_count}건 · 해시 ${aggregateHash}`);
 }
 
 try{await main()}catch(error){console.error(`경기 DB 마이그레이션 실패: ${error.message}`);process.exitCode=1}finally{await closeDatabase().catch(()=>{})}

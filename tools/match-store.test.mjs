@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createMatchStore,mergeStoredMatch} from "../match-store.mjs";
+import {createMatchStore,createPostgresMatchRepository,mergeStoredMatch} from "../match-store.mjs";
 
 const baseMatch=(gameId="1000000001")=>({gameId,gameCreation:1,duration:1200,participants:[{participantId:1,gameName:"A",teamId:100}],timelineCollected:true,timelineSource:"LCU",timeline:{frameInterval:60000,frames:[{timestamp:0,participantFrames:[]}],events:[]}});
 
@@ -32,4 +32,27 @@ test("postgres mode bypasses Blob and delegates row-level operations",async()=>{
   let blobReads=0,blobWrites=0,upserts=0;
   const postgresRepository={async list(){return [baseMatch()]},async get(){return baseMatch()},async count(){return 1},async upsert(matches){upserts++;return {received:matches.length,total:1,replaced:[true],replacedCount:1}}},store=createMatchStore({mode:"postgres",loadBlob:async()=>{blobReads++;return []},saveBlob:async()=>{blobWrites++},postgresRepository});
   assert.equal((await store.list()).length,1);assert.equal((await store.get("1000000001")).gameId,"1000000001");assert.equal((await store.upsert([baseMatch()])).total,1);assert.equal(upserts,1);assert.equal(blobReads,0);assert.equal(blobWrites,0);
+});
+
+test("postgres repository passes JSONB values without pre-stringifying",async()=>{
+  const jsonValues=[],queries=[],builders=[];
+  const tx=(first,...values)=>{
+    if(Array.isArray(first?.raw)){
+      const text=first.join("?");queries.push({text,values});
+      if(text.includes("SELECT m.game_id"))return [];
+      if(text.includes("SELECT count(*)"))return [{count:1}];
+      return [];
+    }
+    builders.push({first,values});return {first,values};
+  };
+  tx.json=value=>{jsonValues.push(value);return {type:"jsonb",value}};
+  const sql=Object.assign(tx,{begin:async callback=>callback(tx)}),match=baseMatch();
+  await createPostgresMatchRepository(sql).upsert([match]);
+  const matchRows=builders.find(builder=>builder.values.includes("payload")).first;
+  assert.equal(typeof matchRows[0].payload,"object");assert.deepEqual(matchRows[0].epic_objectives,[]);
+  const participantRows=builders.find(builder=>builder.values.includes("data")).first;
+  assert.deepEqual(participantRows[0].data,match.participants[0]);
+  assert.deepEqual(jsonValues,[match.timeline.frames,match.timeline.events,match.timeline]);
+  const timelineQuery=queries.find(query=>query.text.includes("INSERT INTO match_timelines"));
+  assert.ok(timelineQuery);assert.deepEqual(timelineQuery.values.slice(2,5).map(parameter=>parameter.type),["jsonb","jsonb","jsonb"]);
 });
