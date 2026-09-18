@@ -54,5 +54,7 @@ test("finishing a series automatically calls Responses API once and public GET r
     responseHeadline="타임라인으로 다시 쓴 총평";
     const regenerated=await request(handleRequest,"/api/series-commentary/regenerate",{method:"POST",headers:{authorization:"Bearer test-upload-token"},body:{seriesId}});assert.equal(regenerated.status,200);assert.equal(regenerated.body.status,"ready");assert.equal(regenerated.body.review.headline,responseHeadline);assert.equal(calls,5);
     const forced=JSON.parse(await readFile(join(reviewDir,`${seriesId}.json`),"utf8"));assert.equal(forced.review.headline,responseHeadline);assert.equal(forced.revision,recoveredIncomplete.revision+1);assert.notEqual(forced.generationId,recoveredIncomplete.generationId);
+    const reviewedHeadline="사람이 검수한 타임라인 총평",reviewed=await request(handleRequest,"/api/series-commentary/review",{method:"PUT",headers:{authorization:"Bearer test-upload-token"},body:{seriesId,review:{...forced.review,headline:reviewedHeadline}}});assert.equal(reviewed.status,200);assert.equal(reviewed.body.status,"ready");assert.equal(reviewed.body.review.headline,reviewedHeadline);assert.equal(calls,5);
+    const storedReview=JSON.parse(await readFile(join(reviewDir,`${seriesId}.json`),"utf8"));assert.equal(storedReview.review.headline,reviewedHeadline);assert.equal(storedReview.revision,forced.revision+1);assert.ok(storedReview.reviewedAt>=forced.generatedAt);
   }finally{globalThis.fetch=previousFetch;await rm(tempRoot,{recursive:true,force:true})}
 });

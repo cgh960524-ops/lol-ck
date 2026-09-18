@@ -497,6 +497,11 @@ export async function handleRequest(req,res){
       requireUploaderAuth(req);const body=await readBody(req),record=await generateSeriesCommentary(String(body.seriesId||""),{force:true});
       const state=await loadRawAppState(),series=findFinishedSeries(state,body.seriesId);return json(res,200,publicSeriesCommentary(record,series));
     }
+    if(pathname==="/api/series-commentary/review"&&req.method==="PUT"){
+      requireUploaderAuth(req);const body=await readBody(req),state=await loadRawAppState(),series=findFinishedSeries(state,String(body.seriesId||""));if(!series)throw Object.assign(new Error("완료된 시리즈를 찾지 못했습니다."),{status:404});
+      const review=sanitizeSeriesCommentary(body.review);if(!review)throw Object.assign(new Error("검수 총평 형식이 올바르지 않습니다."),{status:400});
+      const snapshot=await loadSeriesCommentaryVersioned(series),existing=snapshot.value||{},now=Date.now(),record={...existing,version:2,revision:(Number(existing.revision)||0)+1,seriesId:String(series.id||""),seriesNumber:String(series.seriesNumber||series.id||""),promptVersion:SERIES_COMMENTARY_PROMPT_VERSION,status:"ready",model:String(existing.model||openAIModel()),review,generationId:randomUUID(),generatedAt:now,reviewedAt:now,updatedAt:now,leaseUntil:null};delete record.errorCode;delete record.failedAt;await saveJson(snapshot.name,snapshot.file,record);return json(res,200,publicSeriesCommentary(record,series));
+    }
     if(pathname==="/api/discord/recruitment-reminder"&&req.method==="GET"){const agent=String(req.headers["user-agent"]||""),authorized=agent.includes("vercel-cron/1.0")||(uploadToken&&String(req.headers.authorization||"")===`Bearer ${uploadToken}`);if(!authorized)return json(res,401,{error:"unauthorized"});return json(res,200,await sendDiscordRecruitmentReminder())}
     if(pathname==="/api/discord/register-hall-of-fame"&&req.method==="POST"){requireUploaderAuth(req);return json(res,200,await registerDiscordHallOfFameCommand())}
     if(pathname==="/api/discord/post-player-panel"&&req.method==="POST"){requireUploaderAuth(req);return json(res,200,await postDiscordPlayerRegistrationPanel({refresh:true}))}
