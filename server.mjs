@@ -76,23 +76,34 @@ const seriesCommentaryInstructions=`당신은 응CK연구소의 리그 오브 �
 아랫밸 상대에게 큰 지표가 나온 것은 기대되는 부분임을 감안하고, 윗밸 상대에게 버티거나 우세한 지표를 낸 경우를 더 의미 있게 해석하세요.
 KDA 하나만으로 단정하지 말고 골드, CS, 피해량, 킬 관여, 시야, 오브젝트와 역할을 함께 보세요.
 mappingComplete가 false인 세트는 팀 합계나 빠진 선수에 대해 단정하지 마세요.
-각 세트 총평과 확인 가능한 맞포지션 구도를 다루고, 눈에 띈 선수만 최대 6명 선정하세요. 비난하거나 조롱하지 말고 짧고 자연스럽게 작성하세요.`;
-function openAIOutputText(payload){if(typeof payload?.output_text==="string")return payload.output_text;for(const item of payload?.output||[])for(const content of item?.content||[])if(content?.type==="output_text"&&typeof content.text==="string")return content.text;return ""}
+각 세트 총평과 확인 가능한 맞포지션 구도를 다루고, 눈에 띈 선수만 최대 6명 선정하세요. 승부 요인은 최대 5개로 제한하고 각 요약은 2~3문장 이내로 쓰세요. 비난하거나 조롱하지 말고 짧고 자연스럽게 작성하세요.`;
+function openAIOutputText(payload){
+  if(typeof payload?.output_text==="string"&&payload.output_text.trim())return payload.output_text;
+  const fragments=[];for(const item of payload?.output||[])for(const content of item?.content||[])if(content?.type==="output_text"&&typeof content.text==="string"&&content.text.trim())fragments.push(content.text);
+  return fragments.join("");
+}
 async function requestSeriesCommentary(evidence){
   const key=openAIKey();if(!key)throw Object.assign(new Error("OpenAI API 키가 설정되지 않았습니다."),{code:"missing_api_key"});
   const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",headers:{Authorization:`Bearer ${key}`,"Content-Type":"application/json"},signal:AbortSignal.timeout(45_000),body:JSON.stringify({
     model:openAIModel(),store:false,instructions:seriesCommentaryInstructions,reasoning:{effort:"low"},
     input:`다음 시리즈 증거를 분석해 JSON 스키마에 맞는 총평을 작성하세요.\n${JSON.stringify(evidence)}`,
-    max_output_tokens:2600,text:{format:{type:"json_schema",name:"eungck_series_commentary",strict:true,schema:SERIES_COMMENTARY_SCHEMA}},
+    max_output_tokens:6000,text:{verbosity:"low",format:{type:"json_schema",name:"eungck_series_commentary",strict:true,schema:SERIES_COMMENTARY_SCHEMA}},
   })});
   if(!response.ok){const error=Object.assign(new Error(`OpenAI API 요청 실패 (${response.status})`),{statusCode:response.status,code:response.status===401||response.status===403?"openai_auth":response.status===429?"rate_limit":"openai_request"});throw error}
-  const payload=await response.json(),text=openAIOutputText(payload);let parsed;
+  const payload=await response.json(),text=openAIOutputText(payload),refusal=(payload.output||[]).flatMap(item=>item.content||[]).find(content=>content?.type==="refusal");
+  if(payload.status&&payload.status!=="completed"){
+    const reason=payload.incomplete_details?.reason||"unknown",code=payload.status==="incomplete"&&reason==="max_output_tokens"?"output_incomplete":"invalid_output";
+    console.error("OpenAI commentary response incomplete",{status:payload.status,reason,inputTokens:Number(payload.usage?.input_tokens)||0,outputTokens:Number(payload.usage?.output_tokens)||0,textLength:text.length});
+    throw Object.assign(new Error(`OpenAI 응답 미완료 (${payload.status})`),{code});
+  }
+  if(refusal)throw Object.assign(new Error("OpenAI가 총평 생성을 거절했습니다."),{code:"invalid_output"});
+  let parsed;
   try{parsed=JSON.parse(text)}catch{throw Object.assign(new Error("OpenAI 응답을 해석하지 못했습니다."),{code:"invalid_output"})}
   const review=sanitizeSeriesCommentary(parsed);if(!review)throw Object.assign(new Error("OpenAI 총평 형식이 올바르지 않습니다."),{code:"invalid_output"});
   return {review,model:String(payload.model||openAIModel()),usage:{inputTokens:Number(payload.usage?.input_tokens)||0,outputTokens:Number(payload.usage?.output_tokens)||0,totalTokens:Number(payload.usage?.total_tokens)||0}};
 }
-function seriesCommentaryErrorCode(error){if(error?.code==="missing_api_key")return "missing_api_key";if(error?.name==="TimeoutError"||error?.name==="AbortError")return "timeout";return ["openai_auth","rate_limit","openai_request","invalid_output","missing_match_data","incomplete_player_mapping","daily_limit"].includes(error?.code)?error.code:"generation_failed"}
-const recoverableSeriesCommentaryErrors=new Set(["timeout","rate_limit","openai_request","generation_failed"]);
+function seriesCommentaryErrorCode(error){if(error?.code==="missing_api_key")return "missing_api_key";if(error?.name==="TimeoutError"||error?.name==="AbortError")return "timeout";return ["openai_auth","rate_limit","openai_request","invalid_output","output_incomplete","missing_match_data","incomplete_player_mapping","daily_limit"].includes(error?.code)?error.code:"generation_failed"}
+const recoverableSeriesCommentaryErrors=new Set(["timeout","rate_limit","openai_request","output_incomplete","generation_failed"]);
 function canRecoverSeriesCommentary(record){
   if(!record||Number(record.attempts||0)>=2)return false;
   if(record.status==="pending")return Date.now()>Number(record.leaseUntil||Number(record.requestedAt||0)+120_000);

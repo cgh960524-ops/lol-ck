@@ -1,4 +1,4 @@
-export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-18.1";
+export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-18.2";
 
 export const SERIES_COMMENTARY_SCHEMA={
   type:"object",
@@ -6,10 +6,10 @@ export const SERIES_COMMENTARY_SCHEMA={
   properties:{
     headline:{type:"string"},
     overview:{type:"string"},
-    decisiveFactors:{type:"array",items:{type:"string"}},
-    setReviews:{type:"array",items:{type:"object",additionalProperties:false,properties:{setNumber:{type:"integer"},title:{type:"string"},summary:{type:"string"}},required:["setNumber","title","summary"]}},
-    matchupReviews:{type:"array",items:{type:"object",additionalProperties:false,properties:{role:{type:"string",enum:["탑","정글","미드","원딜","서폿"]},title:{type:"string"},summary:{type:"string"}},required:["role","title","summary"]}},
-    notablePlayers:{type:"array",items:{type:"object",additionalProperties:false,properties:{name:{type:"string"},side:{type:"string",enum:["BLUE","RED"]},summary:{type:"string"}},required:["name","side","summary"]}},
+    decisiveFactors:{type:"array",maxItems:5,items:{type:"string"}},
+    setReviews:{type:"array",maxItems:5,items:{type:"object",additionalProperties:false,properties:{setNumber:{type:"integer"},title:{type:"string"},summary:{type:"string"}},required:["setNumber","title","summary"]}},
+    matchupReviews:{type:"array",maxItems:5,items:{type:"object",additionalProperties:false,properties:{role:{type:"string",enum:["탑","정글","미드","원딜","서폿"]},title:{type:"string"},summary:{type:"string"}},required:["role","title","summary"]}},
+    notablePlayers:{type:"array",maxItems:6,items:{type:"object",additionalProperties:false,properties:{name:{type:"string"},side:{type:"string",enum:["BLUE","RED"]},summary:{type:"string"}},required:["name","side","summary"]}},
     ratingSummary:{type:"string"},
     dataNotice:{type:"string"},
   },
