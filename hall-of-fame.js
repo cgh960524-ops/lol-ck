@@ -56,8 +56,8 @@ async function renderServerHallOfFame(){
 }
 const hofCardIds=["objectiveLeaderboard","stealLeaderboard","wallLeaderboard","visionLeaderboard","supportLeaderboard","ccLeaderboard","efficiencyLeaderboard","demolitionLeaderboard","chaosLeaderboard","safetyLeaderboard","soloKillLeaderboard","soloDeathLeaderboard","multiKillLeaderboard","bestSynergyLeaderboard","worstSynergyLeaderboard","bloodKingLeaderboard","championPoolLeaderboard","evenMatchLeaderboard"];
 const hofCardsComplete=()=>hofCardIds.every(id=>document.querySelector(`#${id} .leaderboard-row, #${id} .leaderboard-empty`));
-const ensureServerHallOfFame=()=>{if(!hofCardsComplete())renderServerHallOfFame()};
-window.addEventListener("DOMContentLoaded",()=>setTimeout(renderServerHallOfFame,350));
+let hofDataReady=false;
+const ensureServerHallOfFame=()=>{if(hofDataReady&&!hofCardsComplete())renderServerHallOfFame()};
 let hofRepairTimer;new MutationObserver(()=>{if(hofCardsComplete())return;clearTimeout(hofRepairTimer);hofRepairTimer=setTimeout(ensureServerHallOfFame,120)}).observe(document.querySelector(".award-grid"),{childList:true,subtree:true});
 
 async function renderTimelineObjectiveBoards(){
@@ -77,5 +77,5 @@ async function renderTimelineObjectiveBoards(){
   }catch(error){console.warn("타임라인 오브젝트 명예의전당 집계 실패:",error.message)}
 }
 const scheduleTimelineObjectiveBoards=()=>setTimeout(renderTimelineObjectiveBoards,750);
-window.addEventListener("DOMContentLoaded",scheduleTimelineObjectiveBoards);
-window.addEventListener("ranking-data-changed",()=>{renderServerHallOfFame();renderTimelineObjectiveBoards()});
+window.addEventListener("eungck-matches-ready",()=>{hofDataReady=true;renderServerHallOfFame();scheduleTimelineObjectiveBoards()});
+window.addEventListener("ranking-data-changed",()=>{if(hofDataReady){renderServerHallOfFame();renderTimelineObjectiveBoards()}});

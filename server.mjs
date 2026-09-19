@@ -37,7 +37,10 @@ async function loadMatches({includeTimeline=false}={}){return matchStore.list({i
 async function upsertMatches(matches){return matchStore.upsert(matches)}
 async function getMatch(gameId,options){return matchStore.get(gameId,options)}
 async function loadRawAppState(){const raw=await loadJson("app-state",appStateFile,{version:1,players:[],seriesState:{active:null,history:[]}});return raw&&typeof raw==="object"?raw:{players:[],seriesState:{active:null,history:[]}}}
-async function loadAppState(){return deriveRatings(await loadRawAppState())}
+// Ratings are materialized when state changes. Read paths must return that
+// snapshot directly; replaying every stored match for every visitor is both
+// unnecessary and the largest source of database egress.
+async function loadAppState(){return loadRawAppState()}
 async function deriveRatings(state,matches=null){const result=CKRating.recalculate(Array.isArray(state.players)?state.players:[],matches||await loadMatches(),state.seriesState||{});state.players=result.players;state.ratingAlgorithm={version:CKRating.VERSION,diagnostics:result.diagnostics};return state}
 async function saveAppState(value){await deriveRatings(value);await saveJson("app-state",appStateFile,value)}
 const rankingRevision=(state,matches)=>createHash("sha256").update(JSON.stringify([Number(state.updatedAt)||0,CKRating.VERSION,(matches||[]).length,...(matches||[]).map(match=>[String(match.gameId),Number(match.uploadedAt)||0,Number(match.enrichedAt)||0,Boolean(match.timelineCollected),(match.epicObjectives||[]).length])])).digest("hex").slice(0,20);
