@@ -14,6 +14,7 @@ const PUBLIC_RATING_EVENT_FIELDS = [
   "opponentId", "opponentPower", "expectedPerformance", "actualMatchup",
   "quality", "reason", "matchupChange", "referenceChange", "capAdjustment",
   "opponentReliability", "acceleration", "defensive", "seriesSource",
+  "duoContextApplied", "duoChange", "partnerAdjustment", "timelineContextApplied", "timelineChange", "performanceChange", "seriesGuardrailAdjustment",
 ];
 
 function projectRatingEvent(event) {

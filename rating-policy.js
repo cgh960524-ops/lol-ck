@@ -89,17 +89,28 @@ export function matchupUpdate({before,opponent,opponentConfidence=0,signal,paire
  const change=clamp(matchupChange+referenceChange,-60*learning,60*learning);
  return {change,matchupChange,referenceChange,capAdjustment:change-matchupChange-referenceChange,expected,actual,residual,reliability,repeatFactor,opponentFactor,learning,defensive,defensiveFactor};
 }
-// Bottom lane keeps the same-role comparison as its anchor, then adds a small
-// 2v2 context and partner-difficulty correction. It never replaces the ADC vs
-// ADC or support vs support evidence with a shared lane result.
-export function bottomDuoChange({individualChange,teammateChange,ownPartner,opponentPartner}){
+// Legacy bottom games keep the V4.1 same-role anchor. V4.2 games with complete
+// timeline evidence prioritize the recorded lane phase while retaining a
+// bounded share of the end-of-game individual and duo box score.
+export function bottomDuoChange({individualChange,teammateChange,ownPartner,opponentPartner,timelineChange=null,role="",sweepWin=false}){
  const individual=n(individualChange),duo=(individual+n(teammateChange))/2;
  const partnerAdjustment=clamp(.06*(n(opponentPartner)-n(ownPartner)),-12,12);
  const contextual=individual+partnerAdjustment;
+ if(timelineChange!==null&&timelineChange!==undefined&&Number.isFinite(Number(timelineChange))){
+  // V4.2 makes the recorded lane phase the primary bottom-lane evidence.
+  // End-of-game box score remains useful, but cannot by itself erase a won
+  // 2v2 lane or turn late poke damage into a lane victory.
+  const support=role==='SUPPORT',weights=support?{individual:.35,duo:.15,timeline:.45,partnerContext:.05}:{individual:.20,duo:.10,timeline:.65,partnerContext:.05};
+  let change=weights.individual*individual+weights.duo*n(teammateChange)+weights.timeline*n(timelineChange)+weights.partnerContext*partnerAdjustment;
+  // A sweep is not a win bonus. It only prevents one losing lane from
+  // producing a severe series penalty when every set was still converted.
+  if(sweepWin)change=Math.max(change,role==='SUPPORT'?-10:-14);
+  return {change,individualChange:individual,duoChange:duo,partnerAdjustment,contextualChange:contextual,timelineChange:n(timelineChange),timelineApplied:true,weights};
+ }
  // Keep fractional state internally so repeated small evidence can still
  // converge; role/history scores are rounded only when displayed.
  const change=.70*individual+.20*duo+.10*contextual;
- return {change,individualChange:individual,duoChange:duo,partnerAdjustment,contextualChange:contextual,weights:{individual:.70,duo:.20,partnerContext:.10}};
+ return {change,individualChange:individual,duoChange:duo,partnerAdjustment,contextualChange:contextual,timelineChange:null,timelineApplied:false,weights:{individual:.70,duo:.20,partnerContext:.10}};
 }
 export const ROLE_IMPACT={TOP:.15,JUNGLE:.28,MID:.20,ADC:.15,SUPPORT:.22};
 export function predictTeams(blue,red){
