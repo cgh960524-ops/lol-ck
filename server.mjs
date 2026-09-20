@@ -112,16 +112,17 @@ const seriesCommentaryInstructions=`당신은 응CK연구소의 리그 오브 �
 아랫밸 상대에게 큰 지표가 나온 것은 기대되는 부분임을 감안하고, 윗밸 상대에게 버티거나 우세한 지표를 낸 경우를 더 의미 있게 해석하세요.
 KDA 하나만으로 단정하지 말고 골드, CS, 피해량, 킬 관여, 시야, 오브젝트와 역할을 함께 보세요.
 analysis는 서버가 경기 지표와 타임라인으로 확정한 화면용 데이터입니다. 타임라인 좌표, 팀 매핑, BEST/WORST 후보를 다시 계산하거나 바꾸지 말고 해설만 작성하세요.
-series.blueTeam은 고정 1팀, series.redTeam은 고정 2팀입니다. 세트의 실제 진영은 analysis.sets[].sideMapping에서만 확인하세요. 1팀과 2팀은 세트마다 BLUE/RED가 바뀔 수 있으므로 색상이나 이전 세트 진영으로 추정하지 마세요.
+series.blueTeam과 analysis.series.teams.TEAM1.name은 고정 1팀의 실제 팀명이고, series.redTeam과 analysis.series.teams.TEAM2.name은 고정 2팀의 실제 팀명입니다. 세트마다 게임 안 진영은 바뀔 수 있으며 analysis.sets[].sideMapping은 검증에만 사용하세요.
+사용자에게 보이는 모든 문장에는 BLUE, RED, 블루, 레드, TEAM1, TEAM2, 1팀, 2팀 같은 내부 구분자를 절대 쓰지 마세요. 팀을 언급할 때는 반드시 analysis.series.teams.TEAM1.name 또는 analysis.series.teams.TEAM2.name의 실제 팀명을 정확히 쓰세요. 세트별 진영이 바뀌어도 팀명은 고정 선수 구성 기준으로 유지하세요.
 setReviews의 team1Good과 team2Good은 해당 세트에서 각 팀이 잘한 점을 지표 근거로 설명하세요. bestReason과 worstReason은 analysis.sets[]의 서버 선정 선수에 대한 해설만 쓰고 다른 선수를 재선정하지 마세요.
 mappingComplete가 false인 세트는 팀 합계나 빠진 선수에 대해 단정하지 마세요.
 timeline.available이 true이면 최종 스코어보다 timeline.turningPoints, biggestSwings, leadChanges와 교전 뒤 90초 이내의 오브젝트·건물 전환을 우선해 경기 흐름을 설명하세요. timeline.confidence가 partial이면 그 한계를 함께 밝히세요.
-모델용 timeline 골드는 leader와 leadGold로 이미 정규화되어 있습니다. 문장에는 필드명 'leader'를 그대로 출력하지 말고 그 값인 BLUE 또는 RED를 넣어 'BLUE가 5,331골드 앞섰다'처럼 쓰세요. 선두 팀에 음수 부호를 붙이지 마세요. swingGold는 격차 자체가 아니라 해당 구간의 변화량이므로 현재 골드 격차처럼 쓰지 마세요. 시각, 선수 이름과 수치는 JSON 값을 그대로 확인하고, 앞서던 팀이 바뀐 경기에서 한 팀이 계속 우세했다고 쓰지 마세요.
+모델용 timeline 골드는 leader와 leadGold로 이미 정규화되어 있습니다. 문장에는 필드명이나 내부 팀 코드를 출력하지 말고, leader가 TEAM1 또는 BLUE이면 TEAM1.name을, TEAM2 또는 RED이면 TEAM2.name을 써서 '귀성중찬 팀이 5,331골드 앞섰다'처럼 표현하세요. 선두 팀에 음수 부호를 붙이지 마세요. swingGold는 격차 자체가 아니라 해당 구간의 변화량이므로 현재 골드 격차처럼 쓰지 마세요. 시각, 선수 이름과 수치는 JSON 값을 그대로 확인하고, 앞서던 팀이 바뀐 경기에서 한 팀이 계속 우세했다고 쓰지 마세요.
 교전과 오브젝트·건물을 함께 설명할 때는 각 conversion의 실제 minute를 확인하세요. conversion이 startMinute~endMinute 안이면 '교전 과정에서', endMinute 뒤면 '교전 이후'라고 구분하고, 교전 중 사건까지 전부 '교전 뒤'라고 쓰지 마세요. turningPoint의 startMinute~endMinute는 킬 교전 구간이므로 뒤따른 건물 시각까지 교전 구간을 늘리지 마세요.
 ratingChanges.events의 opponentComparison은 본인의 해당 세트 roleBefore와 상대 opponentPower의 직접 비교입니다. 혼동을 막기 위해 '윗밸', '밑밸', '높은 상대', '낮은 상대', '높은 조건', '낮은 조건' 같은 상대 강도 표현은 사용하지 마세요. 필요하면 본인 roleBefore와 상대 opponentPower의 숫자를 그대로 비교하세요.
 ratingChanges.events의 expected와 actualMatchup 숫자를 직접 대소 비교하지 마세요. reason이 유일한 수행 판정 기준이며 above는 기대 이상, expected는 기대 범위, below는 기대 이하입니다.
 seriesGuardrailAdjustment가 0이 아니면 해당 세트의 수행 보정이 아니라 시리즈 전체 스윕 결과와 누적 라인전 근거에 적용된 완충치입니다. 세트 경기력을 설명할 때는 performanceChange와 reason을 사용하고, 최종 롤력 변화에는 시리즈 완충치가 합쳐졌다고 구분하세요.
-사용자 문장에 leader, leadGold, roleBefore, opponentPower, reason, above, expected, below 같은 JSON 필드명·영문 판정값을 그대로 출력하지 마세요. 각각 실제 BLUE/RED, 골드 수치, 경기 전 포지션 롤력, 상대 포지션 롤력, 기대 이상·기대 범위·기대 이하라는 자연스러운 한국어로 바꾸세요.
+사용자 문장에 leader, leadGold, roleBefore, opponentPower, reason, above, expected, below 같은 JSON 필드명·영문 판정값을 그대로 출력하지 마세요. 각각 실제 팀명, 골드 수치, 경기 전 포지션 롤력, 상대 포지션 롤력, 기대 이상·기대 범위·기대 이하라는 자연스러운 한국어로 바꾸세요.
 오브젝트 개수를 쓸 때는 timeline.summary.objectiveCountBySide를 그대로 사용하고 이벤트 목록을 눈으로 다시 세지 마세요.
 bottomDuo.comparison은 항목별 비교입니다. mixed가 true이면 한쪽이 2대2 전체 또는 전 라인에서 우세했다고 단정하지 말고, 골드·CS·피해량 또는 킬·어시스트처럼 실제 우세 항목을 나눠 쓰세요.
 bottomDuo.laneTimeline이 있으면 최종 피해량보다 10분·15분 듀오 골드/CS/경험치, 순수 2대2 킬, 정글 개입 사망, 10분에서 15분 사이 회복을 우선해 바텀 라인전을 설명하세요. pureKills는 정글·다른 라인 개입이 기록되지 않은 킬만 뜻하며, botDeathsToJungle은 상대 정글이 킬 또는 어시스트에 직접 기록된 경우만 뜻합니다. 한 세트의 최종 피해량이 높다는 이유만으로 라인전을 이겼다고 쓰지 마세요.
@@ -152,7 +153,7 @@ async function requestSeriesCommentary(evidence){
   if(refusal)throw Object.assign(new Error("OpenAI가 총평 생성을 거절했습니다."),{code:"invalid_output"});
   let parsed;
   try{parsed=JSON.parse(text)}catch{throw Object.assign(new Error("OpenAI 응답을 해석하지 못했습니다."),{code:"invalid_output"})}
-  const review=sanitizeSeriesCommentary(parsed);if(!review)throw Object.assign(new Error("OpenAI 총평 형식이 올바르지 않습니다."),{code:"invalid_output"});
+  const teamNames={TEAM1:evidence.analysis?.series?.teams?.TEAM1?.name||evidence.series?.blueTeam,TEAM2:evidence.analysis?.series?.teams?.TEAM2?.name||evidence.series?.redTeam},review=sanitizeSeriesCommentary(parsed,teamNames);if(!review)throw Object.assign(new Error("OpenAI 총평 형식이 올바르지 않습니다."),{code:"invalid_output"});
   return {review,model:String(payload.model||openAIModel()),usage:{inputTokens:Number(payload.usage?.input_tokens)||0,outputTokens:Number(payload.usage?.output_tokens)||0,totalTokens:Number(payload.usage?.total_tokens)||0}};
 }
 
@@ -214,13 +215,13 @@ function startSeriesCommentary(reference,options={}){
   return job;
 }
 function publicSeriesCommentary(record,series,analysis=null){
-  if(record?.status==="ready")return {status:"ready",seriesId:String(series.id),seriesNumber:String(series.seriesNumber||series.id),model:record.model,generatedAt:record.generatedAt,analysis,review:record.review};
+  if(record?.status==="ready"){const teamNames={TEAM1:analysis?.series?.teams?.TEAM1?.name||record.review?.team1Name,TEAM2:analysis?.series?.teams?.TEAM2?.name||record.review?.team2Name},review=sanitizeSeriesCommentary(record.review,teamNames)||record.review;return {status:"ready",seriesId:String(series.id),seriesNumber:String(series.seriesNumber||series.id),model:record.model,generatedAt:record.generatedAt,analysis,review}}
   const status=record?.status||(!openAIKey()?"unavailable":"missing");
   return {status,seriesId:String(series.id),seriesNumber:String(series.seriesNumber||series.id),updatedAt:record?.updatedAt||null,errorCode:record?.errorCode||(!openAIKey()?"missing_api_key":null),analysis};
 }
 async function saveReviewedSeriesCommentary(reference,input){
   const state=await loadRawAppState(),series=findFinishedSeries(state,String(reference||""));if(!series)throw Object.assign(new Error("완료된 시리즈를 찾지 못했습니다."),{status:404});
-  const review=sanitizeSeriesCommentary(input);if(!review)throw Object.assign(new Error("검수 총평 형식이 올바르지 않습니다."),{status:400});
+  const review=sanitizeSeriesCommentary(input,{TEAM1:seriesTeamName(series,"BLUE"),TEAM2:seriesTeamName(series,"RED")});if(!review)throw Object.assign(new Error("검수 총평 형식이 올바르지 않습니다."),{status:400});
   const snapshot=await loadSeriesCommentaryVersioned(series),existing=snapshot.value||{},now=Date.now(),record={...existing,version:2,revision:(Number(existing.revision)||0)+1,seriesId:String(series.id||""),seriesNumber:String(series.seriesNumber||series.id||""),promptVersion:SERIES_COMMENTARY_PROMPT_VERSION,status:"ready",model:String(existing.model||openAIModel()),review,generationId:randomUUID(),generatedAt:now,reviewedAt:now,updatedAt:now,leaseUntil:null};delete record.errorCode;delete record.failedAt;await saveJson(snapshot.name,snapshot.file,record);return {record,series};
 }
 const playerRegistrationPanelPayload={embeds:[{title:"🎮 응CK 플레이어 등록",description:"롤 내전에 참가하려면 본인의 Riot ID를 등록해주세요.\n\n**입력 예시**\n전수찬오른붕 `#KR11`\n\nDiscord 서버 닉네임은 별칭으로 자동 연결됩니다.",color:5814783}],components:[{type:1,components:[{type:2,style:1,label:"내 플레이어 등록하기",emoji:{name:"📝"},custom_id:"ck_player_open:register"},{type:2,style:2,label:"내 정보 갱신하기",emoji:{name:"🔄"},custom_id:"ck_player_open:refresh"}]}]};

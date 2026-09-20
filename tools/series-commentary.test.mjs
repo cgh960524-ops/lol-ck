@@ -135,6 +135,15 @@ test("series commentary output is bounded and rejects an empty response",()=>{
   assert.equal(review.setReviews[0].bestReason,"best");
 });
 
+test("series commentary replaces internal side labels with matched team names",()=>{
+  const review=sanitizeSeriesCommentary({headline:"BLUE가 RED를 이겼다",overview:"블루팀은 앞섰고 레드팀은 추격했다",decisiveFactors:["TEAM1과 2팀의 격차"],setReviews:[],matchupReviews:[],notablePlayers:[],ratingSummary:"1팀은 BLUE, 2팀은 RED",dataNotice:""},{TEAM1:"귀성중찬 팀",TEAM2:"Bruiser 팀"});
+  assert.equal(review.headline,"귀성중찬 팀이 Bruiser 팀을 이겼다");
+  assert.equal(review.overview,"귀성중찬 팀은 앞섰고 Bruiser 팀은 추격했다");
+  assert.equal(review.decisiveFactors[0],"귀성중찬 팀과 Bruiser 팀의 격차");
+  assert.equal(review.ratingSummary,"귀성중찬 팀은 귀성중찬 팀, Bruiser 팀은 Bruiser 팀");
+  assert.doesNotMatch(JSON.stringify(review),/BLUE|RED|블루|레드|TEAM\s*[12]|[12]팀/i);
+});
+
 test("automatic commentary accepts only a verified finish transition",()=>{
   const roleList=["TOP","JUNGLE","MID","ADC","SUPPORT"],players=Array.from({length:10},(_,index)=>({id:index+1,name:`P${index+1}`}));
   const team=(start,side)=>roleList.map((role,index)=>({id:start+index,name:`P${start+index}`,role,power:1500+index,side}));

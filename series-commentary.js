@@ -1,6 +1,6 @@
 import {evaluateBottomTimeline} from "./bottom-timeline.js";
 
-export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-20.1";
+export const SERIES_COMMENTARY_PROMPT_VERSION="2026-09-20.2";
 
 export const SERIES_COMMENTARY_SCHEMA={
   type:"object",
@@ -343,16 +343,27 @@ export function buildSeriesCommentaryEvidence({series,players=[],matches=[],seri
   return evidence;
 }
 
-export function sanitizeSeriesCommentary(value){
+function localizedTeamText(value,teamNames={}){
+  const names={TEAM1:cleanText(teamNames.TEAM1||teamNames.BLUE||"1팀",60),TEAM2:cleanText(teamNames.TEAM2||teamNames.RED||"2팀",60)},particle=(name,kind)=>{
+    const last=name.trim().at(-1)||"",code=last.charCodeAt(0),hasBatchim=code>=0xac00&&code<=0xd7a3&&(code-0xac00)%28!==0;
+    return kind==="가"?(hasBatchim?"이":"가"):kind==="는"?(hasBatchim?"은":"는"):kind==="를"?(hasBatchim?"을":"를"):kind==="와"?(hasBatchim?"과":"와"):kind==="로"?(hasBatchim&&((code-0xac00)%28)!==8?"으로":"로"):kind||"";
+  },replace=(text,key,pattern)=>text.replace(pattern,(_match,suffix="")=>`${names[key]}${particle(names[key],suffix)}`);
+  let text=String(value??"");
+  text=replace(text,"TEAM1",/(?:BLUE(?:\s+TEAM)?|블루\s*팀?|TEAM\s*1|1팀)(가|는|를|와|로)?/gi);
+  text=replace(text,"TEAM2",/(?:RED(?:\s+TEAM)?|레드\s*팀?|TEAM\s*2|2팀)(가|는|를|와|로)?/gi);
+  return text;
+}
+
+export function sanitizeSeriesCommentary(value,teamNames={}){
   if(!value||typeof value!=="object")return null;
-  const item=(entry,fields)=>Object.fromEntries(fields.map(([key,max])=>[key,cleanText(entry?.[key],max)]));
+  const text=(value,max)=>cleanText(localizedTeamText(value,teamNames),max),item=(entry,fields)=>Object.fromEntries(fields.map(([key,max])=>[key,text(entry?.[key],max)]));
   const review={
-    headline:cleanText(value.headline,120),overview:cleanText(value.overview,1000),
-    decisiveFactors:(Array.isArray(value.decisiveFactors)?value.decisiveFactors:[]).slice(0,5).map(text=>cleanText(text,400)).filter(Boolean),
+    headline:text(value.headline,120),overview:text(value.overview,1000),
+    decisiveFactors:(Array.isArray(value.decisiveFactors)?value.decisiveFactors:[]).slice(0,5).map(value=>text(value,400)).filter(Boolean),
     setReviews:(Array.isArray(value.setReviews)?value.setReviews:[]).slice(0,5).map(entry=>({setNumber:Math.max(1,Math.round(n(entry?.setNumber))),...item(entry,[["title",100],["summary",600],["team1Good",500],["team2Good",500],["bestReason",500],["worstReason",500]])})).filter(entry=>entry.title||entry.summary),
     matchupReviews:(Array.isArray(value.matchupReviews)?value.matchupReviews:[]).slice(0,5).map(entry=>({role:roles.map(role=>roleKo[role]).includes(entry?.role)?entry.role:"",...item(entry,[["title",100],["summary",600]])})).filter(entry=>entry.role&&(entry.title||entry.summary)),
-    notablePlayers:(Array.isArray(value.notablePlayers)?value.notablePlayers:[]).slice(0,6).map(entry=>({name:cleanText(entry?.name,40),side:["BLUE","RED"].includes(entry?.side)?entry.side:"BLUE",summary:cleanText(entry?.summary,500)})).filter(entry=>entry.name&&entry.summary),
-    ratingSummary:cleanText(value.ratingSummary,800),dataNotice:cleanText(value.dataNotice,500),
+    notablePlayers:(Array.isArray(value.notablePlayers)?value.notablePlayers:[]).slice(0,6).map(entry=>({name:cleanText(entry?.name,40),side:["BLUE","RED"].includes(entry?.side)?entry.side:"BLUE",summary:text(entry?.summary,500)})).filter(entry=>entry.name&&entry.summary),
+    ratingSummary:text(value.ratingSummary,800),dataNotice:text(value.dataNotice,500),
   };
   return review.headline&&review.overview?review:null;
 }
