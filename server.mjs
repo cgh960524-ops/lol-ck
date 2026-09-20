@@ -34,6 +34,17 @@ const matchStore=createMatchStore({
   saveBlob:matches=>saveJson("internal-matches",dataFile,matches),
 });
 async function loadMatches({includeTimeline=false}={}){return matchStore.list({includeTimeline})}
+async function loadMatchSummaries(options={}){return matchStore.summaries(options)}
+async function loadLeaderboardSummary(){
+  const [state,rawRows,totalMatches]=await Promise.all([loadRawAppState(),matchStore.leaderboardStats(),matchStore.count()]),resolve=CKRating.playerResolver(state.players||[]),byPlayer=new Map();
+  for(const raw of rawRows||[]){
+    const player=resolve(raw);if(!player)continue;
+    const key=String(player.id),row=byPlayer.get(key)||{playerId:player.id};
+    for(const [field,value] of Object.entries(raw))if(!["puuid","gameName","tagLine"].includes(field))row[field]=(Number(row[field])||0)+(Number(value)||0);
+    byPlayer.set(key,row);
+  }
+  return {rows:[...byPlayer.values()],totalMatches};
+}
 async function upsertMatches(matches){return matchStore.upsert(matches)}
 async function getMatch(gameId,options){return matchStore.get(gameId,options)}
 async function loadRawAppState(){const raw=await loadJson("app-state",appStateFile,{version:1,players:[],seriesState:{active:null,history:[]}});return raw&&typeof raw==="object"?raw:{players:[],seriesState:{active:null,history:[]}}}
@@ -550,6 +561,12 @@ export async function handleRequest(req,res){
       return json(res,200,{ok:true,playerId:main.id,playAliases:main.playAliases});
     }
     if(pathname==="/api/player")return json(res,200,await getPlayerData(url.searchParams.get("riotId")||"",url.searchParams.get("matches")));
+    if(pathname==="/api/match-summaries"&&req.method==="GET"){
+      const limit=Math.max(1,Math.min(1000,Number(url.searchParams.get("limit"))||500)),offset=Math.max(0,Number(url.searchParams.get("offset"))||0),gameIds=String(url.searchParams.get("ids")||"").split(",").map(value=>value.trim()).filter(value=>/^\d{6,16}$/.test(value)).slice(0,100);
+      const [matches,total]=await Promise.all([loadMatchSummaries({limit,offset,gameIds:gameIds.length?gameIds:null}),matchStore.count()]);
+      return json(res,200,{matches,total,limit,offset});
+    }
+    if(pathname==="/api/leaderboard-summary"&&req.method==="GET")return json(res,200,await loadLeaderboardSummary());
     if(pathname==="/api/internal-matches"&&req.method==="GET")return json(res,200,await loadMatches({includeTimeline:url.searchParams.get("timeline")==="1"}));
     if(pathname==="/api/ranking-data"&&req.method==="GET"){
       const state=await loadRawAppState(),matches=await loadMatches(),revision=rankingRevision(state,matches);

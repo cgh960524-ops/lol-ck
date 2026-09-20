@@ -24,6 +24,60 @@ function matchFromRow(row,includeTimeline=true){
   return match;
 }
 
+function matchSummary(match){
+  const participants=Array.isArray(match?.participants)?match.participants:[],team=id=>participants.filter(player=>Number(player.teamId)===id),total=(rows,key)=>rows.reduce((sum,row)=>sum+(Number(row?.[key])||0),0),team100=team(100),team200=team(200);
+  return {gameId:String(match?.gameId||""),gameCreation:Number(match?.gameCreation)||0,duration:Number(match?.duration)||0,timelineCollected:Boolean(match?.timelineCollected||match?.timeline),uploadedAt:Number(match?.uploadedAt)||0,team100:{kills:total(team100,"kills"),gold:total(team100,"gold"),win:Boolean(team100[0]?.win)},team200:{kills:total(team200,"kills"),gold:total(team200,"gold"),win:Boolean(team200[0]?.win)}};
+}
+
+async function queryPostgresMatchSummaries(sql,{gameIds=null,limit=500,offset=0}={}){
+  const safeLimit=Math.max(1,Math.min(1000,Number(limit)||500)),safeOffset=Math.max(0,Number(offset)||0),where=Array.isArray(gameIds)?(gameIds.length?sql`WHERE m.game_id IN ${sql(gameIds.map(String))}`:sql`WHERE false`):sql``;
+  const rows=await sql`
+    SELECT m.game_id,m.game_creation,m.duration,m.timeline_collected,m.uploaded_at,
+      COALESCE(sum(mp.kills) FILTER (WHERE mp.team_id=100),0)::bigint AS team_100_kills,
+      COALESCE(sum(mp.gold) FILTER (WHERE mp.team_id=100),0)::bigint AS team_100_gold,
+      COALESCE(bool_or(mp.win) FILTER (WHERE mp.team_id=100),false) AS team_100_win,
+      COALESCE(sum(mp.kills) FILTER (WHERE mp.team_id=200),0)::bigint AS team_200_kills,
+      COALESCE(sum(mp.gold) FILTER (WHERE mp.team_id=200),0)::bigint AS team_200_gold,
+      COALESCE(bool_or(mp.win) FILTER (WHERE mp.team_id=200),false) AS team_200_win
+    FROM matches m
+    LEFT JOIN match_participants mp ON mp.game_id=m.game_id
+    ${where}
+    GROUP BY m.game_id,m.game_creation,m.duration,m.timeline_collected,m.uploaded_at
+    ORDER BY m.game_creation DESC,m.game_id DESC
+    LIMIT ${safeLimit} OFFSET ${safeOffset}
+  `;
+  return rows.map(row=>({gameId:String(row.game_id),gameCreation:Number(row.game_creation)||0,duration:Number(row.duration)||0,timelineCollected:Boolean(row.timeline_collected),uploadedAt:Number(row.uploaded_at)||0,team100:{kills:Number(row.team_100_kills)||0,gold:Number(row.team_100_gold)||0,win:Boolean(row.team_100_win)},team200:{kills:Number(row.team_200_kills)||0,gold:Number(row.team_200_gold)||0,win:Boolean(row.team_200_win)}}));
+}
+
+const leaderboardNumberFields=["games","wins","kills","deaths","assists","damage","duration","metricGames","metricDuration","metricDeaths","objectiveDamage","turretDamage","turretKills","inhibitorKills","objectivesStolen","objectivesStolenAssists","damageTaken","mitigated","vision","wardsKilled","controlWards","healing","unitsHealed","utilityHealing","healsOnTeammates","shieldsOnTeammates","ccTime","totalCcTime","wardsPlaced","gold"];
+const normalizeLeaderboardRow=row=>Object.fromEntries(Object.entries({...row}).map(([key,value])=>[key,leaderboardNumberFields.includes(key)?Number(value)||0:value]));
+
+async function queryPostgresLeaderboardStats(sql){
+  const rows=await sql`
+    SELECT mp.puuid,mp.game_name AS "gameName",mp.tag_line AS "tagLine",
+      count(*)::integer AS games,count(*) FILTER (WHERE mp.win)::integer AS wins,
+      sum(mp.kills)::bigint AS kills,sum(mp.deaths)::bigint AS deaths,sum(mp.assists)::bigint AS assists,
+      sum(mp.damage)::bigint AS damage,sum(m.duration)::bigint AS duration,
+      count(*) FILTER (WHERE mp.objective_damage IS NOT NULL OR mp.damage_taken IS NOT NULL OR mp.mitigated IS NOT NULL OR mp.cc_time IS NOT NULL OR mp.wards_placed IS NOT NULL)::integer AS "metricGames",
+      COALESCE(sum(m.duration) FILTER (WHERE mp.objective_damage IS NOT NULL OR mp.damage_taken IS NOT NULL OR mp.mitigated IS NOT NULL OR mp.cc_time IS NOT NULL OR mp.wards_placed IS NOT NULL),0)::bigint AS "metricDuration",
+      COALESCE(sum(mp.deaths) FILTER (WHERE mp.objective_damage IS NOT NULL OR mp.damage_taken IS NOT NULL OR mp.mitigated IS NOT NULL OR mp.cc_time IS NOT NULL OR mp.wards_placed IS NOT NULL),0)::bigint AS "metricDeaths",
+      COALESCE(sum(mp.objective_damage),0)::bigint AS "objectiveDamage",COALESCE(sum(mp.turret_damage),0)::bigint AS "turretDamage",
+      sum(mp.turret_kills)::bigint AS "turretKills",sum(mp.inhibitor_kills)::bigint AS "inhibitorKills",sum(mp.objectives_stolen)::bigint AS "objectivesStolen",sum(mp.objectives_stolen_assists)::bigint AS "objectivesStolenAssists",
+      COALESCE(sum(mp.damage_taken),0)::bigint AS "damageTaken",COALESCE(sum(mp.mitigated),0)::bigint AS mitigated,sum(mp.vision)::bigint AS vision,COALESCE(sum(mp.wards_killed),0)::bigint AS "wardsKilled",COALESCE(sum(mp.control_wards),0)::bigint AS "controlWards",
+      COALESCE(sum(mp.healing),0)::bigint AS healing,COALESCE(sum(mp.units_healed),0)::bigint AS "unitsHealed",COALESCE(sum(mp.healing) FILTER (WHERE mp.units_healed>1),0)::bigint AS "utilityHealing",COALESCE(sum(mp.heals_on_teammates),0)::bigint AS "healsOnTeammates",COALESCE(sum(mp.shields_on_teammates),0)::bigint AS "shieldsOnTeammates",
+      COALESCE(sum(mp.cc_time),0)::bigint AS "ccTime",COALESCE(sum(mp.total_cc_time),0)::bigint AS "totalCcTime",COALESCE(sum(mp.wards_placed),0)::bigint AS "wardsPlaced",sum(mp.gold)::bigint AS gold
+    FROM match_participants mp JOIN matches m ON m.game_id=mp.game_id
+    GROUP BY mp.puuid,mp.game_name,mp.tag_line
+  `;
+  return rows.map(normalizeLeaderboardRow);
+}
+
+function blobLeaderboardStats(matches){
+  const grouped=new Map(),metricKeys=["objectiveDamage","damageTaken","mitigated","ccTime","wardsPlaced"];
+  for(const match of matches||[])for(const player of match.participants||[]){const key=String(player.puuid||`${player.gameName||""}#${player.tagLine||""}`).toLowerCase(),row=grouped.get(key)||{puuid:String(player.puuid||""),gameName:String(player.gameName||""),tagLine:String(player.tagLine||"")};for(const field of leaderboardNumberFields)if(row[field]===undefined)row[field]=0;const metric=metricKeys.some(field=>Object.prototype.hasOwnProperty.call(player,field));row.games++;row.wins+=Number(Boolean(player.win));row.kills+=Number(player.kills)||0;row.deaths+=Number(player.deaths)||0;row.assists+=Number(player.assists)||0;row.damage+=Number(player.damage)||0;row.duration+=Number(match.duration)||0;if(metric){row.metricGames++;row.metricDuration+=Number(match.duration)||0;row.metricDeaths+=Number(player.deaths)||0}for(const field of ["objectiveDamage","turretDamage","turretKills","inhibitorKills","objectivesStolen","objectivesStolenAssists","damageTaken","mitigated","vision","wardsKilled","controlWards","healing","unitsHealed","healsOnTeammates","shieldsOnTeammates","ccTime","totalCcTime","wardsPlaced","gold"])row[field]+=Number(player[field])||0;if((Number(player.unitsHealed)||0)>1)row.utilityHealing+=Number(player.healing)||0;grouped.set(key,row)}
+  return [...grouped.values()];
+}
+
 async function queryPostgresMatches(sql,{gameIds=null,includeTimeline=true}={}){
   const timelineSelect=includeTimeline?sql`, t.timeline`:sql``;
   const timelineJoin=includeTimeline?sql`LEFT JOIN match_timelines t ON t.game_id=m.game_id`:sql``;
@@ -60,6 +114,8 @@ export function createPostgresMatchRepository(sql=getDatabase()){
   return {
     async list(options={}){return queryPostgresMatches(sql,options)},
     async get(gameId,{includeTimeline=true}={}){return (await queryPostgresMatches(sql,{gameIds:[String(gameId)],includeTimeline}))[0]||null},
+    async summaries(options={}){return queryPostgresMatchSummaries(sql,options)},
+    async leaderboardStats(){return queryPostgresLeaderboardStats(sql)},
     async count(){const [row]=await sql`SELECT count(*)::integer AS count FROM matches`;return Number(row?.count)||0},
     async upsert(incoming){
       const matches=(Array.isArray(incoming)?incoming:[]).filter(Boolean);
@@ -110,6 +166,8 @@ function createBlobRepository(loadBlob,saveBlob){
   return {
     async list({includeTimeline=true}={}){const value=await loadBlob(),matches=Array.isArray(value)?value:[];return includeTimeline?matches:matches.map(withoutTimeline)},
     async get(gameId,{includeTimeline=true}={}){const match=(await this.list({includeTimeline:true})).find(item=>String(item.gameId)===String(gameId))||null;return includeTimeline?match:withoutTimeline(match)},
+    async summaries({gameIds=null,limit=500,offset=0}={}){const ids=Array.isArray(gameIds)?new Set(gameIds.map(String)):null,matches=(await this.list({includeTimeline:false})).filter(match=>!ids||ids.has(String(match.gameId))).sort((left,right)=>(Number(right.gameCreation)||0)-(Number(left.gameCreation)||0));return matches.slice(Math.max(0,Number(offset)||0),Math.max(0,Number(offset)||0)+Math.max(1,Math.min(1000,Number(limit)||500))).map(matchSummary)},
+    async leaderboardStats(){return blobLeaderboardStats(await this.list({includeTimeline:false}))},
     async count(){return (await this.list()).length},
     async upsert(incoming){const matches=await this.list(),byId=new Map(matches.map((match,index)=>[String(match.gameId),{match,index}])),replaced=[];for(const next of incoming){const key=String(next.gameId),entry=byId.get(key);replaced.push(Boolean(entry));if(entry){entry.match=mergeStoredMatch(entry.match,next);matches[entry.index]=entry.match}else{byId.set(key,{match:next,index:matches.length});matches.push(next)}}await saveBlob(matches);return {received:incoming.length,total:matches.length,replaced,replacedCount:replaced.filter(Boolean).length}},
     async replaceAll(matches){await saveBlob(matches);return {received:matches.length,total:matches.length,replaced:[],replacedCount:0}},
@@ -128,6 +186,8 @@ export function createMatchStore({mode=process.env.MATCH_STORE_MODE||"blob",load
     mode:selected,
     async list(options={}){return selected==="postgres"?pg().list(options):blob.list(options)},
     async get(gameId,options={}){return selected==="postgres"?pg().get(gameId,options):blob.get(gameId,options)},
+    async summaries(options={}){return selected==="postgres"?pg().summaries(options):blob.summaries(options)},
+    async leaderboardStats(){return selected==="postgres"?pg().leaderboardStats():blob.leaderboardStats()},
     async count(){return selected==="postgres"?pg().count():blob.count()},
     async upsert(matches){
       const incoming=Array.isArray(matches)?matches:[];
