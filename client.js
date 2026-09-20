@@ -45,7 +45,7 @@ function normalizeSeriesIdentifiers(){const all=[...(seriesState.history||[]),..
 function nextSeriesNumber(createdAt=Date.now()){normalizeSeriesIdentifiers();const day=seriesDateKey(createdAt),numbers=[...(seriesState.history||[]),...(seriesState.active?[seriesState.active]:[])].map(s=>String(s.seriesNumber||"").match(/^CKS-(\d{8})-(\d{3,})$/)).filter(Boolean).filter(match=>match[1]===day).map(match=>Number(match[2])||0);return "CKS-"+day+"-"+String(Math.max(0,...numbers)+1).padStart(3,"0")}
 normalizeSeriesIdentifiers();
 let serverStateReady=false,serverStateTimer=null;
-const RANKING_DATA_CACHE_KEY="eungck-ranking-data-v1";let rankingDataPromise=null;
+const RANKING_DATA_CACHE_KEY="eungck-ranking-data-v2";let rankingDataPromise=null;
 function loadRankingData(){if(rankingDataPromise)return rankingDataPromise;rankingDataPromise=(async()=>{let cached=null;try{cached=JSON.parse(sessionStorage.getItem(RANKING_DATA_CACHE_KEY)||"null")}catch{try{sessionStorage.removeItem(RANKING_DATA_CACHE_KEY)}catch{}}const query=cached?.revision?`?revision=${encodeURIComponent(cached.revision)}`:"",response=await fetch(`/api/ranking-data${query}`,{cache:"no-store"}),payload=await response.json();if(!response.ok)throw new Error(payload.error||"순위 데이터를 불러오지 못했습니다.");if(payload.unchanged&&cached?.state&&Array.isArray(cached.matches))return cached;const next={revision:payload.revision,state:payload.state,matches:Array.isArray(payload.matches)?payload.matches:[]};try{sessionStorage.setItem(RANKING_DATA_CACHE_KEY,JSON.stringify(next))}catch{}return next})();return rankingDataPromise}
 window.loadEungckRankingData=loadRankingData;
 let serverSaveInFlight=false,serverSavePending=false;
@@ -306,7 +306,7 @@ function prepareLazyMatchLoading(){
  if(location.hash==="#history")requestSummaries();else if(location.hash==="#leaderboard")requestLeaderboard();
  if("IntersectionObserver" in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();requestSummaries()}},{rootMargin:"400px"});const history=document.querySelector("#history");if(history)observer.observe(history)}
  if("IntersectionObserver" in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();requestLeaderboard()}},{rootMargin:"300px"});const leaderboard=document.querySelector("#leaderboard");if(leaderboard)observer.observe(leaderboard)}
- if("IntersectionObserver" in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();requestFull()}},{rootMargin:"0px"});const awards=document.querySelector(".award-grid");if(awards)observer.observe(awards)}
+ if("IntersectionObserver" in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();requestFull()}},{rootMargin:"0px"});const advancedAwards=document.querySelector("#chaosLeaderboard");if(advancedAwards)observer.observe(advancedAwards)}
 }
 let ladderRungs=[],ladderStart=0,ladderTimer=null,ladderBgmOn=false,ladderBgmLoop=null,ladderClockTimer=null;
 function ladderYoutube(command,args=[]){const frame=$("#ladderBgm");frame?.contentWindow?.postMessage(JSON.stringify({event:"command",func:command,args}),"*")}
