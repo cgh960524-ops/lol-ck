@@ -17,6 +17,8 @@ import {projectPublicAppState} from "./public-state.mjs";
 import { staticAssets } from "./static-assets.mjs";
 import {SERIES_COMMENTARY_PROMPT_VERSION,SERIES_COMMENTARY_SCHEMA,buildSeriesCommentaryEvidence,compactSeriesCommentaryEvidence,findFinishedSeries,sanitizeSeriesCommentary,seriesCommentaryKey,validateSeriesCommentaryTransition} from "./series-commentary.js";
 import {buildBottomTimelineSummary} from "./bottom-timeline.js";
+import {discordAuthConfigured,discordManagementConfigured,discordSession,finishDiscordLogin,isDiscordGuildMember,logoutDiscord,requireDiscordGuildMember,requireSameOrigin,startDiscordLogin} from "./discord-auth.mjs";
+import {assertNoUntrackedSeriesManagement,seriesAuditEntry,seriesCopies,validateSeriesRoles} from "./series-management.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4173);
@@ -547,7 +549,37 @@ export async function handleRequest(req,res){
       res.writeHead(200,{"Content-Type":"application/zip","Content-Disposition":'attachment; filename="eungck-uploader-20260919.zip"',"Content-Length":data.length,"X-Content-Type-Options":"nosniff","Cache-Control":"no-store"});
       return res.end(req.method==="HEAD"?undefined:data);
     }
-    if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),openAIConfigured:Boolean(openAIKey()),serverStorage:matchStore.mode==="postgres"?"postgres":matchStore.mode==="shadow"?"vercel-blob+postgres-shadow":process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
+    if(pathname==="/api/health")return json(res,200,{ok:true,uploaderAuth:Boolean(uploadToken),openAIConfigured:Boolean(openAIKey()),discordAuthConfigured:discordAuthConfigured(),serverStorage:matchStore.mode==="postgres"?"postgres":matchStore.mode==="shadow"?"vercel-blob+postgres-shadow":process.env.BLOB_READ_WRITE_TOKEN?"vercel-blob":"local-file"});
+    if(pathname==="/api/auth/discord"&&req.method==="GET")return startDiscordLogin(req,res);
+    if(pathname==="/api/auth/discord/callback"&&req.method==="GET")return finishDiscordLogin(req,res,url);
+    if(pathname==="/api/auth/me"&&req.method==="GET"){
+      const user=discordSession(req);let canManage=false;
+      if(user&&discordManagementConfigured()){try{canManage=await isDiscordGuildMember(user)}catch{/* Fail closed; management routes verify again. */}}
+      return json(res,200,{configured:discordManagementConfigured(),user,canManage});
+    }
+    if(pathname==="/api/auth/logout"&&req.method==="POST"){requireSameOrigin(req);return logoutDiscord(res)}
+    if(pathname==="/api/series-management/logs"&&req.method==="GET"){
+      await requireDiscordGuildMember(req);const state=await loadRawAppState(),reference=String(url.searchParams.get("seriesId")||"");
+      const entries=(state.seriesAuditLog||[]).filter(entry=>!reference||entry.seriesId===reference||entry.seriesNumber===reference).slice(-100).reverse();return json(res,200,{entries});
+    }
+    if(pathname==="/api/series-management/roles"&&req.method==="POST"){
+      requireSameOrigin(req);const actor=await requireDiscordGuildMember(req),body=await readBody(req),state=await loadAppState(),copies=seriesCopies(state.seriesState,body.seriesId);
+      if(!copies.length)throw Object.assign(new Error("시리즈를 찾지 못했습니다."),{status:404});
+      const setNumber=Number(body.setNumber),set=(copies[0].sets||[]).find(item=>Number(item.number)===setNumber);if(!Number.isInteger(setNumber)||!set)throw Object.assign(new Error("세트를 찾지 못했습니다."),{status:404});
+      const roles=validateSeriesRoles(copies[0],body.roleOverrides),before=set.roleOverrides||{};
+      for(const series of copies){const target=(series.sets||[]).find(item=>Number(item.number)===setNumber);if(target)target.roleOverrides={...roles}}
+      state.seriesAuditLog=[...(state.seriesAuditLog||[]),seriesAuditEntry(actor,"roles_updated",copies[0],{setNumber,gameId:String(set.gameId||""),before,after:roles})];
+      state.updatedAt=Date.now();await saveAppState(state);return json(res,200,{ok:true,seriesNumber:copies[0].seriesNumber,setNumber,updatedAt:state.updatedAt});
+    }
+    if(pathname==="/api/series-management/delete"&&req.method==="POST"){
+      requireSameOrigin(req);const actor=await requireDiscordGuildMember(req),body=await readBody(req),state=await loadAppState(),copies=seriesCopies(state.seriesState,body.seriesId);
+      if(!copies.length)throw Object.assign(new Error("시리즈를 찾지 못했습니다."),{status:404});
+      const series=copies[0],id=String(series.id),number=String(series.seriesNumber||id);state.seriesState.history=(state.seriesState.history||[]).filter(item=>String(item.id)!==id);
+      if(String(state.seriesState.active?.id)===id)state.seriesState.active=null;
+      state.seriesState.deletedSeriesNumbers=[...new Set([...(state.seriesState.deletedSeriesNumbers||[]),number])];
+      state.seriesAuditLog=[...(state.seriesAuditLog||[]),seriesAuditEntry(actor,"series_deleted",series,{gameIds:(series.sets||[]).filter(set=>set.imported&&set.gameId).map(set=>String(set.gameId)),setCount:(series.sets||[]).filter(set=>set.imported).length})];
+      state.updatedAt=Date.now();await saveAppState(state);return json(res,200,{ok:true,seriesNumber:number,updatedAt:state.updatedAt});
+    }
     if(pathname==="/api/series-commentary"&&req.method==="GET"){
       const reference=String(url.searchParams.get("seriesId")||"").trim();if(!reference)throw Object.assign(new Error("시리즈 ID가 필요합니다."),{status:400});
       const state=await loadAppState(),series=findFinishedSeries(state,reference);if(!series)throw Object.assign(new Error("완료된 시리즈를 찾지 못했습니다."),{status:404});
@@ -599,6 +631,7 @@ export async function handleRequest(req,res){
     if(pathname==="/api/app-state"&&(req.method==="POST"||req.method==="PUT")){
       const body=await readBody(req),players=Array.isArray(body.players)?body.players.slice(0,200):[],seriesState=body.seriesState&&typeof body.seriesState==="object"?body.seriesState:{active:null,history:[]};
       const previous=await loadAppState(),previousPlayers=new Map((previous.players||[]).map(player=>[String(player.id),player])),protectedPowerFields=["peakTier","peakLp","soloPowerOverride","soloPowerSource","manualPowerFloor","manualPowerSource","unrankedPolicyOptIn"];
+      assertNoUntrackedSeriesManagement(previous.seriesState,seriesState);seriesState.deletedSeriesNumbers=[...(previous.seriesState?.deletedSeriesNumbers||[])];
       for(const player of players){const saved=previousPlayers.get(String(player.id));if(!saved)continue;player.playAliases=player.archived?[]:(saved.playAliases||[]);if(saved.ratingSeedV2)player.ratingSeedV2=structuredClone(saved.ratingSeedV2);if(saved.ratingSeedV21)player.ratingSeedV21=structuredClone(saved.ratingSeedV21);if(saved.ratingSeedV22)player.ratingSeedV22=structuredClone(saved.ratingSeedV22);if(saved.ratingSeedV4)player.ratingSeedV4=structuredClone(saved.ratingSeedV4);player.soloEvidenceHistory=mergeSoloEvidence(saved.soloEvidenceHistory,player.soloEvidence);if(!player.soloEvidence&&saved.soloEvidence)player.soloEvidence=structuredClone(saved.soloEvidence);if(!player.roleGames&&saved.roleGames)player.roleGames=structuredClone(saved.roleGames);for(const field of protectedPowerFields)if((player[field]===undefined||player[field]===null||player[field]==="")&&saved[field]!==undefined&&saved[field]!==null&&saved[field]!=="")player[field]=saved[field]}
       const previousActive=previous.seriesState?.active,activeSeries=seriesState.active,seriesJustFinished=Boolean(activeSeries?.finished&&previousActive&&String(activeSeries.id)===String(previousActive.id)&&!previousActive.finished),finishedRecruitment=seriesJustFinished?previous.discordRecruitment:null;
       let commentaryTransition={ok:false,code:"not_finish_transition"};
@@ -608,7 +641,7 @@ export async function handleRequest(req,res){
       }
       if(seriesJustFinished)for(const player of players)player.selected=false;
       const cancelledRecruitmentIds=[...new Set([...(previous.discordCancelledRecruitmentIds||[]),...(finishedRecruitment?[String(finishedRecruitment.id)]:[])])].slice(-50);
-      const state={version:1,players,seriesState,ladderChoice:body.ladderChoice||null,discordRecruitment:seriesJustFinished?null:(previous.discordRecruitment||null),discordCancelledRecruitmentIds:cancelledRecruitmentIds,discordPlayerRegistrations:previous.discordPlayerRegistrations||{},updatedAt:Date.now()};await saveAppState(state);
+      const state={version:1,players,seriesState,seriesAuditLog:previous.seriesAuditLog||[],ladderChoice:body.ladderChoice||null,discordRecruitment:seriesJustFinished?null:(previous.discordRecruitment||null),discordCancelledRecruitmentIds:cancelledRecruitmentIds,discordPlayerRegistrations:previous.discordPlayerRegistrations||{},updatedAt:Date.now()};await saveAppState(state);
       if(commentaryTransition.ok){const transitionFingerprint=createHash("sha256").update(commentaryTransition.fingerprintInput).digest("hex").slice(0,24);startSeriesCommentary(activeSeries.seriesNumber||activeSeries.id,{transitionFingerprint})}
       else if(seriesJustFinished)console.warn("Series commentary automatic generation skipped",{series:seriesCommentaryKey(activeSeries),code:commentaryTransition.code});
       await notifySeriesChanges(previous,state);return json(res,200,{ok:true,updatedAt:state.updatedAt});

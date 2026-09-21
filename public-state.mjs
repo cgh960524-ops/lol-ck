@@ -31,6 +31,7 @@ export function projectPublicAppState(state) {
   if (!state || typeof state !== "object" || Array.isArray(state)) return state;
 
   const publicState = { ...state };
+  delete publicState.seriesAuditLog;
   if (!Array.isArray(state.players)) return publicState;
 
   publicState.players = state.players.map(player => {
