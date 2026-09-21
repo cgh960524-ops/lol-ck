@@ -1,11 +1,11 @@
 import REFERENCE from './rating-reference.js';
 import {observe} from './rating-observation.js?v=20260918-v41';
-import {bottomDuoChange,initialV4Profile,learningFactor,matchupUpdate,predictTeams} from './rating-policy.js?v=20260920-v42';
+import {bottomDuoChange,initialV4Profile,learningFactor,matchupUpdate,predictTeams,unrankedLearningFactor,unrankedRoleTransfer} from './rating-policy.js?v=20260921-unranked';
 import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
 /* Shared, deterministic browser/server role-skill estimator. No I/O or POG bonuses. */
 (function (root) {
   'use strict';
-  const VERSION = 'matchup-skill-v4.2.20260920';
+  const VERSION = 'matchup-skill-v4.3.20260921';
   const LEGACY_HISTORY_VERSION = 'matchup-skill-v4.20260917';
   const BOTTOM_DUO_HISTORY_VERSION = 'matchup-skill-v4.1.20260918';
   // One-time retrospective boundary requested on 2026-09-18. These are the
@@ -18,6 +18,7 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
   // series at rollout. Older history keeps its frozen V4/V4.1 interpretation.
   const BOTTOM_TIMELINE_RETRO_GAMES = new Set(['8387184562','8387268919','8387383315','8387493830','8387566886']);
   const BOTTOM_TIMELINE_FORWARD_AFTER = 1789837614741;
+  const UNRANKED_FORWARD_AFTER = Date.parse('2026-09-20T15:00:00Z');
   const usesBottomTimeline=m=>BOTTOM_TIMELINE_RETRO_GAMES.has(String(m.gameId))||num(m.gameCreation)>BOTTOM_TIMELINE_FORWARD_AFTER;
   const ROLES = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
   const TIERS = { UNRANKED:1000, IRON:800, BRONZE:950, SILVER:1100, GOLD:1250, PLATINUM:1420, EMERALD:1580, DIAMOND:1780, MASTER:2050, GRANDMASTER:2200, CHALLENGER:2380 };
@@ -113,7 +114,7 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
     const diagnostics={version:VERSION,matches:0,unmatched:0,unconfirmed:0,duplicateLinks:0,lowQuality:0,inferredSessions:new Set(),bottomDuoAdjusted:0,bottomDuoGames:new Set(),bottomTimelineAdjusted:0,bottomTimelineGames:new Set()};
     for(const p of players){
       if(p.ratingSeedV22?.policy!=='skill-baseline-v1')p.ratingSeedV22=initialProfile(p);
-      if(p.ratingSeedV4?.policy!=='matchup-v4')p.ratingSeedV4=initialV4Profile(p,p.ratingSeedV22);
+      p.ratingSeedV4=initialV4Profile(p,p.ratingSeedV22);
       const profile=p.ratingSeedV4,seed=profile.roles[profile.primary].rating;
       models.set(String(p.id),{profile,seed,roles:{},games:0,overall:seed,history:[],unconfirmed:0});
       p.internalGames=0;p.internalRoles={};p.internalChampions={};p.internalKills=0;p.internalDeaths=0;p.internalAssists=0;p.internalKda=0;p.internalChampionScore=0;p.ratingHistory=[];
@@ -123,9 +124,9 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
       if(!model.roles[role]){
         const latest=(p.soloEvidenceHistory||[]).filter(x=>x.source==='riot-solo-420'&&x.observedAt<=time).sort((a,b)=>a.observedAt-b.observedAt).at(-1);
         const active=latest?initialV4Profile({...p,ratingSeedV4:undefined,soloEvidence:latest},p.ratingSeedV22):model.profile;
-        const prior=active.roles[role],mature=model.games>=30&&!active.highTier;
-        const seed=mature?Math.min(prior.rating,model.overall):prior.rating;
-        model.roles[role]={rating:seed,seed,seedSource:mature?'internal-transfer':prior.source,games:0,comparisons:0,wins:0,weight:0,confidence:0,uncertainty:330,opponents:new Set(),series:new Set(),seriesGames:new Map(),opponentSeries:new Map(),recent:[],expectedTotal:0,performanceTotal:0,lastLearning:learningFactor(model.profile,role),estimatedTarget:null};
+        const prior=active.roles[role],unranked=active.currentEvidence?.tier==='UNRANKED'&&!active.highTier&&!active.peakEvidence&&!num(p.soloPowerOverride),optedIn=unranked&&(model.profile.unrankedBaselineVersion===1||p.unrankedPolicyOptIn==='2026-09-21'),transferEnabled=optedIn&&time>UNRANKED_FORWARD_AFTER,transfer=transferEnabled?unrankedRoleTransfer(model.roles,role):null,mature=model.games>=30&&!active.highTier&&!transferEnabled;
+        const seed=transferEnabled?transfer.rating:mature?Math.min(prior.rating,model.overall):prior.rating;
+        model.roles[role]={rating:seed,seed,seedSource:transferEnabled&&transfer.evidence?'unranked-transfer':mature?'internal-transfer':prior.source,games:0,comparisons:0,wins:0,weight:0,confidence:0,uncertainty:330,opponents:new Set(),series:new Set(),seriesGames:new Map(),opponentSeries:new Map(),recent:[],expectedTotal:0,performanceTotal:0,lastLearning:learningFactor(model.profile,role),estimatedTarget:null};
       }
       return model.roles[role];
     }
@@ -133,7 +134,7 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
       const rs=Object.values(model.roles).filter(r=>r.comparisons),total=rs.reduce((s,r)=>s+Math.sqrt(r.weight),0);
       return total?rs.reduce((s,r)=>s+r.rating*Math.sqrt(r.weight),0)/total:model.seed;
     };
-    const sweepWinners=new Set(),sweepLosers=new Set(),seriesMatches=new Map(),seriesLastGame=new Map(),bottomSeriesProgress=new Map();
+    const sweepWinners=new Set(),sweepLosers=new Set(),seriesMatches=new Map(),seriesLastGame=new Map(),bottomSeriesProgress=new Map(),unrankedSeriesProgress=new Map();
     for(const match of prepared.filter(match=>match.seriesSource==='confirmed')){const rows=seriesMatches.get(match.seriesId)||[];rows.push(match);seriesMatches.set(match.seriesId,rows)}
     for(const [seriesId,seriesGames] of seriesMatches){
       if(seriesGames.length<2)continue;
@@ -165,10 +166,11 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
         const obs=performance(mp,opponent?.mp,m,role),before=pre.get(e.id).rating;
         const valid=!!opponent&&obs.target!==null&&obs.quality>=.65;
         const known=(p.soloEvidenceHistory||[]).filter(x=>x.source==='riot-solo-420'&&x.observedAt<=num(m.gameCreation)).sort((a,b)=>a.observedAt-b.observedAt);
-        const learning=learningFactor(model.profile,role,known.at(-1)||null,known);
+        const unranked=num(m.gameCreation)>UNRANKED_FORWARD_AFTER&&(model.profile.unrankedBaselineVersion===1||p.unrankedPolicyOptIn==='2026-09-21')&&model.profile.currentEvidence?.tier==='UNRANKED'&&!model.profile.highTier&&!model.profile.peakEvidence&&!num(p.soloPowerOverride);
+        const learning=learningFactor(model.profile,role,known.at(-1)||null,known)*(unranked?unrankedLearningFactor({games:r?.comparisons||0,series:r?.series.size||0,opponents:r?.opponents.size||0}):1);
         const repeat=r?.seriesGames.get(m.seriesId)||0,opponentSeries=opponent?(r.opponentSeries.get(opponent.id)?.size||0):0;
         const update=valid?matchupUpdate({before,opponent:pre.get(opponent.id).rating,opponentConfidence:pre.get(opponent.id).confidence,signal:obs.signal,pairedSignal:obs.pairedSignal,quality:obs.quality,comparisons:r.comparisons,repeat,opponentSeries,learning,metrics:obs.metrics,opponentMetrics:performance(opponent.mp,mp,m,role).metrics}):null;
-        pending.push({e,obs,before,opponent,comparisonStatus,valid,update,learning,repeat,expected:mp.teamId===100?prediction.blueWinRate:1-prediction.blueWinRate});
+        pending.push({e,obs,before,opponent,comparisonStatus,valid,update,learning,unranked,repeat,expected:mp.teamId===100?prediction.blueWinRate:1-prediction.blueWinRate});
       }
       const duoContexts=new Map(),timelineEvidence=usesBottomTimeline(m)?evaluateBottomTimeline(m):null;
       if(usesBottomDuo(m))for(const step of pending){
@@ -185,7 +187,7 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
       if(duoContexts.size)diagnostics.bottomDuoGames.add(String(m.gameId));
       if([...duoContexts.values()].some(context=>context.timelineApplied))diagnostics.bottomTimelineGames.add(String(m.gameId));
       for(const step of pending){
-        const {e,obs,before,opponent,comparisonStatus,valid,update,learning,repeat,expected}=step,{mp,p,role,r,model}=e;
+        const {e,obs,before,opponent,comparisonStatus,valid,update,learning,unranked,repeat,expected}=step,{mp,p,role,r,model}=e;
         const baseChange=valid?clamp(before+update.change,400,3200)-before:0,duoContext=duoContexts.get(e.id);
         let change=duoContext?clamp(before+duoContext.change,400,3200)-before:baseChange,seriesGuardrailAdjustment=0;const oldOverall=model.overall,internalGamesBefore=model.games;
         if(duoContext?.timelineApplied){
@@ -195,6 +197,12 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
           if(last&&swept&&timelineAverage<=10){const ceiling=role==='SUPPORT'?8:12;if(seriesTotal+seriesGuardrailAdjustment>ceiling)seriesGuardrailAdjustment=ceiling-seriesTotal}
           if(seriesGuardrailAdjustment)change=clamp(before+change+seriesGuardrailAdjustment,400,3200)-before;
           progress.change+=change;bottomSeriesProgress.set(key,progress);
+        }
+        if(valid&&unranked){
+          const key=`${m.seriesId}|${e.id}|${role}`,used=unrankedSeriesProgress.get(key)||0;
+          change=clamp(change,-60,60);
+          change=clamp(change,-120-used,120-used);
+          unrankedSeriesProgress.set(key,used+change);
         }
         if(duoContext)diagnostics.bottomDuoAdjusted++;
         if(duoContext?.timelineApplied)diagnostics.bottomTimelineAdjusted++;
@@ -216,7 +224,7 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
         const c=p.internalChampions[ckey]||={name:mp.championName||'Unknown',championKey:mp.championKey||mp.championName,championId:num(mp.championId),role:role||'UNKNOWN',games:0,wins:0,kills:0,deaths:0,assists:0,damageTotal:0,goldTotal:0};
         c.games++;c.wins+=Number(!!mp.win);for(const key of ['kills','deaths','assists'])c[key]+=num(mp[key]);c.damageTotal+=num(mp.damage);c.goldTotal+=num(mp.gold);
         model.overall=overall(model);
-        model.history.push({gameId:String(m.gameId),seriesId:m.seriesId,seriesSource:m.seriesSource,time:num(m.gameCreation),version:duoContext?.timelineApplied?VERSION:duoContext?BOTTOM_DUO_HISTORY_VERSION:LEGACY_HISTORY_VERSION,role,comparisonStatus,internalGamesBefore,soloRetention:soloRetention(internalGamesBefore,(r?.games||1)-1),win:!!mp.win,
+        model.history.push({gameId:String(m.gameId),seriesId:m.seriesId,seriesSource:m.seriesSource,time:num(m.gameCreation),version:unranked||duoContext?.timelineApplied?VERSION:duoContext?BOTTOM_DUO_HISTORY_VERSION:LEGACY_HISTORY_VERSION,role,comparisonStatus,internalGamesBefore,soloRetention:soloRetention(internalGamesBefore,(r?.games||1)-1),win:!!mp.win,
           before:Math.round(oldOverall),after:Math.round(model.overall),change:Math.round(model.overall)-Math.round(oldOverall),
           roleBefore:Math.round(before),roleAfter:r?Math.round(r.rating):null,roleChange:r?Math.round(r.rating)-Math.round(before):0,
           evidenceRoleBefore:Math.round(before),evidenceRoleAfter:r?Math.round(r.rating):null,calibrationChange:0,calibrationDiscount:0,roleEvidenceShare:r?.confidence||0,
@@ -232,6 +240,7 @@ import {evaluateBottomTimeline} from './bottom-timeline.js?v=20260920-v42';
     }
     for(const p of players){
       const model=models.get(String(p.id)),roles={};for(const role of ROLES)ensureRole(p,role);
+      if((model.profile.unrankedBaselineVersion===1||p.unrankedPolicyOptIn==='2026-09-21')&&model.profile.currentEvidence?.tier==='UNRANKED'&&!model.profile.highTier&&!model.profile.peakEvidence&&!num(p.soloPowerOverride)&&!Object.values(model.roles).some(role=>role.comparisons))model.overall=1350;
       for(const [role,r] of Object.entries(model.roles)){
         roles[role]={rating:Math.round(r.rating),evidenceRating:Math.round(r.rating),seed:Math.round(r.seed),seedSource:r.seedSource,transferAnchor:Math.round(r.seed),transferBaseline:Math.round(r.seed),calibrationDiscount:0,calibrationTarget:Math.round(r.rating),roleEvidenceShare:r.confidence,calibrationStatus:r.comparisons?'matchup-observed':'unplayed-estimate',observedSeries:r.series.size,observedOpponents:r.opponents.size,
           provisional:isProvisional({...r,evidenceSeries:r.series.size}),estimatedTarget:r.estimatedTarget==null?null:Math.round(r.estimatedTarget),evidenceSeries:r.series.size,priorShare:0,soloRetention:soloRetention(model.games,r.games),comparisons:r.comparisons,games:r.games,wins:r.wins,confidence:Number(r.confidence.toFixed(3)),uncertainty:r.uncertainty,opponents:r.opponents.size,series:r.series.size,recentResidual:Number(mean(r.recent.slice(-5)).toFixed(3)),expectedTotal:r.expectedTotal,performanceTotal:r.performanceTotal,learningFactor:r.lastLearning};

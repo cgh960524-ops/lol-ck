@@ -4,6 +4,20 @@ export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const n=x=>Number.isFinite(Number(x))?Number(x):0;
 const TIERS={IRON:800,BRONZE:950,SILVER:1100,GOLD:1250,PLATINUM:1420,EMERALD:1580,DIAMOND:1780,MASTER:2050,GRANDMASTER:2200,CHALLENGER:2380};
 const high=t=>['MASTER','GRANDMASTER','CHALLENGER'].includes(t);
+export const UNRANKED_START=1350;
+export const unrankedEvidenceShare=({games=0,series=0,opponents=0}={})=>Math.min(1,Math.max(0,n(games))/8,Math.max(0,n(series))/3,Math.max(0,n(opponents))/3);
+export function unrankedRoleTransfer(roles,target){
+ const rows=Object.entries(roles||{}).filter(([role,value])=>role!==target&&n(value.comparisons)>0).map(([role,value])=>{
+  const evidence=unrankedEvidenceShare({games:value.comparisons,series:value.series?.size??value.series,opponents:value.opponents?.size??value.opponents});
+  const fraction=role==='SUPPORT'&&target!=='SUPPORT'?.35:['JUNGLE','SUPPORT'].includes(target)?.55:.70;
+  return {evidence,delta:(n(value.rating)-UNRANKED_START)*fraction};
+ });
+ const total=rows.reduce((sum,row)=>sum+row.evidence,0);
+ if(!total)return {rating:UNRANKED_START,evidence:0};
+ const average=rows.reduce((sum,row)=>sum+row.delta*row.evidence,0)/total;
+ return {rating:Math.round(clamp(UNRANKED_START+Math.min(1,total)*average,400,3200)),evidence:Math.min(1,total)};
+}
+export const unrankedLearningFactor=({games=0,series=0,opponents=0}={})=>1+.6*(1-unrankedEvidenceShare({games,series,opponents}));
 export function roleEvidence(counts={}){
  const rows=ROLES.map(r=>[r,Math.max(0,n(counts[r]))]).sort((a,b)=>b[1]-a[1]),total=rows.reduce((s,x)=>s+x[1],0);
  const primary=total>=10&&rows[0][1]>=5?rows[0][0]:null;
@@ -36,14 +50,14 @@ export function initialV4Profile(p,legacy){
  const policy=evidencePolicy(current,p.soloEvidenceHistory||[]),e=current.roles;
  const primary=e.primary||legacy.primary,secondary=e.secondary||null;
  // Preserve an existing documented, role-local legacy peak; do not invent its season or lane.
- const solo=TIERS[current.tier]??legacy.solo??1450;
+ const solo=current.tier==='UNRANKED'?UNRANKED_START:TIERS[current.tier]??legacy.solo??1450;
  const peakBase=policy.peak?TIERS[policy.peak.tier]:solo;
  const mainBase=solo,peakRole=policy.peak?.roles.primary;
  const historicalBase=solo+Math.max(0,peakBase-solo)*policy.trust*.65;
  const transferByOrigin={TOP:.60,JUNGLE:.70,MID:.65,ADC:.60,SUPPORT:.18};
  const roles={};
  for(const role of ROLES){
-  let rating=role===primary?mainBase:role===secondary?mainBase-80:mainBase-clamp(mainBase*.12,150,300);
+  let rating=current.tier==='UNRANKED'&&!policy.peak?mainBase:role===primary?mainBase:role===secondary?mainBase-80:mainBase-clamp(mainBase*.12,150,300);
   if(high(current.tier)&&role!==primary){
    const transfer=transferByOrigin[primary]||.4;
    rating=1450+Math.max(0,mainBase-1450)*(role===secondary?.85:transfer);
@@ -57,7 +71,7 @@ export function initialV4Profile(p,legacy){
   if(!policy.peak&&oldPeak>rating&&role===primary)rating+=(oldPeak-rating)*.5;
   roles[role]={rating:clamp(rating,400,3200),base:clamp(rating,400,3200),peak:oldPeak||null,source:role===primary?'solo-role-estimate':'role-transfer'};
  }
- return {policy:'matchup-v4',solo,primary,secondary,roles,source:e.verified?'riot-role-evidence':'legacy-role-unverified',roleVerified:!!e.verified,highTier:policy.highTier,highTrust:policy.trust,highOrigin:policy.origin||primary,currentEvidence:current,peakEvidence:policy.peak||null};
+ return {policy:'matchup-v4',unrankedBaselineVersion:current.tier==='UNRANKED'?1:undefined,solo,primary,secondary,roles,source:e.verified?'riot-role-evidence':'legacy-role-unverified',roleVerified:!!e.verified,highTier:policy.highTier,highTrust:policy.trust,highOrigin:policy.origin||primary,currentEvidence:current,peakEvidence:policy.peak||null};
 }
 export function learningFactor(profile,role,current=null,history=[]){
  let policy=current?evidencePolicy(current,history):{highTier:profile.highTier,trust:profile.highTrust,origin:profile.highOrigin};

@@ -58,10 +58,17 @@ async function loadRatingMatches(matches=null){
   const summaries=new Map(patches.map(match=>[String(match.gameId),match.ratingTimeline]));return compact.map(match=>summaries.has(String(match.gameId))?{...match,ratingTimeline:summaries.get(String(match.gameId))}:match);
 }
 async function loadRawAppState(){const raw=await loadJson("app-state",appStateFile,{version:1,players:[],seriesState:{active:null,history:[]}});return raw&&typeof raw==="object"?raw:{players:[],seriesState:{active:null,history:[]}}}
+// One requested opt-in for an existing player. The scorer itself uses the
+// persisted flag, so historical matches and every other existing player stay frozen.
+function applyRequestedUnrankedOptIn(state){
+  const player=(state.players||[]).find(item=>String(item.id)==="23"&&item.name==="victorywook"&&item.tag==="#KR1");
+  if(!player||player.unrankedPolicyOptIn||player.tier!=="UNRANKED"||Number(player.ratingV2?.roles?.MID?.games)!==0)return false;
+  player.unrankedPolicyOptIn="2026-09-21";return true;
+}
 // Ratings are materialized when state changes. Read paths must return that
 // snapshot directly; replaying every stored match for every visitor is both
 // unnecessary and the largest source of database egress.
-async function loadAppState(){const state=await loadRawAppState();if(state.ratingAlgorithm?.version!==CKRating.VERSION){await deriveRatings(state);await saveJson("app-state",appStateFile,state)}return state}
+async function loadAppState(){const state=await loadRawAppState(),optedIn=applyRequestedUnrankedOptIn(state);if(optedIn||state.ratingAlgorithm?.version!==CKRating.VERSION){await deriveRatings(state);await saveJson("app-state",appStateFile,state)}return state}
 async function deriveRatings(state,matches=null){const result=CKRating.recalculate(Array.isArray(state.players)?state.players:[],await loadRatingMatches(matches),state.seriesState||{});state.players=result.players;state.ratingAlgorithm={version:CKRating.VERSION,diagnostics:result.diagnostics};return state}
 async function saveAppState(value){await deriveRatings(value);await saveJson("app-state",appStateFile,value)}
 const rankingRevision=(state,matches)=>createHash("sha256").update(JSON.stringify([Number(state.updatedAt)||0,CKRating.VERSION,(matches||[]).length,...(matches||[]).map(match=>[String(match.gameId),Number(match.uploadedAt)||0,Number(match.enrichedAt)||0,Boolean(match.timelineCollected),(match.epicObjectives||[]).length])])).digest("hex").slice(0,20);
@@ -591,7 +598,7 @@ export async function handleRequest(req,res){
     if(pathname==="/api/app-state"&&req.method==="GET"){const state=await loadAppState();if(reconcileDiscordRecruitment(state))await saveAppState(state);return json(res,200,projectPublicAppState(state))}
     if(pathname==="/api/app-state"&&(req.method==="POST"||req.method==="PUT")){
       const body=await readBody(req),players=Array.isArray(body.players)?body.players.slice(0,200):[],seriesState=body.seriesState&&typeof body.seriesState==="object"?body.seriesState:{active:null,history:[]};
-      const previous=await loadAppState(),previousPlayers=new Map((previous.players||[]).map(player=>[String(player.id),player])),protectedPowerFields=["peakTier","peakLp","soloPowerOverride","soloPowerSource","manualPowerFloor","manualPowerSource"];
+      const previous=await loadAppState(),previousPlayers=new Map((previous.players||[]).map(player=>[String(player.id),player])),protectedPowerFields=["peakTier","peakLp","soloPowerOverride","soloPowerSource","manualPowerFloor","manualPowerSource","unrankedPolicyOptIn"];
       for(const player of players){const saved=previousPlayers.get(String(player.id));if(!saved)continue;player.playAliases=player.archived?[]:(saved.playAliases||[]);if(saved.ratingSeedV2)player.ratingSeedV2=structuredClone(saved.ratingSeedV2);if(saved.ratingSeedV21)player.ratingSeedV21=structuredClone(saved.ratingSeedV21);if(saved.ratingSeedV22)player.ratingSeedV22=structuredClone(saved.ratingSeedV22);if(saved.ratingSeedV4)player.ratingSeedV4=structuredClone(saved.ratingSeedV4);player.soloEvidenceHistory=mergeSoloEvidence(saved.soloEvidenceHistory,player.soloEvidence);if(!player.soloEvidence&&saved.soloEvidence)player.soloEvidence=structuredClone(saved.soloEvidence);if(!player.roleGames&&saved.roleGames)player.roleGames=structuredClone(saved.roleGames);for(const field of protectedPowerFields)if((player[field]===undefined||player[field]===null||player[field]==="")&&saved[field]!==undefined&&saved[field]!==null&&saved[field]!=="")player[field]=saved[field]}
       const previousActive=previous.seriesState?.active,activeSeries=seriesState.active,seriesJustFinished=Boolean(activeSeries?.finished&&previousActive&&String(activeSeries.id)===String(previousActive.id)&&!previousActive.finished),finishedRecruitment=seriesJustFinished?previous.discordRecruitment:null;
       let commentaryTransition={ok:false,code:"not_finish_transition"};

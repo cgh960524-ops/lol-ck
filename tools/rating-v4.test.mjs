@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {roleEvidence,makeSoloEvidence,mergeSoloEvidence,peakTrust,initialV4Profile,learningFactor,matchupUpdate,bottomDuoChange,predictTeams} from '../rating-policy.js';
+import {roleEvidence,makeSoloEvidence,mergeSoloEvidence,peakTrust,initialV4Profile,learningFactor,matchupUpdate,bottomDuoChange,predictTeams,unrankedEvidenceShare,unrankedLearningFactor,unrankedRoleTransfer} from '../rating-policy.js';
 import {observe} from '../rating-observation.js';
 import '../rating-engine.js';
 const E=CKRating;
@@ -8,6 +8,7 @@ const players=()=>Array.from({length:10},(_,i)=>({id:i+1,name:'P'+i,tag:'KR1',pu
 const game=(i=1)=>({gameId:String(i),gameCreation:Date.UTC(2026,8,1)+i*86400000,duration:1800,participants:players().map((p,j)=>({puuid:p.puuid,gameName:p.name,tagLine:p.tag,role:p.role,roleSource:'manual',teamId:j<5?100:200,win:j<5,championKey:'Example'+j%5,gold:11500,cs:170,damage:22000,kills:4,deaths:4,assists:10,vision:50,damageTaken:25000,mitigated:18000,ccTime:40,healsOnTeammates:0,shieldsOnTeammates:0,objectiveDamage:9000,turretDamage:2000}))});
 const metrics=[{key:'fight',signal:.5},{key:'control',signal:.5}];
 const update=x=>matchupUpdate({before:1500,opponent:1500,signal:0,pairedSignal:0,opponentConfidence:.8,metrics,opponentMetrics:metrics,...x});
+test('unranked transfer needs distinct evidence and respects specialist roles',()=>{const one={TOP:{rating:1600,comparisons:8,series:1,opponents:1}},diverse={TOP:{rating:1600,comparisons:8,series:3,opponents:3}};assert.equal(unrankedEvidenceShare({games:8,series:1,opponents:1}),1/3);assert.equal(unrankedRoleTransfer(one,'MID').rating,1408);assert.equal(unrankedRoleTransfer(diverse,'MID').rating,1525);assert.equal(unrankedRoleTransfer(diverse,'JUNGLE').rating,1488);assert.equal(unrankedRoleTransfer({SUPPORT:{rating:1600,comparisons:8,series:3,opponents:3}},'MID').rating,1438);assert.equal(unrankedLearningFactor(),1.6);assert.equal(unrankedLearningFactor({games:8,series:3,opponents:3}),1)});
 test('matching expected advantage does not earn a matchup bonus',()=>{const u=update({before:1700,opponent:1200,pairedSignal:500/650});assert.ok(Math.abs(u.matchupChange)<1e-10);assert.ok(u.change<=0);});
 test('same margin against stronger actual opponent yields more credit',()=>{assert.ok(update({opponent:1800,pairedSignal:.2}).change>update({opponent:1200,pairedSignal:.2}).change);});
 test('defensive survival needs participation and another contribution and stays modest',()=>{const a=update({before:1200,opponent:1700,pairedSignal:-.3}),b=update({before:1200,opponent:1700,pairedSignal:-.3,metrics:[{key:'survival',signal:2}]});assert.ok(a.change>b.change);assert.ok(a.matchupChange<10);assert.equal(a.defensive,true);});
